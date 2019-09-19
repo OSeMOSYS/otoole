@@ -16,8 +16,8 @@ class ConvertLine(object):
     >>> cplex_line = "AnnualCost	REGION	CDBACKSTOP	1.0	0.0	137958.8400384134"
     >>> convertor = RegionTechnology()
     >>> convertor.convert()
-    VariableName(REGION,TECHCODE01,2015)       42.69         0\n
-    VariableName(REGION,TECHCODE01,2017)       137958.84         0\n
+    VariableName(REGION,TECHCODE01,2015)       42.69         0\\n
+    VariableName(REGION,TECHCODE01,2017)       137958.84         0\\n
     """
 
     def __init__(self, data: List, start_year: int, end_year: int, output_format='cbc'):
