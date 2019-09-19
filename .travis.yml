@@ -1,7 +1,3 @@
-# Travis configuration file using the build matrix feature
-# Read more under http://docs.travis-ci.com/user/build-configuration/
-# THIS SCRIPT IS SUPPOSED TO BE AN EXAMPLE. MODIFY IT ACCORDING TO YOUR NEEDS!
-
 sudo: false
 language: python
 virtualenv:
@@ -9,27 +5,47 @@ virtualenv:
 matrix:
   fast_finish: true
   include:
-    - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="true"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="true"
 install:
-  - source tests/travis_install.sh
+- source tests/travis_install.sh
 before_script:
-  - git config --global user.email "wusher@kth.com"
-  - git config --global user.name "Will Usher"
+- git config --global user.email "wusher@kth.com"
+- git config --global user.name "Will Usher"
 script:
-  - python setup.py develop
-  - tox
-  - |
-    if [[ "$COVERAGE" == "true" ]]; then
-      pre-commit install
-      pre-commit run --files src
-    fi
+- python setup.py develop
+- tox
+- |
+  if [[ "$COVERAGE" == "true" ]]; then
+    pre-commit install
+    pre-commit run --files src
+  fi
 after_success:
-  - if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
+- if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
 after_script:
-  - travis-cleanup
+- travis-cleanup
 cache:
   pip: true
   directories:
-    - $HOME/miniconda
+  - "$HOME/miniconda"
 notifications:
   email: false
+jobs:
+  include:
+  - stage: deploy
+    name: Deploy to PyPI
+    if: tag =~ ^v
+    env: DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
+    install:
+    - source tests/travis_install.sh
+    - pip install -r requirements.txt
+    script: echo "Deploying to PyPI"
+    deploy:
+      edge: true
+      provider: pypi
+      user: willu47
+      password:
+        secure: gNOYE3ZK6/GnP/f8VpTyP4X+hxR7zT27osT0lWsSZBr4IQLF98R52eumCS/fUmLi8k7ZnN9+XfCeFTZb8SDIY0R7+WxdTvWP0AND+ygXJwq85jzrZ7j76AliD9ejCSNt4Quh11ZX0P3mnUHF+0W7SPHCg41XG67oqzdEHrwK87UMac+ulhXolYwhZrhsJZKC7X6MSAFytJU/is3elVUeOIdVLPC49xZBBR2Y81rUVuOzHjlD/43QJ/a7wzbxAPzNraY1i1PsdAt9pJgZ7uXKqY9c/wTgIQw+ogrUOoqiO77b/LvQCyyOmhqvuMMnvbMNcVkozUMWih43DOhHu5ir73ZwMa050SiAQgRS/RR24XSK56IWGeODIhojOdSZrJ3dyrqGbrUkuViKnqWIenT6s0lNSFSNWqTiTMdMHUOYeltNn8dzr4fVZqHIMBA0BhH4k4OJf135FMt/v1ibJgA94N7C2tyvS+M0MpzPVozq1jLnRg4cQx24JObkdQ8jQptjChHAiBr1UQdASnPtpN4VFWADUpQfx5pCWJcmF53pE5QXlWM/QYbiRrV5/wcmGv4mWwWapEJmu4cY3hQLT23FXel/L0nuP9ireWG57HrZC3R+lqd9Dd1kty/Nw/jKNVYg9ltmCYIiOuoUW09FoBuTeBjNpSMt2BIJcb6DdhMSjfo=
+      on:
+        tags: true
+        all_branches: true
+      skip_cleanup: true
