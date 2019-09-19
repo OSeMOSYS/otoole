@@ -33,3 +33,5 @@ cache:
   pip: true
   directories:
     - $HOME/miniconda
+notifications:
+  email: false

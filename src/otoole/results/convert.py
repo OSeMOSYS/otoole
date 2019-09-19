@@ -1,9 +1,9 @@
 """Converts an OSeMOSYS solution file from CPLEX, CBC or GLPK into CBC or CSV format
 
 """
-import sys
-from typing import List, Union, Tuple
 import argparse
+from typing import List, Tuple
+
 
 class ConvertLine(object):
     """Abstract class which defines the interface to the family of convertors
@@ -190,23 +190,21 @@ def convert_cplex_file(cplex_filename: str, output_filename: str,
                     raise ValueError(msg.format(linenum, line))
 
 
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="Convert OSeMOSYS CPLEX files into different formats")
+    parser = argparse.ArgumentParser(description="Convert OSeMOSYS CPLEX files into different formats")
     parser.add_argument("cplex_file",
-        help="The filepath of the OSeMOSYS cplex output file")
+                        help="The filepath of the OSeMOSYS cplex output file")
     parser.add_argument("output_file",
-        help="The filepath of the converted file that will be written")
+                        help="The filepath of the converted file that will be written")
     parser.add_argument("-s", "--start_year", type=int, default=2015,
-        help="Output only the results from this year onwards")
+                        help="Output only the results from this year onwards")
     parser.add_argument("-e", "--end_year", type=int, default=2070,
-        help="Output only the results upto and including this year")
+                        help="Output only the results upto and including this year")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--csv", action="store_true",
-        help="Output file in comma-separated-values format")
+                       help="Output file in comma-separated-values format")
     group.add_argument("--cbc", action="store_true",
-        help="Output file in CBC format, (default option)")
+                       help="Output file in CBC format, (default option)")
 
     args = parser.parse_args()
 

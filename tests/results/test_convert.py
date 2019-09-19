@@ -1,5 +1,4 @@
 from pytest import mark
-from pytest import fixture
 
 from otoole.results.convert import process_line
 
