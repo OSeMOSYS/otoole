@@ -23,7 +23,7 @@ script:
   - |
     if [[ "$COVERAGE" == "true" ]]; then
       pre-commit install
-      pre-commit run --all-files
+      pre-commit run --files src
     fi
 after_success:
   - if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
