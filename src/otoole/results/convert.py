@@ -3,8 +3,6 @@
 """
 import sys
 from typing import List, Union, Tuple
-from pytest import mark
-from pytest import fixture
 import argparse
 
 class ConvertLine(object):
