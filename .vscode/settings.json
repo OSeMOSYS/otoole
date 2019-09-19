@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "/miniconda3/envs/otoole/bin/python",
+    "restructuredtext.confPath": "${workspaceFolder}/docs"
+}
