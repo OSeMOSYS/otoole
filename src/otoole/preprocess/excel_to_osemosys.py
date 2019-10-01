@@ -108,16 +108,15 @@ def _cast_to_integer(row):
     return converted_row
 
 
-# for loop pou trexei ola ta sheet name kai paragei to format se csv
 def _parseCSVFilesAndConvert(sheet_names, output_folder):
-    """
+    """Holds the logic for writing out model entities in a certain format
     """
     result = ''
     for sheet_name in sheet_names:
         # all the sets
-        if (sheet_name in ['STORAGE', 'EMISSION', 'MODE_OF_OPERATION',
-                           'REGION', 'FUEL', 'TIMESLICE', 'TECHNOLOGY',
-                           'YEAR']):
+        if (sheet_name in ['DAYTYPE', 'DAILYTIMEBRACKET', 'STORAGE', 'EMISSION',
+                           'MODE_OF_OPERATION', 'REGION', 'FUEL', 'TIMESLICE',
+                           'SEASON', 'TECHNOLOGY', 'YEAR']):
             result += 'set ' + sheet_name + ' := '
             filepath = os.path.join(output_folder, sheet_name + '.csv')
             with open(filepath, 'r') as csvfile:
@@ -133,25 +132,25 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
                              'TotalAnnualMinCapacityInvestment',
                              'TotalTechnologyAnnualActivityLowerLimit']):
             result += 'param ' + sheet_name + ' default 0 := '
-            result += '\n[REGION, *, *]:\n'
+            result += '\n[SIMPLICITY, *, *]:\n'
             result += _insert_table(sheet_name, output_folder)
         # all the parameters that have one variable
         elif (sheet_name in ['TotalAnnualMaxCapacityInvestment']):
             result += 'param ' + sheet_name + ' default 99999 := '
-            result += '\n[REGION, *, *]:\n'
+            result += '\n[SIMPLICITY, *, *]:\n'
             result += _insert_table(sheet_name, output_folder)
         elif (sheet_name in ['AvailabilityFactor']):
             result += 'param ' + sheet_name + ' default 1 := '
-            result += '\n[REGION, *, *]:\n'
+            result += '\n[SIMPLICITY, *, *]:\n'
             result += _insert_table(sheet_name, output_folder)
         elif (sheet_name in ['TotalAnnualMaxCapacity',
                              'TotalTechnologyAnnualActivityUpperLimit']):
             result += 'param ' + sheet_name + ' default 9999999 := '
-            result += '\n[REGION, *, *]:\n'
+            result += '\n[SIMPLICITY, *, *]:\n'
             result += _insert_table(sheet_name, output_folder)
         elif (sheet_name in ['AnnualEmissionLimit']):
             result += 'param ' + sheet_name + ' default 99999 := '
-            result += '\n[REGION, *, *]:\n'
+            result += '\n[SIMPLICITY, *, *]:\n'
             result += _insert_table(sheet_name, output_folder)
         elif (sheet_name in ['YearSplit']):
             result += 'param ' + sheet_name + ' default 0 :\n'
@@ -187,7 +186,7 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
                 newRow.pop(0)
                 year = newRow.copy()
                 for row in reader:
-                    result += '[REGION, ' + \
+                    result += '[SIMPLICITY, ' + \
                         row.pop(0) + ', ' + row.pop(0) + ', *, *]:'
                     result += '\n'
                     result += " ".join(year) + " "
@@ -230,6 +229,8 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
                 reader = csv.reader(csvfile)
                 for row in reader:
                     result += 'param ' + sheet_name + ' default 0.1 := ;\n'
+        else:
+            logger.debug("No code found for parameter %s", sheet_name)
     return result
 
 
@@ -245,7 +246,7 @@ def _insert_no_variables(name, output_folder):
             pass
         firstColumn = []
         secondColumn = []
-        secondColumn.append('REGION')
+        secondColumn.append('SIMPLICITY')
         for row in reader:
             firstColumn.append(row[0])
             secondColumn.append(row[1])
@@ -266,7 +267,7 @@ def _insert_two_variables(name, output_folder):
         newRow.pop(0)
         year = newRow.copy()
         for row in reader:
-            result += '[REGION, ' + row.pop(0) + ', *, *]:'
+            result += '[SIMPLICITY, ' + row.pop(0) + ', *, *]:'
             result += '\n'
             result += " ".join(year) + " "
             result += ':=\n'
