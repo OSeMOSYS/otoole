@@ -4,10 +4,13 @@
 
 """
 import csv
+import logging
 import os
 import sys
 
 import xlrd
+
+logger = logging.getLogger(__name__)
 
 
 def generate_csv_from_excel(input_workbook, output_folder):
@@ -70,6 +73,8 @@ def _csv_from_excel(workbook, output_folder):
     workbook :
     output_folder : str
     """
+
+    logger.debug("Generating CSVs from Excel %s", workbook)
     # Create all the csv files in a new folder
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)  # creates the csv folder
@@ -304,11 +309,11 @@ def _modify_names(sheet_names):
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
-        msg = "Usage: python {} <workbook_filename> <output_filepath>"
+        msg = "Usage: python {} <workbook_filename> <output_filepath> <output_folder>"
         print(msg.format(sys.argv[0]))
         sys.exit(1)
     else:
         try:
-            main(sys.argv[1], sys.argv[2])
+            main(sys.argv[1], sys.argv[2], sys.argv[3])
         except:
             sys.exit(1)

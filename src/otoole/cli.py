@@ -24,6 +24,7 @@ optional arguments:
 
 """
 import argparse
+import logging
 import sys
 
 from otoole.preprocess import generate_csv_from_excel, write_datafile
@@ -80,5 +81,9 @@ def get_parser():
 
 def main():
 
+    logging.basicConfig(filename='myapp.log', level=logging.DEBUG)
+    logging.info('Started')
     parser = get_parser()
-    parser.parse_args(sys.argv[1:])
+    args = parser.parse_args(sys.argv[1:])
+    args.func(args)
+    logging.info('Finished')
