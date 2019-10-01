@@ -23,9 +23,9 @@ def generate_csv_from_excel(input_workbook, output_folder):
 def main(input_workbook, output_file, output_folder='CSVFiles'):
     """Creates a model file from an Excel workbook containing OSeMOSYS data
     """
-    work_book = xlrd.open_workbook(os.path.join(input_workbook))
+    generate_csv_from_excel(input_workbook, output_folder)
 
-    csv_from_excel(work_book, output_folder)
+    sheet_names = [x.strip(".csv") for x in os.listdir(output_folder)]
 
     # I create a txt file - string that contains the csv files
     fileOutput = parseCSVFilesAndConvert(sheet_names)
@@ -33,8 +33,6 @@ def main(input_workbook, output_file, output_folder='CSVFiles'):
         text_file.write(fileOutput)
         text_file.write("end;\n")
 
-    work_book.release_resources()  # release the workbook-resources
-    del work_book
 
 def csv_from_excel(workbook, output_folder):
     """Creates csv files from all sheets in a workbook
@@ -63,6 +61,7 @@ def csv_from_excel(workbook, output_folder):
                 row = cast_to_integer(sheet.row_values(rownum))
                 wr.writerow(row)
 
+
 def cast_to_integer(row):
     """function to convert all float numbers to integers....need to check it!!
     """
@@ -78,74 +77,74 @@ def parseCSVFilesAndConvert(original_sheet_names):
     """
     """
 
-    sheet_names = modifyNames(original_sheet_names)
+    sheet_names = modify_names(original_sheet_names)
 
     result = ''
-    for i in range(len(sheet_names)):
+    for sheet_name in sheet_names:
         # 8 #all the     parameters thad do not have variables
-        if (sheet_names[i] in ['STORAGE', 'EMISSION', 'MODE_OF_OPERATION',
-                              'REGION', 'FUEL', 'TIMESLICE', 'TECHNOLOGY',
-                              'YEAR']):
-            result += 'set ' + sheet_names[i] + ' := '
-            with open('CSVFiles/' + sheet_names[i] + '.csv', newline='') as csvfile:
+        if (sheet_name in ['STORAGE', 'EMISSION', 'MODE_OF_OPERATION',
+                           'REGION', 'FUEL', 'TIMESLICE', 'TECHNOLOGY',
+                           'YEAR']):
+            result += 'set ' + sheet_name + ' := '
+            with open('CSVFiles/' + sheet_name + '.csv', newline='') as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
                     result += " ".join(row) + " "
                 result += ";\n"
         # 24 #all the parameters that have one variable
-        elif (sheet_names[i] in ['AccumulatedAnnualDemand', 'CapitalCost',
-                                'FixedCost', 'ResidualCapacity',
-                                'SpecifiedAnnualDemand',
-                                'TotalAnnualMinCapacity',
-                                'TotalAnnualMinCapacityInvestment',
-                                'TotalTechnologyAnnualActivityLowerLimit']):
-            result += 'param ' + sheet_names[i] + ' default 0 := '
+        elif (sheet_name in ['AccumulatedAnnualDemand', 'CapitalCost',
+                             'FixedCost', 'ResidualCapacity',
+                             'SpecifiedAnnualDemand',
+                             'TotalAnnualMinCapacity',
+                             'TotalAnnualMinCapacityInvestment',
+                             'TotalTechnologyAnnualActivityLowerLimit']):
+            result += 'param ' + sheet_name + ' default 0 := '
             result += '\n[REGION, *, *]:\n'
-            result += insert_table(sheet_names[i])
+            result += insert_table(sheet_name)
         # 24 #all the parameters that have one variable
-        elif (sheet_names[i] in ['TotalAnnualMaxCapacityInvestment']):
-            result += 'param ' + sheet_names[i] + ' default 99999 := '
+        elif (sheet_name in ['TotalAnnualMaxCapacityInvestment']):
+            result += 'param ' + sheet_name + ' default 99999 := '
             result += '\n[REGION, *, *]:\n'
-            result += insert_table(sheet_names[i])
-        elif (sheet_names[i] in ['AvailabilityFactor']):
-            result += 'param ' + sheet_names[i] + ' default 1 := '
+            result += insert_table(sheet_name)
+        elif (sheet_name in ['AvailabilityFactor']):
+            result += 'param ' + sheet_name + ' default 1 := '
             result += '\n[REGION, *, *]:\n'
-            result += insert_table(sheet_names[i])
-        elif (sheet_names[i] in ['TotalAnnualMaxCapacity',
-                                'TotalTechnologyAnnualActivityUpperLimit']):
-            result += 'param ' + sheet_names[i] + ' default 9999999 := '
+            result += insert_table(sheet_name)
+        elif (sheet_name in ['TotalAnnualMaxCapacity',
+                             'TotalTechnologyAnnualActivityUpperLimit']):
+            result += 'param ' + sheet_name + ' default 9999999 := '
             result += '\n[REGION, *, *]:\n'
-            result += insert_table(sheet_names[i])
-        elif (sheet_names[i] in ['AnnualEmissionLimit']):
-            result += 'param ' + sheet_names[i] + ' default 99999 := '
+            result += insert_table(sheet_name)
+        elif (sheet_name in ['AnnualEmissionLimit']):
+            result += 'param ' + sheet_name + ' default 99999 := '
             result += '\n[REGION, *, *]:\n'
-            result += insert_table(sheet_names[i])
-        elif (sheet_names[i] in ['YearSplit']):
-            result += 'param ' + sheet_names[i] + ' default 0 :\n'
-            result += insert_table(sheet_names[i])
-        elif (sheet_names[i] in ['CapacityOfOneTechnologyUnit',
-                                'EmissionsPenalty', 'REMinProductionTarget',
-                                'RETagFuel', 'RETagTechnology',
-                                'ReserveMargin', 'ReserveMarginTagFuel',
-                                'ReserveMarginTagTechnology', 'TradeRoute']):
-            result += 'param ' + sheet_names[i] + ' default 0 := ;\n'
-        # 3 #all the parameters that have 2 variables
-        elif (sheet_names[i] in ['SpecifiedDemandProfile']):
-            result += 'param ' + sheet_names[i] + ' default 0 := \n'
-            result += insert_two_variables(sheet_names, i)
-        # 3 #all the parameters that have 2 variables
-        elif (sheet_names[i] in ['VariableCost']):
-            result += 'param ' + sheet_names[i] + ' default 9999999 := \n'
-            result += insert_two_variables(sheet_names, i)
-        # 3 #all the parameters that have 2 variables
-        elif (sheet_names[i] in ['CapacityFactor']):
-            result += 'param ' + sheet_names[i] + ' default 1 := \n'
-            result += insert_two_variables(sheet_names, i)
-        # 3 #all the parameters that have 3     variables
-        elif (sheet_names[i] in ['EmissionActivityRatio', 'InputActivityRatio',
-                                'OutputActivityRatio']):
-            result += 'param ' + sheet_names[i] + ' default 0 := \n'
-            with open('CSVFiles/' + sheet_names[i] + '.csv', newline='') as csvfile:
+            result += insert_table(sheet_name)
+        elif (sheet_name in ['YearSplit']):
+            result += 'param ' + sheet_name + ' default 0 :\n'
+            result += insert_table(sheet_name)
+        elif (sheet_name in ['CapacityOfOneTechnologyUnit',
+                             'EmissionsPenalty', 'REMinProductionTarget',
+                             'RETagFuel', 'RETagTechnology',
+                             'ReserveMargin', 'ReserveMarginTagFuel',
+                             'ReserveMarginTagTechnology', 'TradeRoute']):
+            result += 'param ' + sheet_name + ' default 0 := ;\n'
+        # all the parameters that have 2 variables
+        elif (sheet_name in ['SpecifiedDemandProfile']):
+            result += 'param ' + sheet_name + ' default 0 := \n'
+            result += insert_two_variables(sheet_name)
+        # all the parameters that have 2 variables
+        elif (sheet_name in ['VariableCost']):
+            result += 'param ' + sheet_name + ' default 9999999 := \n'
+            result += insert_two_variables(sheet_name)
+        # all the parameters that have 2 variables
+        elif (sheet_name in ['CapacityFactor']):
+            result += 'param ' + sheet_name + ' default 1 := \n'
+            result += insert_two_variables(sheet_name)
+        # all the parameters that have 3 variables
+        elif (sheet_name in ['EmissionActivityRatio', 'InputActivityRatio',
+                             'OutputActivityRatio']):
+            result += 'param ' + sheet_name + ' default 0 := \n'
+            with open('CSVFiles/' + sheet_name + '.csv', newline='') as csvfile:
                 reader = csv.reader(csvfile)
                 newRow = next(reader)
                 newRow.pop(0)
@@ -162,45 +161,46 @@ def parseCSVFilesAndConvert(original_sheet_names):
                     result += '\n'
                 result += ';\n'
         # 8 #all the parameters that do not have variables
-        elif (sheet_names[i] in ['TotalTechnologyModelPeriodActivityUpperLimit']):
-            result += 'param ' + sheet_names[i] + ' default 9999999 : \n'
-            result += insert_no_variables(sheet_names, i)
-        elif (sheet_names[i] in ['CapacityToActivityUnit']):
-            result += 'param ' + sheet_names[i] + ' default 1 : \n'
-            result += insert_no_variables(sheet_names, i)
+        elif (sheet_name in ['TotalTechnologyModelPeriodActivityUpperLimit']):
+            result += 'param ' + sheet_name + ' default 9999999 : \n'
+            result += insert_no_variables(sheet_name)
+        elif (sheet_name in ['CapacityToActivityUnit']):
+            result += 'param ' + sheet_name + ' default 1 : \n'
+            result += insert_no_variables(sheet_name)
         # 8 #all the parameters that do not have variables
-        elif (sheet_names[i] in ['TotalTechnologyAnnualActivityLowerLimit']):
-            result += 'param ' + sheet_names[i] + ' default 0 := \n'
-            result += insert_no_variables(sheet_names, i)
+        elif (sheet_name in ['TotalTechnologyAnnualActivityLowerLimit']):
+            result += 'param ' + sheet_name + ' default 0 := \n'
+            result += insert_no_variables(sheet_name)
         # 8 #all the parameters that do not have variables
-        elif (sheet_names[i] in ['ModelPeriodEmissionLimit']):
-            result += 'param ' + sheet_names[i] + ' default 999999 := ;\n'
+        elif (sheet_name in ['ModelPeriodEmissionLimit']):
+            result += 'param ' + sheet_name + ' default 999999 := ;\n'
         # 8 #all the   parameters   that do not have variables
-        elif (sheet_names[i] in ['ModelPeriodExogenousEmission', 'AnnualExogenousEmission', 'OperationalLifeStorage']):
-            result += 'param ' + sheet_names[i] + ' default 0 := ;\n'
-        elif (sheet_names[i] in []):  # 8 #all the parameters that do not have variables
-            result += 'param ' + sheet_names[i] + ' default 0 := ;\n'
+        elif (sheet_name in ['ModelPeriodExogenousEmission', 'AnnualExogenousEmission', 'OperationalLifeStorage']):
+            result += 'param ' + sheet_name + ' default 0 := ;\n'
+        elif (sheet_name in []):  # 8 #all the parameters that do not have variables
+            result += 'param ' + sheet_name + ' default 0 := ;\n'
         # 8 #all the parameters that do not have variables
-        elif (sheet_names[i] in ['TotalTechnologyModelPeriodActivityLowerLimit']):
-            result += 'param ' + sheet_names[i] + ' default 0 := ;\n'
+        elif (sheet_name in ['TotalTechnologyModelPeriodActivityLowerLimit']):
+            result += 'param ' + sheet_name + ' default 0 := ;\n'
         # 8 #all the parameters that do not have variables
-        elif (sheet_names[i] in ['DepreciationMethod']):
-            result += 'param ' + sheet_names[i] + ' default 1 := ;\n'
+        elif (sheet_name in ['DepreciationMethod']):
+            result += 'param ' + sheet_name + ' default 1 := ;\n'
         # 8 #all the parameters that do not have variables
-        elif (sheet_names[i] in ['OperationalLife']):
-            result += 'param ' + sheet_names[i] + ' default 1 : \n'
-            result += insert_no_variables(sheet_names, i)
-        elif (sheet_names[i] in ['DiscountRate']):  # default value
-            with open('CSVFiles/' + sheet_names[i] + '.csv', newline='') as csvfile:
+        elif (sheet_name in ['OperationalLife']):
+            result += 'param ' + sheet_name + ' default 1 : \n'
+            result += insert_no_variables(sheet_name)
+        elif (sheet_name in ['DiscountRate']):  # default value
+            with open('CSVFiles/' + sheet_name + '.csv', newline='') as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
-                    result += 'param ' + sheet_names[i] + ' default 0.1 := ;\n'
+                    result += 'param ' + sheet_name + ' default 0.1 := ;\n'
     return result
 
 
-def insert_no_variables(sheet_names, i):
+def insert_no_variables(name):
     result = ""
-    with open('CSVFiles/' + sheet_names[i] + '.csv', newline='') as csvfile:
+    filepath = os.path.join('CSVFiles/' + name + '.csv')
+    with open(filepath, 'r') as csvfile:
         reader = csv.reader(csvfile)
         next(reader)
         firstColumn = []
@@ -216,9 +216,10 @@ def insert_no_variables(sheet_names, i):
     return result
 
 
-def insert_two_variables(sheet_names, i):
+def insert_two_variables(name):
     result = ""
-    with open('CSVFiles/' + sheet_names[i] + '.csv', newline='') as csvfile:
+    filepath = os.path.join('CSVFiles/' + name + '.csv')
+    with open(filepath, 'r') as csvfile:
         reader = csv.reader(csvfile)
         newRow = next(reader)
         newRow.pop(0)
