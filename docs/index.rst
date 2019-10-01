@@ -2,8 +2,6 @@
 otoole
 ======
 
-This is the documentation of **otoole**.
-
 **otoole** is a Python package which provides a command-line interface
 for users of OSeMOSYS.
 
@@ -12,6 +10,10 @@ centralises the commonly used pre- and post-processing steps
 around the use of OSeMOSYS.
 
 .. image:: img/osemosys_dataflow.png
+
+**otoole** aims to support different ways of storing input data and results,
+including csv files, databases and Excel workbooks, as well as different
+implementations of the OSeMOSYS model.
 
 Contents
 ========
