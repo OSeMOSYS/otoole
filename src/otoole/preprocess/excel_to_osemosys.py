@@ -108,24 +108,32 @@ def _cast_to_integer(row):
     return converted_row
 
 
+def read_file_into_memory(sheet_name, output_folder):
+    filepath = os.path.join(output_folder, sheet_name + '.csv')
+    with open(filepath, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        return list(reader)
+
+
 def _parseCSVFilesAndConvert(sheet_names, output_folder):
     """Holds the logic for writing out model entities in a certain format
     """
     result = ''
     for sheet_name in sheet_names:
+
+        contents = read_file_into_memory(sheet_name, output_folder)
+
         # all the sets
         if (sheet_name in ['DAYTYPE', 'DAILYTIMEBRACKET', 'STORAGE', 'EMISSION',
                            'MODE_OF_OPERATION', 'REGION', 'FUEL', 'TIMESLICE',
                            'SEASON', 'TECHNOLOGY', 'YEAR']):
             result += 'set ' + sheet_name + ' := '
-            filepath = os.path.join(output_folder, sheet_name + '.csv')
-            with open(filepath, 'r') as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    result += " ".join(row) + " "
-                result += ";\n"
+            for row in contents:
+                result += " ".join(row) + " "
+            result += ";\n"
         # all the parameters that have one variable
         elif (sheet_name in ['AccumulatedAnnualDemand', 'CapitalCost',
+                             'CapitalCostStorage',
                              'FixedCost', 'ResidualCapacity',
                              'SpecifiedAnnualDemand',
                              'TotalAnnualMinCapacity',
@@ -133,28 +141,28 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
                              'TotalTechnologyAnnualActivityLowerLimit']):
             result += 'param ' + sheet_name + ' default 0 := '
             result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, output_folder)
+            result += _insert_table(sheet_name, contents)
         # all the parameters that have one variable
         elif (sheet_name in ['TotalAnnualMaxCapacityInvestment']):
             result += 'param ' + sheet_name + ' default 99999 := '
             result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, output_folder)
+            result += _insert_table(sheet_name, contents)
         elif (sheet_name in ['AvailabilityFactor']):
             result += 'param ' + sheet_name + ' default 1 := '
             result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, output_folder)
+            result += _insert_table(sheet_name, contents)
         elif (sheet_name in ['TotalAnnualMaxCapacity',
                              'TotalTechnologyAnnualActivityUpperLimit']):
             result += 'param ' + sheet_name + ' default 9999999 := '
             result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, output_folder)
+            result += _insert_table(sheet_name, contents)
         elif (sheet_name in ['AnnualEmissionLimit']):
             result += 'param ' + sheet_name + ' default 99999 := '
             result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, output_folder)
+            result += _insert_table(sheet_name, contents)
         elif (sheet_name in ['YearSplit']):
             result += 'param ' + sheet_name + ' default 0 :\n'
-            result += _insert_table(sheet_name, output_folder)
+            result += _insert_table(sheet_name, contents)
         elif (sheet_name in ['CapacityOfOneTechnologyUnit',
                              'EmissionsPenalty', 'REMinProductionTarget',
                              'RETagFuel', 'RETagTechnology',
@@ -164,47 +172,44 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
         # all the parameters that have 2 variables
         elif (sheet_name in ['SpecifiedDemandProfile']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            result += _insert_two_variables(sheet_name, output_folder)
+            result += _insert_two_variables(sheet_name, contents)
         # all the parameters that have 2 variables
         elif (sheet_name in ['VariableCost']):
             result += 'param ' + sheet_name + ' default 9999999 := \n'
-            result += _insert_two_variables(sheet_name, output_folder)
+            result += _insert_two_variables(sheet_name, contents)
         # all the parameters that have 2 variables
         elif (sheet_name in ['CapacityFactor']):
             result += 'param ' + sheet_name + ' default 1 := \n'
-            result += _insert_two_variables(sheet_name, output_folder)
+            result += _insert_two_variables(sheet_name, contents)
         # all the parameters that have 3 variables
         elif (sheet_name in ['EmissionActivityRatio', 'InputActivityRatio',
                              'OutputActivityRatio']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            filepath = os.path.join(output_folder, sheet_name + '.csv')
-            with open(filepath, newline='') as csvfile:
-                reader = csv.reader(csvfile)
-                newRow = next(reader)
-                newRow.pop(0)
-                newRow.pop(0)
-                newRow.pop(0)
-                year = newRow.copy()
-                for row in reader:
-                    result += '[SIMPLICITY, ' + \
-                        row.pop(0) + ', ' + row.pop(0) + ', *, *]:'
-                    result += '\n'
-                    result += " ".join(year) + " "
-                    result += ':=\n'
-                    result += " ".join(row) + " "
-                    result += '\n'
-                result += ';\n'
+            newRow = next(contents)
+            newRow.pop(0)
+            newRow.pop(0)
+            newRow.pop(0)
+            year = newRow.copy()
+            for row in contents:
+                result += '[SIMPLICITY, ' + \
+                    row.pop(0) + ', ' + row.pop(0) + ', *, *]:'
+                result += '\n'
+                result += " ".join(year) + " "
+                result += ':=\n'
+                result += " ".join(row) + " "
+                result += '\n'
+            result += ';\n'
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['TotalTechnologyModelPeriodActivityUpperLimit']):
             result += 'param ' + sheet_name + ' default 9999999 : \n'
-            result += _insert_no_variables(sheet_name, output_folder)
+            result += _insert_no_variables(sheet_name, contents)
         elif (sheet_name in ['CapacityToActivityUnit']):
             result += 'param ' + sheet_name + ' default 1 : \n'
-            result += _insert_no_variables(sheet_name, output_folder)
+            result += _insert_no_variables(sheet_name, contents)
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['TotalTechnologyAnnualActivityLowerLimit']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            result += _insert_no_variables(sheet_name, output_folder)
+            result += _insert_no_variables(sheet_name, contents)
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['ModelPeriodEmissionLimit']):
             result += 'param ' + sheet_name + ' default 999999 := ;\n'
@@ -222,78 +227,65 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['OperationalLife']):
             result += 'param ' + sheet_name + ' default 1 : \n'
-            result += _insert_no_variables(sheet_name, output_folder)
+            result += _insert_no_variables(sheet_name, contents)
         elif (sheet_name in ['DiscountRate']):  # default value
-            filepath = os.path.join(output_folder, sheet_name + '.csv')
-            with open(filepath, newline='') as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    result += 'param ' + sheet_name + ' default 0.1 := ;\n'
+            for row in contents:
+                result += 'param ' + sheet_name + ' default 0.1 := ;\n'
         else:
             logger.debug("No code found for parameter %s", sheet_name)
     return result
 
 
-def _insert_no_variables(name, output_folder):
+def _insert_no_variables(name, contents):
     result = ""
-    filepath = os.path.join(output_folder, name + '.csv')
-    with open(filepath, 'r') as csvfile:
-        reader = csv.reader(csvfile)
-        try:
-            next(reader)
-        except StopIteration:
-            # The CSV file is empty
-            pass
-        firstColumn = []
-        secondColumn = []
-        secondColumn.append('SIMPLICITY')
-        for row in reader:
-            firstColumn.append(row[0])
-            secondColumn.append(row[1])
-        result += " ".join(firstColumn) + ' '
-        result += ':=\n'
-        result += " ".join(secondColumn) + ' '
-        result += ';\n'
+    try:
+        next(contents)
+    except StopIteration:
+        # The CSV file is empty
+        pass
+    firstColumn = []
+    secondColumn = []
+    secondColumn.append('SIMPLICITY')
+    for row in contents:
+        firstColumn.append(row[0])
+        secondColumn.append(row[1])
+    result += " ".join(firstColumn) + ' '
+    result += ':=\n'
+    result += " ".join(secondColumn) + ' '
+    result += ';\n'
     return result
 
 
-def _insert_two_variables(name, output_folder):
+def _insert_two_variables(name, contents):
     result = ""
-    filepath = os.path.join(output_folder, name + '.csv')
-    with open(filepath, 'r') as csvfile:
-        reader = csv.reader(csvfile)
-        newRow = next(reader)
-        newRow.pop(0)
-        newRow.pop(0)
-        year = newRow.copy()
-        for row in reader:
-            result += '[SIMPLICITY, ' + row.pop(0) + ', *, *]:'
-            result += '\n'
-            result += " ".join(year) + " "
-            result += ':=\n'
-            result += " ".join(row) + " "
-            result += '\n'
-        result += ';\n'
+    newRow = next(contents)
+    newRow.pop(0)
+    newRow.pop(0)
+    year = newRow.copy()
+    for row in contents:
+        result += '[SIMPLICITY, ' + row.pop(0) + ', *, *]:'
+        result += '\n'
+        result += " ".join(year) + " "
+        result += ':=\n'
+        result += " ".join(row) + " "
+        result += '\n'
+    result += ';\n'
     return result
 
 
-def _insert_table(name, output_folder):
+def _insert_table(name, contents):
     result = ""
-    filepath = os.path.join(output_folder, name + '.csv')
-    with open(filepath, newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        try:
-            newRow = next(reader)
-            newRow.pop(0)  # removes the first element of the row
-            result += " ".join(newRow) + " "
-        except StopIteration:
-            # The CSV file is empty
-            pass
-        result += ':=\n'
-        for row in reader:
-            result += " ".join(row) + " "
-            result += '\n'
-        result += ';\n'
+    try:
+        newRow = contents[0]
+        newRow.pop(0)  # removes the first element of the row
+        result += " ".join((newRow)) + " "
+    except StopIteration:
+        # The CSV file is empty
+        pass
+    result += ':=\n'
+    for row in contents[1:]:
+        result += " ".join([str(x) for x in row]) + '\n'
+    result += ';\n'
     return result
 
 
