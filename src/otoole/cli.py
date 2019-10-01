@@ -24,32 +24,61 @@ optional arguments:
 
 """
 import argparse
+import sys
 
+from otoole.preprocess import generate_csv_from_excel, write_datafile
 from otoole.results.convert import convert_cplex_file
 
 
+def excel2csv(args):
+    generate_csv_from_excel(args.workbook, args.output_folder)
+
+
+def csv2datafile(args):
+    write_datafile(args.output_folder, args.output_file)
+
+
+def cplex2cbc(args):
+    convert_cplex_file(args.cplex_file, args.output_file, args.start_year, args.end_year, args.output_format)
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description="otoole: Python toolkit of OSeMOSYS users")
+
+    subparsers = parser.add_subparsers()
+
+    # Parser for pre-processing related commands
+    prep_parser = subparsers.add_parser('prep', help='Prepare an OSeMOSYS datafile')
+    prep_subparsers = prep_parser.add_subparsers()
+
+    excel_parser = prep_subparsers.add_parser('excel', help='Convert from an Excel workbook')
+    excel_parser.add_argument('workbook', help='Path to the Excel workbook')
+    excel_parser.add_argument('output_folder', help='Folder to which to write csv files')
+    excel_parser.set_defaults(func=excel2csv)
+
+    csv_parser = prep_subparsers.add_parser('csv', help='Convert from a folder of csv files')
+    csv_parser.add_argument('output_folder', help='Folder to which to write csv files')
+    csv_parser.add_argument('output_file', help='File to which to write OSeMOSYS data')
+    csv_parser.set_defaults(func=csv2datafile)
+
+    # Parser for the CPLEX related commands
+    cplex_parser = subparsers.add_parser('cplex',
+                                         help='Process a CPLEX solution file')
+
+    cplex_parser.add_argument("cplex_file",
+                              help="The filepath of the OSeMOSYS cplex output file")
+    cplex_parser.add_argument("output_file",
+                              help="The filepath of the converted file that will be written")
+    cplex_parser.add_argument("-s", "--start_year", type=int, default=2015,
+                              help="Output only the results from this year onwards")
+    cplex_parser.add_argument("-e", "--end_year", type=int, default=2070,
+                              help="Output only the results upto and including this year")
+    cplex_parser.add_argument('output_format', choices=['csv', 'cbc'], default='cbc')
+    cplex_parser.set_defaults(func=cplex2cbc)
+    return parser
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Otoole: Python toolkit of OSeMOSYS users")
-    parser.add_argument("cplex_file",
-                        help="The filepath of the OSeMOSYS cplex output file")
-    parser.add_argument("output_file",
-                        help="The filepath of the converted file that will be written")
-    parser.add_argument("-s", "--start_year", type=int, default=2015,
-                        help="Output only the results from this year onwards")
-    parser.add_argument("-e", "--end_year", type=int, default=2070,
-                        help="Output only the results upto and including this year")
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("--csv", action="store_true",
-                       help="Output file in comma-separated-values format")
-    group.add_argument("--cbc", action="store_true",
-                       help="Output file in CBC format, (default option)")
-    args = parser.parse_args()
 
-    if args.csv:
-        output_format = 'csv'
-    else:
-        output_format = 'cbc'
-
-    convert_cplex_file(args.cplex_file, args.output_file,
-                       args.start_year, args.end_year,
-                       output_format)
+    parser = get_parser()
+    parser.parse_args(sys.argv[1:])
