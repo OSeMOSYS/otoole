@@ -12,6 +12,14 @@ import sys
 import xlrd
 
 
+def generate_csv_from_excel(input_workbook, output_folder):
+    work_book = xlrd.open_workbook(os.path.join(input_workbook))
+
+    csv_from_excel(work_book, output_folder)
+    work_book.release_resources()  # release the workbook-resources
+    del work_book
+
+
 def main(input_workbook, output_file, output_folder='CSVFiles'):
     """Creates a model file from an Excel workbook containing OSeMOSYS data
     """
@@ -44,12 +52,12 @@ def csv_from_excel(workbook, output_folder):
     for sheet in workbook.sheets():  # typing: xlrd.book.Sheet
 
         name = sheet.name
-        modified_name = modified_name([name])
+        mod_name = modify_names([name])
 
         # Open the sheet name in the xlsx file and write it in csv format]
-        filepath = os.path.join(output_folder, modified_name[0] + '.csv')
+        filepath = os.path.join(output_folder, mod_name[0] + '.csv')
         with open(filepath, 'w', newline='') as your_csv_file:
-            wr = csv.writer(your_csv_file, quoting=csv.QUOTE_ALL)
+            wr = csv.writer(your_csv_file, quoting=csv.QUOTE_NONNUMERIC)
 
             for rownum in range(sheet.nrows):  # reads each row in the csv file
                 row = cast_to_integer(sheet.row_values(rownum))
@@ -59,7 +67,7 @@ def cast_to_integer(row):
     """function to convert all float numbers to integers....need to check it!!
     """
     if all(isinstance(n, float) for n in row):
-        converted_row = list(map(int, sh.row_values(rownum)))
+        converted_row = list(map(int, row))
     else:
         converted_row = row
     return converted_row
@@ -242,7 +250,7 @@ def insert_table(name):
     return result
 
 
-def modifyNames(sheet_names):
+def modify_names(sheet_names):
     """I change the name of the sheets in the xlsx file to match with the csv
     actual ones
     """
