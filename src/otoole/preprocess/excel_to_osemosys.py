@@ -42,7 +42,10 @@ def write_datafile(output_folder, output_file):
         Path to datafile to be written
     """
     sheet_names = [x.strip(".csv") for x in os.listdir(output_folder)]
-    fileOutput = _parseCSVFilesAndConvert(sheet_names)
+
+    sorted_names = sorted(sheet_names)
+
+    fileOutput = _parseCSVFilesAndConvert(sorted_names, output_folder)
     with open(output_file, "w") as text_file:
         text_file.write(fileOutput)
         text_file.write("end;\n")
@@ -106,12 +109,9 @@ def _cast_to_integer(row):
 
 
 # for loop pou trexei ola ta sheet name kai paragei to format se csv
-def _parseCSVFilesAndConvert(original_sheet_names, output_folder):
+def _parseCSVFilesAndConvert(sheet_names, output_folder):
     """
     """
-
-    sheet_names = _modify_names(original_sheet_names)
-
     result = ''
     for sheet_name in sheet_names:
         # all the sets
@@ -178,7 +178,8 @@ def _parseCSVFilesAndConvert(original_sheet_names, output_folder):
         elif (sheet_name in ['EmissionActivityRatio', 'InputActivityRatio',
                              'OutputActivityRatio']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            with open('CSVFiles/' + sheet_name + '.csv', newline='') as csvfile:
+            filepath = os.path.join(output_folder, sheet_name + '.csv')
+            with open(filepath, newline='') as csvfile:
                 reader = csv.reader(csvfile)
                 newRow = next(reader)
                 newRow.pop(0)
@@ -224,7 +225,8 @@ def _parseCSVFilesAndConvert(original_sheet_names, output_folder):
             result += 'param ' + sheet_name + ' default 1 : \n'
             result += _insert_no_variables(sheet_name, output_folder)
         elif (sheet_name in ['DiscountRate']):  # default value
-            with open('CSVFiles/' + sheet_name + '.csv', newline='') as csvfile:
+            filepath = os.path.join(output_folder, sheet_name + '.csv')
+            with open(filepath, newline='') as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
                     result += 'param ' + sheet_name + ' default 0.1 := ;\n'
@@ -236,7 +238,11 @@ def _insert_no_variables(name, output_folder):
     filepath = os.path.join(output_folder, name + '.csv')
     with open(filepath, 'r') as csvfile:
         reader = csv.reader(csvfile)
-        next(reader)
+        try:
+            next(reader)
+        except StopIteration:
+            # The CSV file is empty
+            pass
         firstColumn = []
         secondColumn = []
         secondColumn.append('REGION')
@@ -275,9 +281,13 @@ def _insert_table(name, output_folder):
     filepath = os.path.join(output_folder, name + '.csv')
     with open(filepath, newline='') as csvfile:
         reader = csv.reader(csvfile)
-        newRow = next(reader)
-        newRow.pop(0)  # removes the first element of the row
-        result += " ".join(newRow) + " "
+        try:
+            newRow = next(reader)
+            newRow.pop(0)  # removes the first element of the row
+            result += " ".join(newRow) + " "
+        except StopIteration:
+            # The CSV file is empty
+            pass
         result += ':=\n'
         for row in reader:
             result += " ".join(row) + " "
