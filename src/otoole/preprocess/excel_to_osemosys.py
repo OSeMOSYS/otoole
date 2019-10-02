@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 
+import pandas as pd
 import xlrd
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ def write_datafile(output_folder, output_file):
     output_file
         Path to datafile to be written
     """
-    sheet_names = [x.strip(".csv") for x in os.listdir(output_folder)]
+    sheet_names = [os.path.splitext(x)[0] for x in os.listdir(output_folder)]
 
     sorted_names = sorted(sheet_names)
 
@@ -172,33 +173,20 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
         # all the parameters that have 2 variables
         elif (sheet_name in ['SpecifiedDemandProfile']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            result += _insert_two_variables(sheet_name, contents)
+            result += _insert_variables(contents, 2)
         # all the parameters that have 2 variables
         elif (sheet_name in ['VariableCost']):
             result += 'param ' + sheet_name + ' default 9999999 := \n'
-            result += _insert_two_variables(sheet_name, contents)
+            result += _insert_variables(contents, 2)
         # all the parameters that have 2 variables
         elif (sheet_name in ['CapacityFactor']):
             result += 'param ' + sheet_name + ' default 1 := \n'
-            result += _insert_two_variables(sheet_name, contents)
+            result += _insert_variables(contents, 2)
         # all the parameters that have 3 variables
         elif (sheet_name in ['EmissionActivityRatio', 'InputActivityRatio',
                              'OutputActivityRatio']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            newRow = next(contents)
-            newRow.pop(0)
-            newRow.pop(0)
-            newRow.pop(0)
-            year = newRow.copy()
-            for row in contents:
-                result += '[SIMPLICITY, ' + \
-                    row.pop(0) + ', ' + row.pop(0) + ', *, *]:'
-                result += '\n'
-                result += " ".join(year) + " "
-                result += ':=\n'
-                result += " ".join(row) + " "
-                result += '\n'
-            result += ';\n'
+            result += _insert_variables(contents, 3)
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['TotalTechnologyModelPeriodActivityUpperLimit']):
             result += 'param ' + sheet_name + ' default 9999999 : \n'
@@ -236,56 +224,65 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
     return result
 
 
-def _insert_no_variables(name, contents):
+def _insert_no_variables(name, data):
+
     result = ""
-    try:
-        next(contents)
-    except StopIteration:
-        # The CSV file is empty
-        pass
-    firstColumn = []
-    secondColumn = []
-    secondColumn.append('SIMPLICITY')
-    for row in contents:
-        firstColumn.append(row[0])
-        secondColumn.append(row[1])
-    result += " ".join(firstColumn) + ' '
-    result += ':=\n'
-    result += " ".join(secondColumn) + ' '
-    result += ';\n'
+
+    if data:
+        df = pd.DataFrame(data[1:])
+        df = df.T
+
+        table = df.values
+
+        result += " ".join([str(x) for x in table[0]]) + ':=\n'
+        result += "SIMPLICITY " + " ".join([str(x) for x in table[1]]) + '\n;\n'
+
     return result
 
 
-def _insert_two_variables(name, contents):
+def _insert_variables(contents: list, number_variables: int):
+    """
+
+    Arguments
+    ---------
+    contents : list
+    number_variables : int
+    """
     result = ""
-    newRow = next(contents)
-    newRow.pop(0)
-    newRow.pop(0)
-    year = newRow.copy()
-    for row in contents:
-        result += '[SIMPLICITY, ' + row.pop(0) + ', *, *]:'
-        result += '\n'
-        result += " ".join(year) + " "
-        result += ':=\n'
-        result += " ".join(row) + " "
-        result += '\n'
+
+    if contents:
+        header = contents[0]
+        index = header[:number_variables - 1]
+        df = pd.DataFrame(contents[1:], columns=header)  # typing: pandas.DataFrame
+        df = df.set_index(index)
+        year = [str(x) for x in header[number_variables:]]
+
+        for idx, data in df.groupby(level=list(range(number_variables - 1))):
+            logging.debug("Index: %s\n data: %s\n", idx, data)
+            if isinstance(idx, str):
+                idx = [idx]
+            result += '[SIMPLICITY, ' + ", ".join([str(x) for x in idx]) + ', *, *]:\n'
+            result += " ".join(year) + " :=\n"
+            for row in data.values:
+                stringify = [str(x) for x in list(row)]
+                result += " ".join(stringify) + '\n'
     result += ';\n'
     return result
 
 
 def _insert_table(name, contents):
     result = ""
-    try:
+
+    if contents:
         newRow = contents[0]
         newRow.pop(0)  # removes the first element of the row
         result += " ".join((newRow)) + " "
-    except StopIteration:
-        # The CSV file is empty
-        pass
-    result += ':=\n'
-    for row in contents[1:]:
-        result += " ".join([str(x) for x in row]) + '\n'
+
+        result += ':=\n'
+        for row in contents[1:]:
+            result += " ".join([str(x) for x in row]) + '\n'
     result += ';\n'
+
     return result
 
 
@@ -294,19 +291,19 @@ def _modify_names(sheet_names):
     actual ones
     """
     modifiedNames = sheet_names.copy()
-    for i in range(len(modifiedNames)):
-        if (modifiedNames[i] == "TotalAnnualMaxCapacityInvestmen"):
-            modifiedNames[i] = "TotalAnnualMaxCapacityInvestment"
-        elif (modifiedNames[i] == "TotalAnnualMinCapacityInvestmen"):
-            modifiedNames[i] = "TotalAnnualMinCapacityInvestment"
-        elif (modifiedNames[i] == "TotalTechnologyAnnualActivityLo"):
-            modifiedNames[i] = "TotalTechnologyAnnualActivityLowerLimit"
-        elif (modifiedNames[i] == "TotalTechnologyAnnualActivityUp"):
-            modifiedNames[i] = "TotalTechnologyAnnualActivityUpperLimit"
-        elif (modifiedNames[i] == "TotalTechnologyModelPeriodActLo"):
-            modifiedNames[i] = "TotalTechnologyModelPeriodActivityLowerLimit"
-        elif (modifiedNames[i] == "TotalTechnologyModelPeriodActUp"):
-            modifiedNames[i] = "TotalTechnologyModelPeriodActivityUpperLimit"
+    for name in modifiedNames:
+        if (name == "TotalAnnualMaxCapacityInvestmen"):
+            name = "TotalAnnualMaxCapacityInvestment"
+        elif (name == "TotalAnnualMinCapacityInvestmen"):
+            name = "TotalAnnualMinCapacityInvestment"
+        elif (name == "TotalTechnologyAnnualActivityLo"):
+            name = "TotalTechnologyAnnualActivityLowerLimit"
+        elif (name == "TotalTechnologyAnnualActivityUp"):
+            name = "TotalTechnologyAnnualActivityUpperLimit"
+        elif (name == "TotalTechnologyModelPeriodActLo"):
+            name = "TotalTechnologyModelPeriodActivityLowerLimit"
+        elif (name == "TotalTechnologyModelPeriodActUp"):
+            name = "TotalTechnologyModelPeriodActivityUpperLimit"
     return modifiedNames
 
 
