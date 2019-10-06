@@ -2,6 +2,167 @@
 # coding: utf-8
 """Extract data from spreadsheets and write to an OSeMOSYS datafile
 
+Reads and writes the following OSeMOSYS parameters and sets to and from
+files on disk.
+
+Notes
+=====
+
+Sets
+~~~~
+set YEAR;
+set TECHNOLOGY;
+set TIMESLICE;
+set FUEL;
+set EMISSION;
+set MODE_OF_OPERATION;
+set REGION;
+set SEASON;
+set DAYTYPE;
+set DAILYTIMEBRACKET;
+set FLEXIBLEDEMANDTYPE;
+set STORAGE;
+
+All sets are written in a CSV file in one column of values with no header.
+For example, the CSV file for set YEAR::
+
+    2015
+    2016
+    2017
+    2018
+    2019
+    2020
+
+Sets are written into the OSeMOSYS data file using the following syntax::
+
+    set YEAR := 2014 2015 2016 2017 2018 2019 2020 ;
+
+Parameters
+~~~~~~~~~~
+
+In general, parameters can be written into CSV files in narrow or wide
+formats. In narrow format, the CSV file should look as follows::
+
+    TIMESLICE,YEAR,VALUE
+    ID,2014,0.1667
+    IN,2014,0.0833
+    SD,2014,0.1667
+    SN,2014,0.0833
+    WD,2014,0.3333
+    WN,2014,0.1667
+
+In wide format, the final index is transposed::
+
+    TIMESLICE,2014,2015,...
+    ID,0.1667,0.1667
+    IN,0.0833,0.0833
+    SD,0.1667,0.1667
+    SN,0.0833,0.0833
+    WD,0.3333,0.3333
+    WN,0.1667,0.1667
+
+Wide format is a bit nicer to use with spreadsheets,
+as it allows you to more easily plot graphs of values, but narrow
+format is a more flexible and easily manipulated data format.
+
+Writing parameteters:
+
+1-dimensional e.g. DiscountRate{r in REGION}
+
+2-dimension e.g. YearSplit{l in TIMESLICE, y in YEAR}
+
+n-dimensional e.g. DaysInDayType{ls in SEASON, ld in DAYTYPE, y in YEAR}
+
+
+
+Global
+------
+param YearSplit{l in TIMESLICE, y in YEAR};
+param DiscountRate{r in REGION};
+param DaySplit{lh in DAILYTIMEBRACKET, y in YEAR};
+param Conversionls{l in TIMESLICE, ls in SEASON};
+param Conversionld{l in TIMESLICE, ld in DAYTYPE};
+param Conversionlh{l in TIMESLICE, lh in DAILYTIMEBRACKET};
+param DaysInDayType{ls in SEASON, ld in DAYTYPE, y in YEAR};
+param TradeRoute{r in REGION, rr in REGION, f in FUEL, y in YEAR};
+param DepreciationMethod{r in REGION};
+
+Demands
+-------
+param SpecifiedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
+param SpecifiedDemandProfile{r in REGION, f in FUEL, l in TIMESLICE, y in YEAR};
+param AccumulatedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
+
+Performance
+-----------
+
+param CapacityToActivityUnit{r in REGION, t in TECHNOLOGY};
+param TechWithCapacityNeededToMeetPeakTS{r in REGION, t in TECHNOLOGY};
+param CapacityFactor{r in REGION, t in TECHNOLOGY, l in TIMESLICE, y in YEAR};
+param AvailabilityFactor{r in REGION, t in TECHNOLOGY, y in YEAR};
+param OperationalLife{r in REGION, t in TECHNOLOGY};
+param ResidualCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+param InputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
+param OutputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
+
+Technology Costs
+----------------
+param CapitalCost{r in REGION, t in TECHNOLOGY, y in YEAR};
+param VariableCost{r in REGION, t in TECHNOLOGY, m in MODE_OF_OPERATION, y in YEAR};
+param FixedCost{r in REGION, t in TECHNOLOGY, y in YEAR};
+
+Storage
+-------
+param TechnologyToStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
+param TechnologyFromStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
+param StorageLevelStart{r in REGION, s in STORAGE};
+param StorageMaxChargeRate{r in REGION, s in STORAGE};
+param StorageMaxDischargeRate{r in REGION, s in STORAGE};
+param MinStorageCharge{r in REGION, s in STORAGE, y in YEAR};
+param OperationalLifeStorage{r in REGION, s in STORAGE};
+param CapitalCostStorage{r in REGION, s in STORAGE, y in YEAR};
+param ResidualStorageCapacity{r in REGION, s in STORAGE, y in YEAR};
+
+Capacity Constraints
+--------------------
+param CapacityOfOneTechnologyUnit{r in REGION, t in TECHNOLOGY, y in YEAR};
+param TotalAnnualMaxCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+param TotalAnnualMinCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+
+Investment Constraints
+----------------------
+param TotalAnnualMaxCapacityInvestment{r in REGION, t in TECHNOLOGY, y in YEAR};
+param TotalAnnualMinCapacityInvestment{r in REGION, t in TECHNOLOGY, y in YEAR};
+
+Activity Constraints
+--------------------
+param TotalTechnologyAnnualActivityUpperLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
+param TotalTechnologyAnnualActivityLowerLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
+param TotalTechnologyModelPeriodActivityUpperLimit{r in REGION, t in TECHNOLOGY};
+param TotalTechnologyModelPeriodActivityLowerLimit{r in REGION, t in TECHNOLOGY};
+
+Reserve Margin
+--------------
+param ReserveMarginTagTechnology{r in REGION, t in TECHNOLOGY, y in YEAR};
+param ReserveMarginTagFuel{r in REGION, f in FUEL, y in YEAR};
+param ReserveMargin{r in REGION, y in YEAR};
+
+RE Generation Target
+--------------------
+param RETagTechnology{r in REGION, t in TECHNOLOGY, y in YEAR};
+param RETagFuel{r in REGION, f in FUEL, y in YEAR};
+param REMinProductionTarget{r in REGION, y in YEAR};
+
+Emissions & Penalties
+---------------------
+param EmissionActivityRatio{r in REGION, t in TECHNOLOGY, e in EMISSION, m in MODE_OF_OPERATION, y in YEAR};
+param EmissionsPenalty{r in REGION, e in EMISSION, y in YEAR};
+param AnnualExogenousEmission{r in REGION, e in EMISSION, y in YEAR};
+param AnnualEmissionLimit{r in REGION, e in EMISSION, y in YEAR};
+param ModelPeriodExogenousEmission{r in REGION, e in EMISSION};
+param ModelPeriodEmissionLimit{r in REGION, e in EMISSION};
+
+
 """
 import csv
 import logging
@@ -168,23 +329,23 @@ def _build_result_string(results: dict):
         # all the parameters that have 2 variables
         elif (sheet_name in ['SpecifiedDemandProfile']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            result += _insert_variables(contents, 2)
+            result += _insert_parameter_table(contents, 2)
         # all the parameters that have 2 variables
         elif (sheet_name in ['VariableCost']):
             result += 'param ' + sheet_name + ' default 9999999 := \n'
-            result += _insert_variables(contents, 2)
+            result += _insert_parameter_table(contents, 2)
         # all the parameters that have 2 variables
         elif (sheet_name in ['CapacityFactor']):
             result += 'param ' + sheet_name + ' default 1 := \n'
-            result += _insert_variables(contents, 2)
+            result += _insert_parameter_table(contents, 2)
         # all the parameters that have 3 variables
         elif (sheet_name in ['EmissionActivityRatio', 'InputActivityRatio',
                              'OutputActivityRatio']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            result += _insert_variables(contents, 3)
+            result += _insert_parameter_table(contents, 3)
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['TotalTechnologyModelPeriodActivityUpperLimit']):
-            result += 'param ' + sheet_name + ' default 9999999 : \n'
+            result += 'param ' + sheet_name + ' default 9999999 :'
             result += _insert_no_variables(contents)
         elif (sheet_name in ['CapacityToActivityUnit']):
             result += 'param ' + sheet_name + ' default 1 : \n'
@@ -197,9 +358,9 @@ def _build_result_string(results: dict):
         elif (sheet_name in ['ModelPeriodEmissionLimit']):
             result += 'param ' + sheet_name + ' default 999999 := ;\n'
         # 8 #all the   parameters   that do not have variables
-        elif (sheet_name in ['ModelPeriodExogenousEmission', 'AnnualExogenousEmission', 'OperationalLifeStorage']):
+        elif (sheet_name in ['ModelPeriodExogenousEmission', 'AnnualExogenousEmission']):
             result += 'param ' + sheet_name + ' default 0 :=\n'
-            result += _insert_variables(contents, 1)
+            result += _insert_parameter_table(contents, 1)
         elif (sheet_name in []):  # 8 #all the parameters that do not have variables
             result += 'param ' + sheet_name + ' default 0 := ;\n'
         # 8 #all the parameters that do not have variables
@@ -209,8 +370,8 @@ def _build_result_string(results: dict):
         elif (sheet_name in ['DepreciationMethod']):
             result += 'param ' + sheet_name + ' default 1 := ;\n'
         # 8 #all the parameters that do not have variables
-        elif (sheet_name in ['OperationalLife']):
-            result += 'param ' + sheet_name + ' default 1 : \n'
+        elif (sheet_name in ['OperationalLife', 'OperationalLifeStorage']):
+            result += 'param ' + sheet_name + ' default 1 :'
             result += _insert_no_variables(contents)
         elif (sheet_name in ['DiscountRate']):  # default value
             for row in contents:
@@ -224,19 +385,22 @@ def _insert_no_variables(data):
 
     result = ""
 
-    if data:
+    if data[1:]:
         df = pd.DataFrame(data[1:])
         df = df.T
 
         table = df.values
 
-        result += " ".join([str(x) for x in table[0]]) + ':=\n'
-        result += "SIMPLICITY " + " ".join([str(x) for x in table[1]]) + '\n;\n'
+        result += "\n" + " ".join([str(x) for x in table[0]]) + ':=\n'
+        result += "SIMPLICITY " + " ".join([str(x) for x in table[1]]) + '\n'
+    else:
+        result += '=\n'
+    result += ';\n'
 
     return result
 
 
-def _insert_variables(contents: list, number_indices: int):
+def _insert_parameter_table(contents: list, number_indices: int):
     """
 
     Arguments
@@ -280,7 +444,7 @@ def _insert_table(name, data, default: int = 999999, region: bool = False):
     result = 'param ' + name + ' default ' + str(default) + ' :=\n'
     if data:
         if region:
-            result += '= [SIMPLICITY, *, *]:\n'
+            result += '[SIMPLICITY, *, *]:\n'
 
         header = data[0]
         header.pop(0)  # removes the first element of the row
