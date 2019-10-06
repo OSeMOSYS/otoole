@@ -46,7 +46,8 @@ def write_datafile(output_folder, output_file):
 
     sorted_names = sorted(sheet_names)
 
-    fileOutput = _parseCSVFilesAndConvert(sorted_names, output_folder)
+    results = build_results_dictionary(sorted_names, output_folder)
+    fileOutput = _build_result_string(results)
     with open(output_file, "w") as text_file:
         text_file.write(fileOutput)
         text_file.write("end;\n")
@@ -116,13 +117,20 @@ def read_file_into_memory(sheet_name, output_folder):
         return list(reader)
 
 
-def _parseCSVFilesAndConvert(sheet_names, output_folder):
+def build_results_dictionary(sheet_names, output_folder):
+    results = dict()
+    for sheet_name in sheet_names:
+
+        results[sheet_name] = read_file_into_memory(sheet_name, output_folder)
+
+    return results
+
+
+def _build_result_string(results: dict):
     """Holds the logic for writing out model entities in a certain format
     """
     result = ''
-    for sheet_name in sheet_names:
-
-        contents = read_file_into_memory(sheet_name, output_folder)
+    for sheet_name, contents in results.items():
 
         # all the sets
         if (sheet_name in ['DAYTYPE', 'DAILYTIMEBRACKET', 'STORAGE', 'EMISSION',
@@ -134,42 +142,29 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
             result += ";\n"
         # all the parameters that have one variable
         elif (sheet_name in ['AccumulatedAnnualDemand', 'CapitalCost',
-                             'CapitalCostStorage',
                              'FixedCost', 'ResidualCapacity',
                              'SpecifiedAnnualDemand',
                              'TotalAnnualMinCapacity',
                              'TotalAnnualMinCapacityInvestment',
                              'TotalTechnologyAnnualActivityLowerLimit']):
-            result += 'param ' + sheet_name + ' default 0 := '
-            result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, contents)
+            result += _insert_table(sheet_name, contents, default=0, region=True)
         # all the parameters that have one variable
         elif (sheet_name in ['TotalAnnualMaxCapacityInvestment']):
-            result += 'param ' + sheet_name + ' default 99999 := '
-            result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, contents)
+            result += _insert_table(sheet_name, contents, default=99999, region=True)
         elif (sheet_name in ['AvailabilityFactor']):
-            result += 'param ' + sheet_name + ' default 1 := '
-            result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, contents)
+            result += _insert_table(sheet_name, contents, 1)
         elif (sheet_name in ['TotalAnnualMaxCapacity',
                              'TotalTechnologyAnnualActivityUpperLimit']):
-            result += 'param ' + sheet_name + ' default 9999999 := '
-            result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, contents)
+            result += _insert_table(sheet_name, contents, default=999999, region=True)
         elif (sheet_name in ['AnnualEmissionLimit']):
-            result += 'param ' + sheet_name + ' default 99999 := '
-            result += '\n[SIMPLICITY, *, *]:\n'
-            result += _insert_table(sheet_name, contents)
-        elif (sheet_name in ['YearSplit']):
-            result += 'param ' + sheet_name + ' default 0 :\n'
-            result += _insert_table(sheet_name, contents)
-        elif (sheet_name in ['CapacityOfOneTechnologyUnit',
-                             'EmissionsPenalty', 'REMinProductionTarget',
+            result += _insert_table(sheet_name, contents, default=99999, region=True)
+        elif (sheet_name in ['YearSplit', 'CapacityOfOneTechnologyUnit', 'CapitalCostStorage']):
+            result += _insert_table(sheet_name, contents, 0)
+        elif (sheet_name in ['EmissionsPenalty', 'REMinProductionTarget',
                              'RETagFuel', 'RETagTechnology',
                              'ReserveMargin', 'ReserveMarginTagFuel',
                              'ReserveMarginTagTechnology', 'TradeRoute']):
-            result += 'param ' + sheet_name + ' default 0 := ;\n'
+            result += _insert_table(sheet_name, contents, default=0, region=True)
         # all the parameters that have 2 variables
         elif (sheet_name in ['SpecifiedDemandProfile']):
             result += 'param ' + sheet_name + ' default 0 := \n'
@@ -190,20 +185,21 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['TotalTechnologyModelPeriodActivityUpperLimit']):
             result += 'param ' + sheet_name + ' default 9999999 : \n'
-            result += _insert_no_variables(sheet_name, contents)
+            result += _insert_no_variables(contents)
         elif (sheet_name in ['CapacityToActivityUnit']):
             result += 'param ' + sheet_name + ' default 1 : \n'
-            result += _insert_no_variables(sheet_name, contents)
+            result += _insert_no_variables(contents)
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['TotalTechnologyAnnualActivityLowerLimit']):
             result += 'param ' + sheet_name + ' default 0 := \n'
-            result += _insert_no_variables(sheet_name, contents)
+            result += _insert_no_variables(contents)
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['ModelPeriodEmissionLimit']):
             result += 'param ' + sheet_name + ' default 999999 := ;\n'
         # 8 #all the   parameters   that do not have variables
         elif (sheet_name in ['ModelPeriodExogenousEmission', 'AnnualExogenousEmission', 'OperationalLifeStorage']):
-            result += 'param ' + sheet_name + ' default 0 := ;\n'
+            result += 'param ' + sheet_name + ' default 0 :=\n'
+            result += _insert_variables(contents, 1)
         elif (sheet_name in []):  # 8 #all the parameters that do not have variables
             result += 'param ' + sheet_name + ' default 0 := ;\n'
         # 8 #all the parameters that do not have variables
@@ -215,7 +211,7 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
         # 8 #all the parameters that do not have variables
         elif (sheet_name in ['OperationalLife']):
             result += 'param ' + sheet_name + ' default 1 : \n'
-            result += _insert_no_variables(sheet_name, contents)
+            result += _insert_no_variables(contents)
         elif (sheet_name in ['DiscountRate']):  # default value
             for row in contents:
                 result += 'param ' + sheet_name + ' default 0.1 := ;\n'
@@ -224,7 +220,7 @@ def _parseCSVFilesAndConvert(sheet_names, output_folder):
     return result
 
 
-def _insert_no_variables(name, data):
+def _insert_no_variables(data):
 
     result = ""
 
@@ -240,46 +236,58 @@ def _insert_no_variables(name, data):
     return result
 
 
-def _insert_variables(contents: list, number_variables: int):
+def _insert_variables(contents: list, number_indices: int):
     """
 
     Arguments
     ---------
     contents : list
-    number_variables : int
+    number_indices : int
     """
     result = ""
 
     if contents:
         header = contents[0]
-        index = header[:number_variables - 1]
-        df = pd.DataFrame(contents[1:], columns=header)  # typing: pandas.DataFrame
-        df = df.set_index(index)
-        year = [str(x) for x in header[number_variables:]]
+        df = pd.DataFrame(data=contents[1:], columns=header)  # typing: pandas.DataFrame
+        if number_indices > 1:
+            index = header[:number_indices - 1]
+            df = df.set_index(index)
+        else:
+            index = None
+        year = [str(x) for x in header[number_indices:]]
 
-        for idx, data in df.groupby(level=list(range(number_variables - 1))):
-            logging.debug("Index: %s\n data: %s\n", idx, data)
-            if isinstance(idx, str):
-                idx = [idx]
-            result += '[SIMPLICITY, ' + ", ".join([str(x) for x in idx]) + ', *, *]:\n'
+        if index:
+            for idx, data in df.groupby(level=list(range(number_indices - 1))):
+                logging.debug("Index: %s\n data: %s\n", idx, data)
+                if isinstance(idx, str):
+                    idx = [idx]
+                result += '[SIMPLICITY, ' + ", ".join([str(x) for x in idx]) + ', *, *]:\n'
+                result += " ".join(year) + " :=\n"
+                for row in data.values:
+                    stringify = [str(x) for x in list(row)]
+                    result += " ".join(stringify) + '\n'
+        else:
+            result += '[SIMPLICITY, *, *]:\n'
             result += " ".join(year) + " :=\n"
-            for row in data.values:
+            for row in df.values:
                 stringify = [str(x) for x in list(row)]
                 result += " ".join(stringify) + '\n'
     result += ';\n'
     return result
 
 
-def _insert_table(name, contents):
-    result = ""
+def _insert_table(name, data, default: int = 999999, region: bool = False):
+    result = 'param ' + name + ' default ' + str(default) + ' :=\n'
+    if data:
+        if region:
+            result += '= [SIMPLICITY, *, *]:\n'
 
-    if contents:
-        newRow = contents[0]
-        newRow.pop(0)  # removes the first element of the row
-        result += " ".join((newRow)) + " "
+        header = data[0]
+        header.pop(0)  # removes the first element of the row
+        result += " ".join(([str(x) for x in header])) + " "
 
         result += ':=\n'
-        for row in contents[1:]:
+        for row in data[1:]:
             result += " ".join([str(x) for x in row]) + '\n'
     result += ';\n'
 
