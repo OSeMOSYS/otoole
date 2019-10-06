@@ -171,8 +171,23 @@ import sys
 
 import pandas as pd
 import xlrd
+from yaml import SafeLoader, load
+
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Try backported to PY<37 `importlib_resources`.
+    import importlib_resources as pkg_resources
+
 
 logger = logging.getLogger(__name__)
+
+
+def read_config():
+
+    with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
+        config = load(config_file, Loader=SafeLoader)
+    return config
 
 
 def generate_csv_from_excel(input_workbook, output_folder):

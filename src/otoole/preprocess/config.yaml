@@ -1,86 +1,86 @@
 AccumulatedAnnualDemand:
-    indices: REGION,FUEL,YEAR
+    indices: [REGION,FUEL,YEAR]
     type: param
     default: 0
 AnnualEmissionLimit:
-    indices: REGION,EMISSION,YEAR
+    indices: [REGION,EMISSION,YEAR]
     type: param
     default: 99999
 AnnualExogenousEmission:
-    indices: REGION,EMISSION,YEAR
+    indices: [REGION,EMISSION,YEAR]
     type: param
     default: 0
 AvailabilityFactor:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 1
 CapacityFactor:
-    indices: REGION,TECHNOLOGY,TIMESLICE,YEAR
+    indices: [REGION,TECHNOLOGY,TIMESLICE,YEAR]
     type: param
     default: 1
 CapacityOfOneTechnologyUnit:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 1
 CapacityToActivityUnit:
-    indices: REGION,TECHNOLOGY
+    indices: [REGION,TECHNOLOGY]
     type: param
     default: 1
 CapitalCost:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 CapitalCostStorage:
-    indices: REGION,STORAGE,YEAR
+    indices: [REGION,STORAGE,YEAR]
     type: param
     default: 0
 Conversionld:
-    indices: TIMESLICE,DAYTYPE
+    indices: [TIMESLICE,DAYTYPE]
     type: param
     default: 0
 Conversionlh:
-    indices: TIMESLICE,DAILYTIMEBRACKET
+    indices: [TIMESLICE,DAILYTIMEBRACKET]
     type: param
     default: 0
 Conversionls:
-    indices: TIMESLICE,SEASON
+    indices: [TIMESLICE,SEASON]
     type: param
     default: 0
 DAILYTIMEBRACKET:
     indices:
     type: set
 DaysInDayType:
-    indices: SEASON,DAYTYPE,YEAR
+    indices: [SEASON,DAYTYPE,YEAR]
     type: param
     default: 7
 DaySplit:
-    indices: DAILYTIMEBRACKET,YEAR
+    indices: [DAILYTIMEBRACKET,YEAR]
     type: param
     default: 0.00137
 DAYTYPE:
     indices:
     type: set
 DepreciationMethod:
-    indices: REGION
+    indices: [REGION]
     type: param
     default: 1
 DiscountRate:
-    indices: REGION
+    indices: [REGION]
     type: param
     default: 0.05
 EMISSION:
     indices:
     type: set
 EmissionActivityRatio:
-    indices: REGION,TECHNOLOGY,EMISSION,MODE_OF_OPERATION,YEAR
+    indices: [REGION,TECHNOLOGY,EMISSION,MODE_OF_OPERATION,YEAR]
     type: param
     default: 0
 EmissionsPenalty:
-    indices: REGION,EMISSION,YEAR
+    indices: [REGION,EMISSION,YEAR]
     type: param
     default: 0
 FixedCost:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 FLEXIBLEDEMANDTYPE:
@@ -90,159 +90,159 @@ FUEL:
     indices:
     type: set
 InputActivityRatio:
-    indices: REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,YEAR
+    indices: [REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,YEAR]
     type: param
     default: 0
 MinStorageCharge:
-    indices: REGION,STORAGE,YEAR
+    indices: [REGION,STORAGE,YEAR]
     type: param
     default: 0
 MODE_OF_OPERATION:
     indices:
     type: set
 ModelPeriodEmissionLimit:
-    indices: REGION,EMISSION
+    indices: [REGION,EMISSION]
     type: param
     default: 99999
 ModelPeriodExogenousEmission:
-    indices: REGION,EMISSION
+    indices: [REGION,EMISSION]
     type: param
     default: 0
 OperationalLife:
-    indices: REGION,TECHNOLOGY
+    indices: [REGION,TECHNOLOGY]
     type: param
     default: 1
 OperationalLifeStorage:
-    indices: REGION,STORAGE
+    indices: [REGION,STORAGE]
     type: param
     default: 0
 OutputActivityRatio:
-    indices: REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,YEAR
+    indices: [REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,YEAR]
     type: param
     default: 0
 REGION:
     indices:
     type: set
 REMinProductionTarget:
-    indices: REGION,YEAR
+    indices: [REGION,YEAR]
     type: param
     default: 0
 ReserveMargin:
-    indices: REGION,YEAR
+    indices: [REGION,YEAR]
     type: param
     default: 1
 ReserveMarginTagFuel:
-    indices: REGION,FUEL,YEAR
+    indices: [REGION,FUEL,YEAR]
     type: param
     default: 0
 ReserveMarginTagTechnology:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 ResidualCapacity:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 ResidualStorageCapacity:
-    indices: REGION,STORAGE,YEAR
+    indices: [REGION,STORAGE,YEAR]
     type: param
     default: 999
 RETagFuel:
-    indices: REGION,FUEL,YEAR
+    indices: [REGION,FUEL,YEAR]
     type: param
     default: 0
 RETagTechnology:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 SEASON:
     indices:
     type: set
 SpecifiedAnnualDemand:
-    indices: REGION,FUEL,YEAR
+    indices: [REGION,FUEL,YEAR]
     type: param
     default: 0
 SpecifiedDemandProfile:
-    indices: REGION,FUEL,TIMESLICE,YEAR
+    indices: [REGION,FUEL,TIMESLICE,YEAR]
     type: param
     default: 0
 STORAGE:
     indices:
     type: set
 StorageLevelStart:
-    indices: REGION,STORAGE
+    indices: [REGION,STORAGE]
     type: param
     default: 0
 StorageMaxChargeRate:
-    indices: REGION,STORAGE
+    indices: [REGION,STORAGE]
     type: param
     default: 0
 StorageMaxDischargeRate:
-    indices: REGION,STORAGE
+    indices: [REGION,STORAGE]
     type: param
     default: 0
 TECHNOLOGY:
     indices:
     type: set
 TechnologyFromStorage:
-    indices: REGION,TECHNOLOGY,STORAGE,MODE_OF_OPERATION
+    indices: [REGION,TECHNOLOGY,STORAGE,MODE_OF_OPERATION]
     type: param
     default: 0
 TechnologyToStorage:
-    indices: REGION,TECHNOLOGY,STORAGE,MODE_OF_OPERATION
+    indices: [REGION,TECHNOLOGY,STORAGE,MODE_OF_OPERATION]
     type: param
     default: 0
 TechWithCapacityNeededToMeetPeakTS:
-    indices: REGION,TECHNOLOGY
+    indices: [REGION,TECHNOLOGY]
     type: param
     default:
 TIMESLICE:
     indices:
     type: set
 TotalAnnualMaxCapacity:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 99999
 TotalAnnualMaxCapacityInvestment:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 99999
 TotalAnnualMinCapacity:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 TotalAnnualMinCapacityInvestment:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 0
 TotalTechnologyAnnualActivityLowerLimit:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default:
 TotalTechnologyAnnualActivityUpperLimit:
-    indices: REGION,TECHNOLOGY,YEAR
+    indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     default: 99999
 TotalTechnologyModelPeriodActivityLowerLimit:
-    indices: REGION,TECHNOLOGY
+    indices: [REGION,TECHNOLOGY]
     type: param
     default: 0
 TotalTechnologyModelPeriodActivityUpperLimit:
-    indices: REGION,TECHNOLOGY
+    indices: [REGION,TECHNOLOGY]
     type: param
     default: 99999
 TradeRoute:
-    indices: REGION,REGION,FUEL,YEAR
+    indices: [REGION,REGION,FUEL,YEAR]
     type: param
     default: 0
 VariableCost:
-    indices: REGION,TECHNOLOGY,MODE_OF_OPERATION,YEAR
+    indices: [REGION,TECHNOLOGY,MODE_OF_OPERATION,YEAR]
     type: param
     default: 0
 YEAR:
     indices:
     type: set
 YearSplit:
-    indices: TIMESLICE,YEAR
+    indices: [TIMESLICE,YEAR]
     type: param
     default: 0

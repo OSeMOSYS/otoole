@@ -2,8 +2,22 @@ from otoole.preprocess.excel_to_osemosys import (
     _build_result_string,
     _insert_no_variables,
     _insert_parameter_table,
-    _insert_table
+    _insert_table,
+    read_config
 )
+
+
+class TestConfig:
+
+    def test_read_config(self):
+
+        actual = read_config()
+        expected = {
+                        'indices': ['REGION', 'FUEL', 'YEAR'],
+                        'type': 'param',
+                        'default': 0
+                    }
+        assert actual['AccumulatedAnnualDemand'] == expected
 
 
 class TestWritingFunctions:
