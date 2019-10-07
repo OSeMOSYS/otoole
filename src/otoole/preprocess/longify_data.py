@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from typing import Dict
 
 import pandas as pd
 from excel_to_osemosys import read_config
@@ -48,6 +49,38 @@ def check_set(df, config_details, name):
     return narrow
 
 
+def check_set_datatype(narrow: pd.DataFrame, config_details: Dict, parameter: str) -> pd.DataFrame:
+    datatype = config_details[parameter]['dtype']
+    logger.debug('Columns for set %s are: %s', parameter, narrow.columns)
+    if narrow.iloc[:, 0].dtype != datatype:
+        logger.warning("dtype does not match %s for set %s", datatype, parameter)
+    return narrow
+
+
+def check_datatypes(narrow: pd.DataFrame, config_details: Dict, parameter: str) -> pd.DataFrame:
+    """
+    """
+    logger.info("Checking datatypes for %s", parameter)
+    dtypes = {}
+
+    for column in narrow.columns:
+        if column == 'VALUE':
+            datatype = config_details[parameter]['dtype']
+            dtypes['VALUE'] = datatype
+        else:
+            datatype = config_details[column]['dtype']
+            dtypes[column] = datatype
+        if narrow[column].dtype != datatype:
+            logger.warning("dtype of column %s does not match %s for parameter %s", column, datatype, parameter)
+            if datatype == 'int':
+                narrow[column] = narrow[column].apply(cast_to_int)
+    return narrow.astype(dtypes)
+
+
+def cast_to_int(value):
+    return int(float(value))
+
+
 def main(output_folder):
     config = read_config()
 
@@ -69,13 +102,17 @@ def main(output_folder):
 
         if entity_type == 'param':
             narrow = check_parameter(df, config_details, parameter)
+            if not narrow.empty:
+                narrow_checked = check_datatypes(narrow, config, parameter)
         elif entity_type == 'set':
             narrow = check_set(df, config_details, parameter)
+            if not narrow.empty:
+                narrow_checked = check_set_datatype(narrow, config, parameter)
 
         filepath = os.path.join(output_folder, 'narrow', parameter + '.csv')
         with open(filepath, 'w') as csvfile:
-            logger.info("Writing %s rows into narrow file for %s", narrow.shape[0], parameter)
-            narrow.to_csv(csvfile, index=False)
+            logger.info("Writing %s rows into narrow file for %s", narrow_checked.shape[0], parameter)
+            narrow_checked.to_csv(csvfile, index=False)
 
 
 if __name__ == '__main__':
