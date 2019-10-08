@@ -28,6 +28,7 @@ import logging
 import sys
 
 from otoole.preprocess import generate_csv_from_excel, write_datafile
+from otoole.preprocess.create_datapackage import main as create_datapackage
 from otoole.results.convert import convert_cplex_file
 
 
@@ -37,6 +38,10 @@ def excel2csv(args):
 
 def csv2datafile(args):
     write_datafile(args.output_folder, args.output_file)
+
+
+def csv2datapackage(args):
+    create_datapackage(args.csv_folder, args.datapackage)
 
 
 def cplex2cbc(args):
@@ -57,10 +62,16 @@ def get_parser():
     excel_parser.add_argument('output_folder', help='Folder to which to write csv files')
     excel_parser.set_defaults(func=excel2csv)
 
-    csv_parser = prep_subparsers.add_parser('csv', help='Convert from a folder of csv files')
+    csv_parser = prep_subparsers.add_parser('csv', help='Convert a folder of csv files to an OSeMOSYS datafile')
     csv_parser.add_argument('output_folder', help='Folder to which to write csv files')
     csv_parser.add_argument('output_file', help='File to which to write OSeMOSYS data')
     csv_parser.set_defaults(func=csv2datafile)
+
+    datapackage_parser = prep_subparsers.add_parser('datapackage',
+                                                    help='Convert a folder of csv file to a datapackage')
+    datapackage_parser.add_argument('csv_folder', help='Path to folder containing csv files')
+    datapackage_parser.add_argument('datapackage', help='Path to destination for datapackage')
+    datapackage_parser.set_defaults(func=csv2datapackage)
 
     # Parser for the CPLEX related commands
     cplex_parser = subparsers.add_parser('cplex',

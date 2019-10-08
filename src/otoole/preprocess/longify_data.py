@@ -4,7 +4,8 @@ import sys
 from typing import Dict
 
 import pandas as pd
-from excel_to_osemosys import read_config
+
+from otoole.preprocess.excel_to_osemosys import read_config
 
 logger = logging.getLogger()
 
@@ -81,7 +82,7 @@ def cast_to_int(value):
     return int(float(value))
 
 
-def main(output_folder):
+def main(output_folder, narrow_folder):
     config = read_config()
 
     for parameter, details in config.items():
@@ -104,12 +105,16 @@ def main(output_folder):
             narrow = check_parameter(df, config_details, parameter)
             if not narrow.empty:
                 narrow_checked = check_datatypes(narrow, config, parameter)
+            else:
+                narrow_checked = narrow
         elif entity_type == 'set':
             narrow = check_set(df, config_details, parameter)
             if not narrow.empty:
                 narrow_checked = check_set_datatype(narrow, config, parameter)
+            else:
+                narrow_checked = narrow
 
-        filepath = os.path.join(output_folder, 'narrow', parameter + '.csv')
+        filepath = os.path.join(narrow_folder, 'data', parameter + '.csv')
         with open(filepath, 'w') as csvfile:
             logger.info("Writing %s rows into narrow file for %s", narrow_checked.shape[0], parameter)
             narrow_checked.to_csv(csvfile, index=False)
@@ -118,4 +123,5 @@ def main(output_folder):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     output_folder = sys.argv[1]
-    main(output_folder)
+    narrow_folder = sys.argv[2]
+    main(output_folder, narrow_folder)

@@ -1,15 +1,22 @@
+"""Creates a datapackage from a collection of CSV files of OSeMOSYS input data
+
+- Uses Frictionless Data datapackage concept to build a JSON schema of the dataset
+- Enforces relations between sets and indices in parameter files
+"""
+
 import logging
 import os
 import sys
 
 from datapackage import Package
-from excel_to_osemosys import read_config
-from longify_data import main as longify
+
+from otoole.preprocess.excel_to_osemosys import read_config
+from otoole.preprocess.longify_data import main as longify
 
 logger = logging.getLogger()
 
 
-def main(path_to_simplicity):
+def generate_package(path_to_simplicity):
     """
 
     [{'fields': 'REGION', 'reference': {'resource': 'REGION', 'fields': 'VALUE'}}]
@@ -58,14 +65,15 @@ def validate_contents(path_to_data):
             logger.warning("Validation error in %s: %s", resource.name, str(ex))
 
 
+def main(wide_folder, narrow_folder):
+    longify(wide_folder, narrow_folder)
+    generate_package(narrow_folder)
+    validate_contents(narrow_folder)
+
+
 if __name__ == '__main__':
 
     logging.basicConfig(level=logging.DEBUG)
     wide_folder = sys.argv[1]
     narrow_folder = sys.argv[2]
-
-    longify(wide_folder, narrow_folder)
-
-    main(narrow_folder)
-
-    validate_contents(narrow_folder)
+    main(wide_folder, narrow_folder)

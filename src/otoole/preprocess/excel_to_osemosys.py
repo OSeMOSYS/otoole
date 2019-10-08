@@ -168,6 +168,7 @@ import csv
 import logging
 import os
 import sys
+from typing import Dict, List
 
 import pandas as pd
 import xlrd
@@ -178,7 +179,6 @@ try:
 except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as pkg_resources
-
 
 logger = logging.getLogger(__name__)
 
@@ -286,14 +286,25 @@ def _cast_to_integer(row):
     return converted_row
 
 
-def read_file_into_memory(sheet_name, output_folder):
-    filepath = os.path.join(output_folder, sheet_name + '.csv')
+def read_file_into_memory(name: str, folder_name: str) -> List:
+    """Read a parameter file `name` in folder `folder_name`
+
+    Arguments
+    ---------
+    name : str
+    folder_name : str
+
+    Returns
+    -------
+    list
+    """
+    filepath = os.path.join(folder_name, name + '.csv')
     with open(filepath, 'r') as csvfile:
         reader = csv.reader(csvfile)
         return list(reader)
 
 
-def build_results_dictionary(sheet_names, output_folder):
+def build_results_dictionary(sheet_names: List, output_folder: str) -> Dict:
     results = dict()
     for sheet_name in sheet_names:
 
@@ -302,8 +313,17 @@ def build_results_dictionary(sheet_names, output_folder):
     return results
 
 
-def _build_result_string(results: dict):
+def _build_result_string(results: Dict[str, List]) -> str:
     """Holds the logic for writing out model entities in a certain format
+
+    Arguments
+    ---------
+    results : dict
+        A dictionary keyed by parameter name with the data in the value field
+
+    Returns
+    -------
+    str
     """
     result = ''
     for sheet_name, contents in results.items():
@@ -396,8 +416,9 @@ def _build_result_string(results: dict):
     return result
 
 
-def _insert_no_variables(data):
-
+def _insert_no_variables(data: List) -> str:
+    """
+    """
     result = ""
 
     if data[1:]:
@@ -415,7 +436,7 @@ def _insert_no_variables(data):
     return result
 
 
-def _insert_parameter_table(contents: list, number_indices: int):
+def _insert_parameter_table(contents: List, number_indices: int) -> str:
     """
 
     Arguments
@@ -455,7 +476,7 @@ def _insert_parameter_table(contents: list, number_indices: int):
     return result
 
 
-def _insert_table(name, data, default: int = 999999, region: bool = False):
+def _insert_table(name, data, default: int = 999999, region: bool = False) -> str:
     result = 'param ' + name + ' default ' + str(default) + ' :=\n'
     if data:
         if region:
@@ -473,7 +494,7 @@ def _insert_table(name, data, default: int = 999999, region: bool = False):
     return result
 
 
-def _modify_names(sheet_names):
+def _modify_names(sheet_names: List) -> List:
     """I change the name of the sheets in the xlsx file to match with the csv
     actual ones
     """
