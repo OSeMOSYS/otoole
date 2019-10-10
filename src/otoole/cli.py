@@ -29,6 +29,7 @@ import sys
 
 from otoole.preprocess import generate_csv_from_excel, write_datafile
 from otoole.preprocess.create_datapackage import main as create_datapackage
+from otoole.preprocess.narrow_to_datafile import main as create_datafile
 from otoole.results.convert import convert_cplex_file
 
 
@@ -46,6 +47,10 @@ def csv2datapackage(args):
 
 def cplex2cbc(args):
     convert_cplex_file(args.cplex_file, args.output_file, args.start_year, args.end_year, args.output_format)
+
+
+def datapackage2datafile(args):
+    create_datafile(args.datapackage, args.datafile)
 
 
 def get_parser():
@@ -73,6 +78,12 @@ def get_parser():
     datapackage_parser.add_argument('datapackage', help='Path to destination for datapackage')
     datapackage_parser.set_defaults(func=csv2datapackage)
 
+    datafile_parser = prep_subparsers.add_parser('datafile',
+                                                 help='Convert an OSeMOSYS datapackage to a datafile')
+    datafile_parser.add_argument('datapackage', help='Path to destination for datapackage')
+    datafile_parser.add_argument('datafile', help='Path to datafile')
+    datafile_parser.set_defaults(func=datapackage2datafile)
+
     # Parser for the CPLEX related commands
     cplex_parser = subparsers.add_parser('cplex',
                                          help='Process a CPLEX solution file')
@@ -96,5 +107,6 @@ def main():
     logging.info('Started')
     parser = get_parser()
     args = parser.parse_args(sys.argv[1:])
-    args.func(args)
+    if 'func' in args:
+        args.func(args)
     logging.info('Finished')
