@@ -36,13 +36,12 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # Configure the conda environment and put it in the path using the
     # provided versions
     # (prefer local venv, since the miniconda folder is cached)
-    conda create -p ./.venv --yes python=${PYTHON_VERSION} pip virtualenv
+    conda create -p ./.venv --yes python=${PYTHON_VERSION} pip virtualenv pandas xlrd pyyaml
     source activate ./.venv
 fi
 
 # for all
 pip install -U pip setuptools
-pip install tox
 
 if [[ "$COVERAGE" == "true" ]]; then
     pip install -U pytest-cov pytest-virtualenv coverage coveralls flake8 pre-commit

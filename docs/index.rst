@@ -2,8 +2,6 @@
 otoole
 ======
 
-This is the documentation of **otoole**.
-
 **otoole** is a Python package which provides a command-line interface
 for users of OSeMOSYS.
 
@@ -12,6 +10,29 @@ centralises the commonly used pre- and post-processing steps
 around the use of OSeMOSYS.
 
 .. image:: img/osemosys_dataflow.png
+
+**otoole** aims to support different ways of storing input data and results,
+including csv files, databases, datapackages and Excel workbooks,
+as well as different implementations of the OSeMOSYS model.
+
+Getting Started
+===============
+
+Install ``otoole`` using pip::
+
+    pip install otoole
+
+Obtain the latest version of OSeMOSYS::
+
+    otoole setup osemosys
+
+Download an OSeMOSYS datapackage and convert it to a modelfile::
+
+    otoole prep datafile http://github.com/KTH-dESA/model_library/simplicity/datapackage.json ./simplicity.txt
+
+Run OSeMOSYS with the modelfile and place the results in a folder::
+
+    otoole run --modelfile simplicity.txt --datapackage results
 
 Contents
 ========

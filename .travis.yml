@@ -13,7 +13,7 @@ before_script:
 - git config --global user.name "Will Usher"
 script:
 - python setup.py develop
-- tox
+- pytest
 - |
   if [[ "$COVERAGE" == "true" ]]; then
     pre-commit install
