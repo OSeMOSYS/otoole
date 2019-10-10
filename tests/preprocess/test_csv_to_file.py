@@ -1,3 +1,7 @@
+import io
+
+import pandas as pd
+
 from otoole.preprocess.excel_to_osemosys import (
     _build_result_string,
     _insert_no_variables,
@@ -5,6 +9,108 @@ from otoole.preprocess.excel_to_osemosys import (
     _insert_table,
     read_config
 )
+from otoole.preprocess.narrow_to_datafile import write_parameter, write_set
+
+
+class TestDataFrameWriting:
+
+    def test_write_empty_parameter_with_defaults(self):
+
+        data = []
+
+        df = pd.DataFrame(data=data, columns=['REGION', 'FUEL', 'VALUE'])
+
+        stream = io.StringIO()
+        write_parameter(stream, df, 'test_parameter', 0)
+
+        stream.seek(0)
+        expected = ['param default 0 : test_parameter :=\n',
+                    ';\n']
+        actual = stream.readlines()
+
+        for actual_line, expected_line in zip(actual, expected):
+            assert actual_line == expected_line
+
+    def test_write_parameter_as_tabbing_format(self):
+
+        data = [['SIMPLICITY', 'BIOMASS', 0.95969],
+                ['SIMPLICITY', 'ETH1', 4.69969]]
+
+        df = pd.DataFrame(data=data, columns=['REGION', 'FUEL', 'VALUE'])
+
+        stream = io.StringIO()
+        write_parameter(stream, df, 'test_parameter', 0)
+
+        stream.seek(0)
+        expected = ['param default 0 : test_parameter :=\n',
+                    'SIMPLICITY BIOMASS 0.95969\n',
+                    'SIMPLICITY ETH1 4.69969\n',
+                    ';\n']
+        actual = stream.readlines()
+
+        for actual_line, expected_line in zip(actual, expected):
+            assert actual_line == expected_line
+
+    def test_write_set(self):
+
+        data = [['BIOMASS'],
+                ['ETH1']]
+
+        df = pd.DataFrame(data=data, columns=['VALUE'])
+
+        stream = io.StringIO()
+        write_set(stream, df, 'TECHNOLOGY')
+
+        stream.seek(0)
+        expected = ['set TECHNOLOGY :=\n',
+                    'BIOMASS\n',
+                    'ETH1\n',
+                    ';\n']
+        actual = stream.readlines()
+
+        for actual_line, expected_line in zip(actual, expected):
+            assert actual_line == expected_line
+
+
+class TestAbstractWritingFunctions:
+
+    def test_one_dimensional_parameter(self):
+        data = [
+            ["REGION", "VALUE"],
+            ["SIMPLICITY", 0.05]]
+        data = pd.DataFrame(data=data[1:], columns=data[0])
+        expected = "param DiscountRate default 0.05 :=\n;\n"
+        actual = _build_result_string(data)
+        assert actual == expected
+
+    def test_two_dimensional_parameter(self):
+
+        data = [
+            ["TIMESLICE", "YEAR", "VALUE"],
+            ["ID", 2014, 0.1667],
+            ["ID", 2015, 0.1667],
+            ["IN", 2014, 0.0833],
+            ["IN", 2015, 0.0833],
+            ["SD", 2014, 0.1667],
+            ["SD", 2015, 0.1667],
+            ["SN", 2014, 0.0833],
+            ["SN", 2015, 0.0833],
+            ["WD", 2014, 0.3333],
+            ["WD", 2015, 0.3333],
+            ["WN", 2014, 0.1667],
+            ["WN", 2015, 0.1667]]
+
+        data = pd.DataFrame(data=data[1:], columns=data[0])
+        expected = "param YearSplit default 0 :\n" + \
+                   "2014 2015:=\n" + \
+                   "ID 0.1667 0.1667\n" + \
+                   "IN 0.0833 0.0833\n" + \
+                   "SD 0.1667 0.1667\n" + \
+                   "SN 0.0833 0.0833\n" + \
+                   "WD 0.3333 0.3333\n" + \
+                   "WN 0.1667 0.1667\n"
+        actual = _build_result_string(data)
+        assert actual == expected
 
 
 class TestConfig:
