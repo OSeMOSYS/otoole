@@ -27,9 +27,7 @@ import argparse
 import logging
 import sys
 
-from otoole.preprocess import generate_csv_from_excel, write_datafile
-from otoole.preprocess.create_datapackage import main as create_datapackage
-from otoole.preprocess.narrow_to_datafile import main as create_datafile
+from otoole.preprocess import create_datafile, create_datapackage, generate_csv_from_excel
 from otoole.results.convert import convert_cplex_file
 
 
@@ -37,16 +35,13 @@ def excel2csv(args):
     generate_csv_from_excel(args.workbook, args.output_folder)
 
 
-def csv2datafile(args):
-    write_datafile(args.output_folder, args.output_file)
-
-
 def csv2datapackage(args):
     create_datapackage(args.csv_folder, args.datapackage)
 
 
 def cplex2cbc(args):
-    convert_cplex_file(args.cplex_file, args.output_file, args.start_year, args.end_year, args.output_format)
+    convert_cplex_file(args.cplex_file, args.output_file, args.start_year,
+                       args.end_year, args.output_format)
 
 
 def datapackage2datafile(args):
@@ -68,11 +63,6 @@ def get_parser():
     excel_parser.add_argument('workbook', help='Path to the Excel workbook')
     excel_parser.add_argument('output_folder', help='Folder to which to write csv files')
     excel_parser.set_defaults(func=excel2csv)
-
-    csv_parser = prep_subparsers.add_parser('csv', help='Convert a folder of csv files to an OSeMOSYS datafile')
-    csv_parser.add_argument('output_folder', help='Folder to which to write csv files')
-    csv_parser.add_argument('output_file', help='File to which to write OSeMOSYS data')
-    csv_parser.set_defaults(func=csv2datafile)
 
     datapackage_parser = prep_subparsers.add_parser('datapackage',
                                                     help='Convert a folder of csv file to a datapackage')
