@@ -27,7 +27,7 @@ CapacityOfOneTechnologyUnit:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
-    default: 1
+    default: 0
 CapacityToActivityUnit:
     indices: [REGION,TECHNOLOGY]
     type: param
@@ -257,7 +257,7 @@ TotalTechnologyAnnualActivityLowerLimit:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
-    default:
+    default: 0
 TotalTechnologyAnnualActivityUpperLimit:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
