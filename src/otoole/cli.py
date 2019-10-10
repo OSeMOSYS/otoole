@@ -3,24 +3,18 @@
 Example
 -------
 >>> otoole --help
-usage: otoole [-h] [-s START_YEAR] [-e END_YEAR] [--csv | --cbc]
-              cplex_file output_file
+usage: otoole [-h] [-v] {prep,cplex} ...
 
-Otoole: Python toolkit of OSeMOSYS users
+otoole: Python toolkit of OSeMOSYS users
 
 positional arguments:
-  cplex_file            The filepath of the OSeMOSYS cplex output file
-  output_file           The filepath of the converted file that will be
-                        written
+  {prep,cplex}
+    prep        Prepare an OSeMOSYS datafile
+    cplex       Process a CPLEX solution file
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -s START_YEAR, --start_year START_YEAR
-                        Output only the results from this year onwards
-  -e END_YEAR, --end_year END_YEAR
-                        Output only the results upto and including this year
-  --csv                 Output file in comma-separated-values format
-  --cbc                 Output file in CBC format, (default option)
+  -h, --help    show this help message and exit
+  -v            Enable debug mode
 
 """
 import argparse
@@ -105,4 +99,6 @@ def main():
 
     if 'func' in args:
         args.func(args)
+    else:
+        parser.print_help()
     logging.info('Finished')
