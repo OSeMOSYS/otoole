@@ -46,6 +46,7 @@ def generate_package(path_to_simplicity):
 
             schema = resource.schema
             schema.descriptor['foreignKeys'] = foreign_keys
+            schema.descriptor['primaryKey'] = indices
             schema.commit()
 
     filepath = os.path.join(path_to_simplicity, 'datapackage.json')
