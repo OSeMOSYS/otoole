@@ -56,6 +56,8 @@ def datapackage2datafile(args):
 def get_parser():
     parser = argparse.ArgumentParser(description="otoole: Python toolkit of OSeMOSYS users")
 
+    parser.add_argument('-v', help='Enable debug mode', action='store_true')
+
     subparsers = parser.add_subparsers()
 
     # Parser for pre-processing related commands
@@ -107,6 +109,10 @@ def main():
     logging.info('Started')
     parser = get_parser()
     args = parser.parse_args(sys.argv[1:])
+
+    if args.v:
+        logging.basicConfig(filename='myapp.log', level=logging.DEBUG, filemode='a')
+
     if 'func' in args:
         args.func(args)
     logging.info('Finished')

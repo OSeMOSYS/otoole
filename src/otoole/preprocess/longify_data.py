@@ -83,6 +83,8 @@ def cast_to_int(value):
 
 
 def main(output_folder, narrow_folder):
+    """Read in a folder of irregular wide-format files and write as narrow csvs
+    """
     config = read_config()
 
     for parameter, details in config.items():

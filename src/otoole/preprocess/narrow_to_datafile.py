@@ -1,5 +1,5 @@
+import io
 import logging
-import os
 import sys
 
 import pandas as pd
@@ -8,7 +8,7 @@ from datapackage import Package
 logger = logging.getLogger(__name__)
 
 
-def write_parameter(filepath, df: pd.DataFrame, parameter_name, default):
+def write_parameter(filepath: io.TextIOBase, df: pd.DataFrame, parameter_name, default):
     """
 
     Arguments
@@ -24,7 +24,7 @@ def write_parameter(filepath, df: pd.DataFrame, parameter_name, default):
     return filepath
 
 
-def write_set(filepath, df: pd.DataFrame, set_name):
+def write_set(filepath: io.TextIOBase, df: pd.DataFrame, set_name):
     """
 
     Arguments
@@ -47,8 +47,7 @@ def read_narrow_csv(filepath):
 
 def main(datapackage, datafilepath):
 
-    filepath = os.path.join(datapackage, 'datapackage.json')
-    package = Package(filepath)
+    package = Package(datapackage)
 
     with open(datafilepath, 'w') as filepath:
 

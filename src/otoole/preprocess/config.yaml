@@ -274,7 +274,7 @@ TotalTechnologyModelPeriodActivityUpperLimit:
     dtype: float
     default: 99999
 TradeRoute:
-    indices: [REGION,REGION,FUEL,YEAR]
+    indices: [REGION,FUEL,YEAR]
     type: param
     dtype: float
     default: 0
