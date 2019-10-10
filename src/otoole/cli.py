@@ -92,7 +92,7 @@ def get_parser():
 
 def main():
 
-    logging.basicConfig(filename='myapp.log', level=logging.DEBUG)
+    logging.basicConfig(filename='myapp.log', level=logging.DEBUG, filemode='w')
     logging.info('Started')
     parser = get_parser()
     args = parser.parse_args(sys.argv[1:])
