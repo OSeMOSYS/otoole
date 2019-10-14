@@ -30,25 +30,50 @@ def main(path_to_datapackage):
     def extract_nodes(package_rows: List[List], node_type='technology', color='red', shape='circle') -> List:
         nodes = [(x[0], {'type': node_type, 'name': x,
                          'fillcolor': color, 'shape': shape,
-                         'style': 'filled'})
+                         'style': 'filled'}
+                  )
                  for x in package_rows]
 
         return nodes
 
+    def extract_edges(package_rows: List[Dict], from_column, to_column, value_attribute_name):
+        edges = [(x[from_column], x[to_column],
+                 {value_attribute_name: float(x['VALUE'])}
+                  )
+                 for x in package_rows]
+        return edges
+
     nodes = extract_nodes(technologies, shape='square', color='yellow')
-    nodes += extract_nodes(storage, node_type='storage', shape='triangle', color='blue')
+    nodes += extract_nodes(storage, node_type='storage', shape='triangle', color='lightblue')
     nodes += extract_nodes(fuel, node_type='fuel', color='white')
     nodes += extract_nodes(emission, node_type='emission', color='grey')
+    nodes += [('AccumulatedAnnualDemand',
+               {'type': 'demand', 'fillcolor': 'green',
+                'name': 'AccumulatedAnnualDemand',
+                'style': 'filled'}
+               )
+              ]
 
     input_activity = package.get_resource('InputActivityRatio').read(keyed=True)
     output_activity = package.get_resource('OutputActivityRatio').read(keyed=True)
     emission_activity = package.get_resource('EmissionActivityRatio').read(keyed=True)
+    tech2storage = package.get_resource('TechnologyToStorage').read(keyed=True)
+    techfromstorage = package.get_resource('TechnologyFromStorage').read(keyed=True)
+    demand = package.get_resource('AccumulatedAnnualDemand').read(keyed=True)
 
-    edges = [(x['FUEL'], x['TECHNOLOGY'], {'input_ratio': float(x['VALUE'])}) for x in input_activity]
+    edges = extract_edges(input_activity, 'FUEL', 'TECHNOLOGY', 'input_ratio')
 
-    edges += [(x['TECHNOLOGY'], x['FUEL'], {'output_ratio': float(x['VALUE'])}) for x in output_activity]
+    edges += extract_edges(output_activity, 'TECHNOLOGY', 'FUEL', 'output_ratio')
 
-    edges += [(x['TECHNOLOGY'], x['EMISSION'], {'emission_ratio': float(x['VALUE'])}) for x in emission_activity]
+    edges += extract_edges(emission_activity, 'TECHNOLOGY', 'EMISSION', 'emission_ratio')
+
+    edges += extract_edges(tech2storage, 'TECHNOLOGY', 'STORAGE', 'input_ratio')
+
+    edges += extract_edges(techfromstorage, 'STORAGE', 'TECHNOLOGY', 'ouput_ratio')
+
+    edges += [(x['FUEL'], 'AccumulatedAnnualDemand',
+              {'Demand': float(x['VALUE'])})
+              for x in demand]
 
     graph = build_graph(nodes, edges)
     draw_graph(graph)
