@@ -4,7 +4,6 @@ import logging
 import sys
 from typing import Dict, List, Tuple
 
-import matplotlib.pyplot as plt
 import networkx as nx
 from datapackage import Package
 
@@ -27,7 +26,8 @@ def main(path_to_datapackage):
     fuel = package.get_resource('FUEL').read()
     emission = package.get_resource('EMISSION').read()
 
-    def extract_nodes(package_rows: List[List], node_type='technology', color='red', shape='circle') -> List:
+    def extract_nodes(package_rows: List[List], node_type='technology',
+                      color='red', shape='circle') -> List:
         nodes = [(x[0], {'type': node_type, 'name': x,
                          'fillcolor': color, 'shape': shape,
                          'style': 'filled'}
@@ -36,16 +36,29 @@ def main(path_to_datapackage):
 
         return nodes
 
-    def extract_edges(package_rows: List[Dict], from_column, to_column, value_attribute_name):
-        edges = [(x[from_column], x[to_column],
-                 {value_attribute_name: float(x['VALUE'])}
-                  )
+    def add_fuel(package_rows: List[List]) -> List:
+        nodes = [(x[0],
+                 {'type': 'fuel', 'style': 'filled', 'shape': 'circle', 'height': 0.1, 'width': 0.1, 'label': ""})
                  for x in package_rows]
+        return nodes
+
+    def extract_edges(package_rows: List[Dict], from_column, to_column, value_attribute_name, from_edge: bool = True):
+        """[]
+        """
+        if from_edge:
+            edges = [(x[from_column], x[to_column],
+                     {value_attribute_name: float(x['VALUE']), 'dir': 'none'})
+                     for x in package_rows]
+        else:
+            edges = [(x[from_column], x[to_column],
+                     {value_attribute_name: float(x['VALUE']), 'label': x[from_column]})
+                     for x in package_rows]
+
         return edges
 
-    nodes = extract_nodes(technologies, shape='square', color='yellow')
+    nodes = extract_nodes(technologies, shape='rectangle', color='yellow')
     nodes += extract_nodes(storage, node_type='storage', shape='triangle', color='lightblue')
-    nodes += extract_nodes(fuel, node_type='fuel', color='white')
+    nodes += add_fuel(fuel)
     nodes += extract_nodes(emission, node_type='emission', color='grey')
     nodes += [('AccumulatedAnnualDemand',
                {'type': 'demand', 'fillcolor': 'green',
@@ -61,7 +74,7 @@ def main(path_to_datapackage):
     techfromstorage = package.get_resource('TechnologyFromStorage').read(keyed=True)
     demand = package.get_resource('AccumulatedAnnualDemand').read(keyed=True)
 
-    edges = extract_edges(input_activity, 'FUEL', 'TECHNOLOGY', 'input_ratio')
+    edges = extract_edges(input_activity, 'FUEL', 'TECHNOLOGY', 'input_ratio', from_edge=False)
 
     edges += extract_edges(output_activity, 'TECHNOLOGY', 'FUEL', 'output_ratio')
 
@@ -81,12 +94,11 @@ def main(path_to_datapackage):
 
 def draw_graph(graph):
 
-    pos = nx.nx_agraph.graphviz_layout(graph, prog='neato')
+    pygraph = nx.nx_agraph.to_agraph(graph)
+    pygraph.graph_attr['rankdir'] = 'LR'
 
-    nx.nx_agraph.write_dot(graph, 'file.dot')
-    nx.draw_networkx(graph, pos=pos)
-    # write_dot(graph, 'file.dot')
-    plt.savefig("res.png")
+    pygraph.layout(prog='dot')
+    pygraph.draw('res.png')
 
 
 def build_graph(nodes: List[Tuple], edges: List[Tuple[str, str, Dict]]):
