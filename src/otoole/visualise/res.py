@@ -60,7 +60,7 @@ def main(path_to_datapackage):
     nodes += extract_nodes(storage, node_type='storage', shape='triangle', color='lightblue')
     nodes += add_fuel(fuel)
     nodes += extract_nodes(emission, node_type='emission', color='grey')
-    nodes += [('AccumulatedAnnualDemand',
+    nodes += [('AnnualDemand',
                {'type': 'demand', 'fillcolor': 'green',
                 'name': 'AccumulatedAnnualDemand',
                 'style': 'filled'}
@@ -72,7 +72,8 @@ def main(path_to_datapackage):
     emission_activity = package.get_resource('EmissionActivityRatio').read(keyed=True)
     tech2storage = package.get_resource('TechnologyToStorage').read(keyed=True)
     techfromstorage = package.get_resource('TechnologyFromStorage').read(keyed=True)
-    demand = package.get_resource('AccumulatedAnnualDemand').read(keyed=True)
+    acc_demand = package.get_resource('AccumulatedAnnualDemand').read(keyed=True)
+    spec_demand = package.get_resource('SpecifiedAnnualDemand').read(keyed=True)
 
     edges = extract_edges(input_activity, 'FUEL', 'TECHNOLOGY', 'input_ratio', from_edge=False)
 
@@ -84,9 +85,12 @@ def main(path_to_datapackage):
 
     edges += extract_edges(techfromstorage, 'STORAGE', 'TECHNOLOGY', 'ouput_ratio')
 
-    edges += [(x['FUEL'], 'AccumulatedAnnualDemand',
-              {'Demand': float(x['VALUE'])})
-              for x in demand]
+    edges += [(x['FUEL'], 'AnnualDemand',
+              {'Demand': float(x['VALUE']), 'label': x['FUEL']})
+              for x in acc_demand]
+    edges += [(x['FUEL'], 'AnnualDemand',
+              {'Demand': float(x['VALUE']), 'label': x['FUEL']})
+              for x in spec_demand]
 
     graph = build_graph(nodes, edges)
     draw_graph(graph)
