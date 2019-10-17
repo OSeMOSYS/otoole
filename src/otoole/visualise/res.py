@@ -100,6 +100,8 @@ def draw_graph(graph):
 
     pygraph = nx.nx_agraph.to_agraph(graph)
     pygraph.graph_attr['rankdir'] = 'LR'
+    pygraph.graph_attr['splines'] = 'ortho'
+    pygraph.graph_attr['concentrate'] = 'true'
 
     pygraph.layout(prog='dot')
     pygraph.draw('res.png')
