@@ -25,6 +25,7 @@ The aim of the package is to provide a community resource which
 centralises the commonly used pre- and post-processing steps
 around the use of OSeMOSYS.
 
+
 Installation
 ============
 
@@ -32,20 +33,31 @@ Install **otoole** using pip::
 
     pip install otoole
 
-Install a development version
-=============================
 
-To install the package in develop mode:
+Contributing
+============
+
+New ideas and bugs are found on the repository Issue Tracker.
+Please do contribute by discussing and developing these ideas further,
+or by developing the codebase.
+
+To contribute directly to the documentation of code development, you
+first need to install the package in *develop mode*:
 
     git clone http://github.com/OSeMOSYS/otoole
-    cd otoole                              #
-    git checkout <branch you wish to use>  # obtain the version of the source code you wish to use
-    python setup.py develop                # install the package in develop mode
+    cd otoole
+    git checkout <branch you wish to use>
+    python setup.py develop
+
+Now, all changes made in the codebase will automatically be reflected
+in the installed Python version accessible on the command line or from
+importing otoole modules into other Python packages.
 
 
+Usage
+=====
 
-Note
-====
+For detailed instructions of the use of the tool, run the command line
+help function::
 
-This project has been set up using PyScaffold 3.2.2. For details and usage
-information on PyScaffold see https://pyscaffold.org/.
+    otoole --help
