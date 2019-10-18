@@ -32,6 +32,17 @@ Install **otoole** using pip::
 
     pip install otoole
 
+Install a development version
+=============================
+
+To install the package in develop mode:
+
+    git clone http://github.com/OSeMOSYS/otoole
+    cd otoole                              #
+    git checkout <branch you wish to use>  # obtain the version of the source code you wish to use
+    python setup.py develop                # install the package in develop mode
+
+
 
 Note
 ====
