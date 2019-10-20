@@ -26,7 +26,7 @@ Download an OSeMOSYS datapackage and convert it to a modelfile::
 
     otoole prep datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip ./simplicity.txt
 
-Visualise the Reference Energy System
+Visualise the Reference Energy System::
 
     otoole viz res https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip res.png && open res.png
 
