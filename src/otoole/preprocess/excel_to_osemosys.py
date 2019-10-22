@@ -181,15 +181,24 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def read_config() -> Dict:
+def read_config(path_to_user_config: str = None) -> Dict:
     """Reads the config file holding expected OSeMOSYS set and parameter dimensions
+
+    Arguments
+    ---------
+    path_to_user_config : str, optional, default=None
+        Optional path to a user defined configuration file
 
     Returns
     -------
     dict
     """
-    with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
-        config = load(config_file, Loader=SafeLoader)
+    if path_to_user_config:
+        with open(path_to_user_config, 'r') as user_config_file:
+            config = load(user_config_file, Loader=SafeLoader)
+    else:
+        with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
+            config = load(config_file, Loader=SafeLoader)
     return config
 
 
