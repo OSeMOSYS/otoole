@@ -167,7 +167,7 @@ param ModelPeriodEmissionLimit{r in REGION, e in EMISSION};
 import csv
 import logging
 import os
-from typing import List
+from typing import Dict, List
 
 import xlrd
 from yaml import SafeLoader, load
@@ -181,8 +181,13 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def read_config():
+def read_config() -> Dict:
+    """Reads the config file holding expected OSeMOSYS set and parameter dimensions
 
+    Returns
+    -------
+    dict
+    """
     with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
         config = load(config_file, Loader=SafeLoader)
     return config
