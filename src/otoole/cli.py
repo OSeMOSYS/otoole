@@ -23,6 +23,7 @@ import sys
 
 from otoole.preprocess import convert_file_to_package, create_datafile, create_datapackage, generate_csv_from_excel
 from otoole.results.convert import convert_cplex_file
+from otoole.visualise import create_res
 
 
 def excel2csv(args):
@@ -48,6 +49,10 @@ def conversion_matrix(args):
     else:
         msg = "Conversion from {} to {} is not yet implemented".format(args.convert_from, args.convert_to)
         raise NotImplementedError(msg)
+
+
+def datapackage2res(args):
+    create_res(args.datapackage, args.resfile)
 
 
 def get_parser():
@@ -100,12 +105,21 @@ def get_parser():
                               help="Output only the results upto and including this year")
     cplex_parser.add_argument('output_format', choices=['csv', 'cbc'], default='cbc')
     cplex_parser.set_defaults(func=cplex2cbc)
+
+    # Parser for visualisation
+    viz_parser = subparsers.add_parser('viz', help='Visualise the model')
+    viz_subparsers = viz_parser.add_subparsers()
+
+    res_parser = viz_subparsers.add_parser('res', help='Generate a reference energy system')
+    res_parser.add_argument('datapackage', help='Path to model datapackage')
+    res_parser.add_argument('resfile', help='Path to reference energy system')
+    res_parser.set_defaults(func=datapackage2res)
+
     return parser
 
 
 def main():
 
-    logging.info('Started')
     parser = get_parser()
     args = parser.parse_args(sys.argv[1:])
 
@@ -118,4 +132,3 @@ def main():
         args.func(args)
     else:
         parser.print_help()
-    logging.info('Finished')

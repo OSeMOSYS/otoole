@@ -22,13 +22,13 @@ Install ``otoole`` using pip::
 
     pip install otoole
 
-Obtain the latest version of OSeMOSYS::
-
-    otoole setup osemosys
-
 Download an OSeMOSYS datapackage and convert it to a modelfile::
 
-    otoole prep datafile http://github.com/KTH-dESA/model_library/simplicity/datapackage.json ./simplicity.txt
+    otoole prep datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip ./simplicity.txt
+
+Visualise the Reference Energy System::
+
+    otoole viz res https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip res.png && open res.png
 
 Run OSeMOSYS with the modelfile and place the results in a folder::
 
