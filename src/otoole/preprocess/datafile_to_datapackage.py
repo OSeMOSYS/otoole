@@ -11,10 +11,9 @@ from flatten_dict import flatten
 from pulp import Amply
 
 from otoole.preprocess.excel_to_osemosys import read_config
-from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
+from otoole.preprocess.longify_data import check_datatypes, check_set_datatype, write_out_dataframe
 
 logger = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.DEBUG)
 
 
 def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
@@ -33,12 +32,16 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
     if not os.path.exists(path_to_datapackage):
         os.mkdir(path_to_datapackage)
     for name, df in dict_of_dataframes.items():
-        filepath = os.path.join(path_to_datapackage, name + '.csv')
-        df.to_csv(filepath)
+        write_out_dataframe(path_to_datapackage, name, df)
 
 
-def read_in_datafile(path_to_datafile: str, config: Dict):
-    """
+def read_in_datafile(path_to_datafile: str, config: Dict) -> Amply:
+    """Read in a datafile using the Amply parsing class
+
+    Arguments
+    ---------
+    path_to_datafile: str
+    config: Dict
     """
     parameter_definitions = load_parameter_definitions(config)
     datafile_parser = Amply(parameter_definitions)
@@ -50,7 +53,18 @@ def read_in_datafile(path_to_datafile: str, config: Dict):
     return datafile_parser
 
 
-def convert_amply_to_dataframe(datafile_parser, config) -> Dict:
+def convert_amply_to_dataframe(datafile_parser, config) -> Dict[str, pd.DataFrame]:
+    """Converts an amply parser to a dict of pandas dataframes
+
+    Arguments
+    ---------
+    datafile_parser : Amply
+    config : Dict
+
+    Returns
+    -------
+    dict of pandas.DataFrame
+    """
 
     dict_of_dataframes = {}
 
@@ -82,7 +96,13 @@ def convert_amply_to_dataframe(datafile_parser, config) -> Dict:
     return dict_of_dataframes
 
 
-def convert_amply_data_to_list(amply_data: Dict) -> List:
+def convert_amply_data_to_list(amply_data: Dict) -> List[List]:
+    """Flattens a dictionary into a list of lists
+
+    Arguments
+    ---------
+    amply_data: dict
+    """
 
     data = []
 
@@ -93,15 +113,12 @@ def convert_amply_data_to_list(amply_data: Dict) -> List:
     return data
 
 
-def write_file(path_to_datapackage, datafile_parser):
-
-    with open(path_to_datapackage, 'w') as datapackage:
-        for symbol in datafile_parser.symbols:
-            datapackage.write(datafile_parser[symbol].data)
-
-
-def load_parameter_definitions(config):
+def load_parameter_definitions(config: dict) -> str:
     """Load the set and parameter dimensions into datafile parser
+
+    Returns
+    -------
+    str
     """
     elements = ""
 

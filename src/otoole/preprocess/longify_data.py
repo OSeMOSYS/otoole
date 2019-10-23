@@ -140,10 +140,23 @@ def main(output_folder, narrow_folder):
             else:
                 narrow_checked = narrow
 
-        filepath = os.path.join(narrow_folder, 'data', parameter + '.csv')
-        with open(filepath, 'w') as csvfile:
-            logger.info("Writing %s rows into narrow file for %s", narrow_checked.shape[0], parameter)
-            narrow_checked.to_csv(csvfile, index=False)
+        write_out_dataframe(narrow_folder, parameter, narrow_checked)
+
+
+def write_out_dataframe(folder, parameter, df):
+    """
+
+    Arguments
+    ---------
+    folder : str
+    parameter : str
+    df : pandas.DataFrame
+
+    """
+    filepath = os.path.join(folder, 'data', parameter + '.csv')
+    with open(filepath, 'w') as csvfile:
+        logger.info("Writing %s rows into narrow file for %s", df.shape[0], parameter)
+        df.to_csv(csvfile, index=False)
 
 
 if __name__ == '__main__':
