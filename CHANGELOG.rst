@@ -2,6 +2,16 @@
 Changelog
 =========
 
+Version 0.3
+===========
+
+- Create a Tabular Data Package from an OSeMOSYS datafile
+
+Version 0.2
+===========
+
+- Visualise a reference energy system from a Tabular Data Package
+
 Version 0.1
 ===========
 
