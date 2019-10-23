@@ -95,14 +95,14 @@ def check_datatypes(narrow: pd.DataFrame, config_details: Dict, parameter: str) 
             logger.warning("dtype of column %s does not match %s for parameter %s", column, datatype, parameter)
             if datatype == 'int':
                 try:
-                    narrow[column] = narrow[column].apply(cast_to_int)
+                    narrow[column] = narrow[column].apply(_cast_to_int)
                 except ValueError as ex:
                     msg = "Unable to apply datatype for column {}: {}".format(column, str(ex))
                     raise ValueError(msg)
     return narrow.astype(dtypes)
 
 
-def cast_to_int(value):
+def _cast_to_int(value):
     return int(float(value))
 
 
@@ -144,7 +144,7 @@ def main(output_folder, narrow_folder):
 
 
 def write_out_dataframe(folder, parameter, df):
-    """
+    """Writes out a dataframe as a csv into the data subfolder of a datapackage
 
     Arguments
     ---------
