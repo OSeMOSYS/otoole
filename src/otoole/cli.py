@@ -21,7 +21,7 @@ import argparse
 import logging
 import sys
 
-from otoole.preprocess import create_datafile, create_datapackage, generate_csv_from_excel
+from otoole.preprocess import convert_file_to_package, create_datafile, create_datapackage, generate_csv_from_excel
 from otoole.results.convert import convert_cplex_file
 
 
@@ -42,10 +42,18 @@ def datapackage2datafile(args):
     create_datafile(args.datapackage, args.datafile)
 
 
+def conversion_matrix(args):
+    if (args.convert_from == 'datafile') and (args.convert_to == 'datapackage'):
+        convert_file_to_package(args.from_file, args.to_file)
+    else:
+        msg = "Conversion from {} to {} is not yet implemented".format(args.convert_from, args.convert_to)
+        raise NotImplementedError(msg)
+
+
 def get_parser():
     parser = argparse.ArgumentParser(description="otoole: Python toolkit of OSeMOSYS users")
 
-    parser.add_argument('--verbose', '-v', help='Enable debug mode', action='count')
+    parser.add_argument('--verbose', '-v', help='Enable debug mode', action='count', default=0)
 
     subparsers = parser.add_subparsers()
 
@@ -69,6 +77,14 @@ def get_parser():
     datafile_parser.add_argument('datapackage', help='Path to destination for datapackage')
     datafile_parser.add_argument('datafile', help='Path to datafile')
     datafile_parser.set_defaults(func=datapackage2datafile)
+
+    # Parser for conversion
+    convert_parser = subparsers.add_parser('convert', help='Convert from one input format to another')
+    convert_parser.add_argument('--convert_from', '-f', help='Input data format to convert from')
+    convert_parser.add_argument('--convert_to', '-t', help='Input data format to convert to')
+    convert_parser.add_argument('--from_file', help="Path to file to convert from")
+    convert_parser.add_argument('--to_file', help='Path to file to convert to')
+    convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for the CPLEX related commands
     cplex_parser = subparsers.add_parser('cplex',
