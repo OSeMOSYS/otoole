@@ -34,6 +34,11 @@ Install **otoole** using pip::
     pip install otoole
 
 
+To upgrade **otoole** using pip::
+
+    pip install otoole --upgrade
+
+
 Contributing
 ============
 
@@ -42,7 +47,7 @@ Please do contribute by discussing and developing these ideas further,
 or by developing the codebase.
 
 To contribute directly to the documentation of code development, you
-first need to install the package in *develop mode*:
+first need to install the package in *develop mode*::
 
     git clone http://github.com/OSeMOSYS/otoole
     cd otoole
