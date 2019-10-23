@@ -10,7 +10,7 @@ import pandas as pd
 from flatten_dict import flatten
 from pulp import Amply
 
-from otoole.preprocess.excel_to_osemosys import read_config
+from otoole.preprocess.excel_to_osemosys import read_config, read_datapackage
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype, write_out_dataframe
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,10 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
         os.mkdir(path_to_datapackage)
     for name, df in dict_of_dataframes.items():
         write_out_dataframe(path_to_datapackage, name, df)
+    datapackage = read_datapackage()
+    filepath = os.path.join(path_to_datapackage, 'datapackage.json')
+    with open(filepath, 'w') as destination:
+        destination.writelines(datapackage)
 
 
 def read_in_datafile(path_to_datafile: str, config: Dict) -> Amply:

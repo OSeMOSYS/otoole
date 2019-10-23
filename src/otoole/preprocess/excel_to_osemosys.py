@@ -192,6 +192,12 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def read_datapackage():
+    with pkg_resources.open_text('otoole.preprocess', 'datapackage.json') as json_file:
+        json = json_file.readlines()
+    return json
+
+
 def read_config(path_to_user_config: str = None) -> Dict:
     """Reads the config file holding expected OSeMOSYS set and parameter dimensions
 

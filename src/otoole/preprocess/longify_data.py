@@ -153,6 +153,7 @@ def write_out_dataframe(folder, parameter, df):
     df : pandas.DataFrame
 
     """
+    os.makedirs(os.path.join(folder, 'data'), exist_ok=True)
     filepath = os.path.join(folder, 'data', parameter + '.csv')
     with open(filepath, 'w') as csvfile:
         logger.info("Writing %s rows into narrow file for %s", df.shape[0], parameter)
