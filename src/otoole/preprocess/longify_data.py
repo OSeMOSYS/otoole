@@ -50,16 +50,36 @@ def check_set(df, config_details, name):
     return narrow
 
 
-def check_set_datatype(narrow: pd.DataFrame, config_details: Dict, parameter: str) -> pd.DataFrame:
-    datatype = config_details[parameter]['dtype']
-    logger.debug('Columns for set %s are: %s', parameter, narrow.columns)
+def check_set_datatype(narrow: pd.DataFrame, config_details: Dict, set_name: str) -> pd.DataFrame:
+    """Checks the datatypes of a set_name dataframe
+
+    Arguments
+    ---------
+    narrow : pandas.DataFrame
+        The set data
+    config_details : dict
+        The configuration dictionary
+    set_name : str
+        The name of the set
+    """
+    datatype = config_details[set_name]['dtype']
+    logger.debug('Columns for set %s are: %s', set_name, narrow.columns)
     if narrow.iloc[:, 0].dtype != datatype:
-        logger.warning("dtype does not match %s for set %s", datatype, parameter)
+        logger.warning("dtype does not match %s for set %s", datatype, set_name)
     return narrow
 
 
 def check_datatypes(narrow: pd.DataFrame, config_details: Dict, parameter: str) -> pd.DataFrame:
-    """
+    """Checks a parameters datatypes
+
+    Arguments
+    ---------
+    narrow : pandas.DataFrame
+        The parameter data
+    config_details : dict
+        The configuration dictionary
+    parameter : str
+        The name of the parameter
     """
     logger.info("Checking datatypes for %s", parameter)
     dtypes = {}
@@ -74,11 +94,15 @@ def check_datatypes(narrow: pd.DataFrame, config_details: Dict, parameter: str) 
         if narrow[column].dtype != datatype:
             logger.warning("dtype of column %s does not match %s for parameter %s", column, datatype, parameter)
             if datatype == 'int':
-                narrow[column] = narrow[column].apply(cast_to_int)
+                try:
+                    narrow[column] = narrow[column].apply(_cast_to_int)
+                except ValueError as ex:
+                    msg = "Unable to apply datatype for column {}: {}".format(column, str(ex))
+                    raise ValueError(msg)
     return narrow.astype(dtypes)
 
 
-def cast_to_int(value):
+def _cast_to_int(value):
     return int(float(value))
 
 
@@ -116,10 +140,24 @@ def main(output_folder, narrow_folder):
             else:
                 narrow_checked = narrow
 
-        filepath = os.path.join(narrow_folder, 'data', parameter + '.csv')
-        with open(filepath, 'w') as csvfile:
-            logger.info("Writing %s rows into narrow file for %s", narrow_checked.shape[0], parameter)
-            narrow_checked.to_csv(csvfile, index=False)
+        write_out_dataframe(narrow_folder, parameter, narrow_checked)
+
+
+def write_out_dataframe(folder, parameter, df):
+    """Writes out a dataframe as a csv into the data subfolder of a datapackage
+
+    Arguments
+    ---------
+    folder : str
+    parameter : str
+    df : pandas.DataFrame
+
+    """
+    os.makedirs(os.path.join(folder, 'data'), exist_ok=True)
+    filepath = os.path.join(folder, 'data', parameter + '.csv')
+    with open(filepath, 'w') as csvfile:
+        logger.info("Writing %s rows into narrow file for %s", df.shape[0], parameter)
+        df.to_csv(csvfile, index=False)
 
 
 if __name__ == '__main__':

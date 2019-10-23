@@ -9,23 +9,26 @@ Notes
 =====
 
 Sets
-~~~~
-set YEAR;
-set TECHNOLOGY;
-set TIMESLICE;
-set FUEL;
-set EMISSION;
-set MODE_OF_OPERATION;
-set REGION;
-set SEASON;
-set DAYTYPE;
-set DAILYTIMEBRACKET;
-set FLEXIBLEDEMANDTYPE;
-set STORAGE;
+----
+These are the standard sets::
 
-All sets are written in a CSV file in one column of values with no header.
+    set YEAR;
+    set TECHNOLOGY;
+    set TIMESLICE;
+    set FUEL;
+    set EMISSION;
+    set MODE_OF_OPERATION;
+    set REGION;
+    set SEASON;
+    set DAYTYPE;
+    set DAILYTIMEBRACKET;
+    set FLEXIBLEDEMANDTYPE;
+    set STORAGE;
+
+All sets are written in a CSV file in one column of values with header of ``VALUE``.
 For example, the CSV file for set YEAR::
 
+    VALUE
     2015
     2016
     2017
@@ -37,29 +40,30 @@ Sets are written into the OSeMOSYS data file using the following syntax::
 
     set YEAR := 2014 2015 2016 2017 2018 2019 2020 ;
 
-Parameters
-~~~~~~~~~~
 
+Parameters
+----------
 In general, parameters can be written into CSV files in narrow or wide
 formats. In narrow format, the CSV file should look as follows::
 
-    TIMESLICE,YEAR,VALUE
-    ID,2014,0.1667
-    IN,2014,0.0833
-    SD,2014,0.1667
-    SN,2014,0.0833
-    WD,2014,0.3333
-    WN,2014,0.1667
+    REGION,TIMESLICE,YEAR,VALUE
+    SIMPLICITY,ID,2014,0.1667
+    SIMPLICITY,IN,2014,0.0833
+    SIMPLICITY,SD,2014,0.1667
+    SIMPLICITY,SN,2014,0.0833
+    SIMPLICITY,WD,2014,0.3333
+    SIMPLICITY,WN,2014,0.1667
+
 
 In wide format, the final index is transposed::
 
-    TIMESLICE,2014,2015,...
-    ID,0.1667,0.1667
-    IN,0.0833,0.0833
-    SD,0.1667,0.1667
-    SN,0.0833,0.0833
-    WD,0.3333,0.3333
-    WN,0.1667,0.1667
+    REGION,TIMESLICE,2014,2015,...
+    SIMPLICITY,ID,0.1667,0.1667
+    SIMPLICITY,IN,0.0833,0.0833
+    SIMPLICITY,SD,0.1667,0.1667
+    SIMPLICITY,SN,0.0833,0.0833
+    SIMPLICITY,WD,0.3333,0.3333
+    SIMPLICITY,WN,0.1667,0.1667
 
 Wide format is a bit nicer to use with spreadsheets,
 as it allows you to more easily plot graphs of values, but narrow
@@ -74,100 +78,107 @@ Writing parameteters:
 n-dimensional e.g. DaysInDayType{ls in SEASON, ld in DAYTYPE, y in YEAR}
 
 
+Global parameters::
 
-Global
-------
-param YearSplit{l in TIMESLICE, y in YEAR};
-param DiscountRate{r in REGION};
-param DaySplit{lh in DAILYTIMEBRACKET, y in YEAR};
-param Conversionls{l in TIMESLICE, ls in SEASON};
-param Conversionld{l in TIMESLICE, ld in DAYTYPE};
-param Conversionlh{l in TIMESLICE, lh in DAILYTIMEBRACKET};
-param DaysInDayType{ls in SEASON, ld in DAYTYPE, y in YEAR};
-param TradeRoute{r in REGION, rr in REGION, f in FUEL, y in YEAR};
-param DepreciationMethod{r in REGION};
+    param YearSplit{l in TIMESLICE, y in YEAR};
+    param DiscountRate{r in REGION};
+    param DaySplit{lh in DAILYTIMEBRACKET, y in YEAR};
+    param Conversionls{l in TIMESLICE, ls in SEASON};
+    param Conversionld{l in TIMESLICE, ld in DAYTYPE};
+    param Conversionlh{l in TIMESLICE, lh in DAILYTIMEBRACKET};
+    param DaysInDayType{ls in SEASON, ld in DAYTYPE, y in YEAR};
+    param TradeRoute{r in REGION, rr in REGION, f in FUEL, y in YEAR};
+    param DepreciationMethod{r in REGION};
 
-Demands
--------
-param SpecifiedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
-param SpecifiedDemandProfile{r in REGION, f in FUEL, l in TIMESLICE, y in YEAR};
-param AccumulatedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
 
-Performance
------------
+Demand parameters::
 
-param CapacityToActivityUnit{r in REGION, t in TECHNOLOGY};
-param TechWithCapacityNeededToMeetPeakTS{r in REGION, t in TECHNOLOGY};
-param CapacityFactor{r in REGION, t in TECHNOLOGY, l in TIMESLICE, y in YEAR};
-param AvailabilityFactor{r in REGION, t in TECHNOLOGY, y in YEAR};
-param OperationalLife{r in REGION, t in TECHNOLOGY};
-param ResidualCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
-param InputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
-param OutputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
+    param SpecifiedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
+    param SpecifiedDemandProfile{r in REGION, f in FUEL, l in TIMESLICE, y in YEAR};
+    param AccumulatedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
 
-Technology Costs
-----------------
-param CapitalCost{r in REGION, t in TECHNOLOGY, y in YEAR};
-param VariableCost{r in REGION, t in TECHNOLOGY, m in MODE_OF_OPERATION, y in YEAR};
-param FixedCost{r in REGION, t in TECHNOLOGY, y in YEAR};
 
-Storage
--------
-param TechnologyToStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
-param TechnologyFromStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
-param StorageLevelStart{r in REGION, s in STORAGE};
-param StorageMaxChargeRate{r in REGION, s in STORAGE};
-param StorageMaxDischargeRate{r in REGION, s in STORAGE};
-param MinStorageCharge{r in REGION, s in STORAGE, y in YEAR};
-param OperationalLifeStorage{r in REGION, s in STORAGE};
-param CapitalCostStorage{r in REGION, s in STORAGE, y in YEAR};
-param ResidualStorageCapacity{r in REGION, s in STORAGE, y in YEAR};
+Performance parameters::
 
-Capacity Constraints
---------------------
-param CapacityOfOneTechnologyUnit{r in REGION, t in TECHNOLOGY, y in YEAR};
-param TotalAnnualMaxCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
-param TotalAnnualMinCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param CapacityToActivityUnit{r in REGION, t in TECHNOLOGY};
+    param TechWithCapacityNeededToMeetPeakTS{r in REGION, t in TECHNOLOGY};
+    param CapacityFactor{r in REGION, t in TECHNOLOGY, l in TIMESLICE, y in YEAR};
+    param AvailabilityFactor{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param OperationalLife{r in REGION, t in TECHNOLOGY};
+    param ResidualCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param InputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
+    param OutputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
 
-Investment Constraints
-----------------------
-param TotalAnnualMaxCapacityInvestment{r in REGION, t in TECHNOLOGY, y in YEAR};
-param TotalAnnualMinCapacityInvestment{r in REGION, t in TECHNOLOGY, y in YEAR};
 
-Activity Constraints
---------------------
-param TotalTechnologyAnnualActivityUpperLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
-param TotalTechnologyAnnualActivityLowerLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
-param TotalTechnologyModelPeriodActivityUpperLimit{r in REGION, t in TECHNOLOGY};
-param TotalTechnologyModelPeriodActivityLowerLimit{r in REGION, t in TECHNOLOGY};
+Technology Costs parameters::
 
-Reserve Margin
---------------
-param ReserveMarginTagTechnology{r in REGION, t in TECHNOLOGY, y in YEAR};
-param ReserveMarginTagFuel{r in REGION, f in FUEL, y in YEAR};
-param ReserveMargin{r in REGION, y in YEAR};
+    param CapitalCost{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param VariableCost{r in REGION, t in TECHNOLOGY, m in MODE_OF_OPERATION, y in YEAR};
+    param FixedCost{r in REGION, t in TECHNOLOGY, y in YEAR};
 
-RE Generation Target
---------------------
-param RETagTechnology{r in REGION, t in TECHNOLOGY, y in YEAR};
-param RETagFuel{r in REGION, f in FUEL, y in YEAR};
-param REMinProductionTarget{r in REGION, y in YEAR};
 
-Emissions & Penalties
----------------------
-param EmissionActivityRatio{r in REGION, t in TECHNOLOGY, e in EMISSION, m in MODE_OF_OPERATION, y in YEAR};
-param EmissionsPenalty{r in REGION, e in EMISSION, y in YEAR};
-param AnnualExogenousEmission{r in REGION, e in EMISSION, y in YEAR};
-param AnnualEmissionLimit{r in REGION, e in EMISSION, y in YEAR};
-param ModelPeriodExogenousEmission{r in REGION, e in EMISSION};
-param ModelPeriodEmissionLimit{r in REGION, e in EMISSION};
+Storage parameters::
 
+    param TechnologyToStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
+    param TechnologyFromStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
+    param StorageLevelStart{r in REGION, s in STORAGE};
+    param StorageMaxChargeRate{r in REGION, s in STORAGE};
+    param StorageMaxDischargeRate{r in REGION, s in STORAGE};
+    param MinStorageCharge{r in REGION, s in STORAGE, y in YEAR};
+    param OperationalLifeStorage{r in REGION, s in STORAGE};
+    param CapitalCostStorage{r in REGION, s in STORAGE, y in YEAR};
+    param ResidualStorageCapacity{r in REGION, s in STORAGE, y in YEAR};
+
+
+Capacity Constraints parameters::
+
+    param CapacityOfOneTechnologyUnit{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param TotalAnnualMaxCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param TotalAnnualMinCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
+
+
+Investment Constraints parameters::
+
+    param TotalAnnualMaxCapacityInvestment{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param TotalAnnualMinCapacityInvestment{r in REGION, t in TECHNOLOGY, y in YEAR};
+
+
+Activity Constraints parameters::
+
+    param TotalTechnologyAnnualActivityUpperLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param TotalTechnologyAnnualActivityLowerLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param TotalTechnologyModelPeriodActivityUpperLimit{r in REGION, t in TECHNOLOGY};
+    param TotalTechnologyModelPeriodActivityLowerLimit{r in REGION, t in TECHNOLOGY};
+
+
+Reserve Margin parameters::
+
+    param ReserveMarginTagTechnology{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param ReserveMarginTagFuel{r in REGION, f in FUEL, y in YEAR};
+    param ReserveMargin{r in REGION, y in YEAR};
+
+
+RE Generation Target parameters::
+
+    param RETagTechnology{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param RETagFuel{r in REGION, f in FUEL, y in YEAR};
+    param REMinProductionTarget{r in REGION, y in YEAR};
+
+
+Emissions & Penalties parameters::
+
+    param EmissionActivityRatio{r in REGION, t in TECHNOLOGY, e in EMISSION, m in MODE_OF_OPERATION, y in YEAR};
+    param EmissionsPenalty{r in REGION, e in EMISSION, y in YEAR};
+    param AnnualExogenousEmission{r in REGION, e in EMISSION, y in YEAR};
+    param AnnualEmissionLimit{r in REGION, e in EMISSION, y in YEAR};
+    param ModelPeriodExogenousEmission{r in REGION, e in EMISSION};
+    param ModelPeriodEmissionLimit{r in REGION, e in EMISSION};
 
 """
 import csv
 import logging
 import os
-from typing import List
+from typing import Dict, List
 
 import xlrd
 from yaml import SafeLoader, load
@@ -181,10 +192,30 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def read_config():
+def read_datapackage():
+    with pkg_resources.open_text('otoole.preprocess', 'datapackage.json') as json_file:
+        json = json_file.readlines()
+    return json
 
-    with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
-        config = load(config_file, Loader=SafeLoader)
+
+def read_config(path_to_user_config: str = None) -> Dict:
+    """Reads the config file holding expected OSeMOSYS set and parameter dimensions
+
+    Arguments
+    ---------
+    path_to_user_config : str, optional, default=None
+        Optional path to a user defined configuration file
+
+    Returns
+    -------
+    dict
+    """
+    if path_to_user_config:
+        with open(path_to_user_config, 'r') as user_config_file:
+            config = load(user_config_file, Loader=SafeLoader)
+    else:
+        with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
+            config = load(config_file, Loader=SafeLoader)
     return config
 
 
