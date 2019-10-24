@@ -39,6 +39,20 @@ To upgrade **otoole** using pip::
     pip install otoole --upgrade
 
 
+Dependencies
+------------
+
+*otoole* requires a number of dependencies, including pygraphviz,
+which can be difficult to install on Windows.
+
+The easiest way to install the dependencies is to use miniconda.
+
+1. Obtain the [miniconda package](https://docs.conda.io/en/latest/miniconda.html)
+2. Add the *conda-forge* channel ``conda config --add channels conda-forge``
+3. Create a new Python environment ``conda create -n myenv python=3.7 datapackage pandas pulp pygraphviz xlrd``
+4. Activate the new environment ``conda activate myenv``
+5. Use pip to install otoole ``pip install otoole``
+
 Contributing
 ============
 
