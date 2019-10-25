@@ -22,6 +22,10 @@ Install ``otoole`` using pip::
 
     pip install otoole
 
+Check the version installed::
+
+    otoole -V
+
 Download an OSeMOSYS datapackage and convert it to a modelfile::
 
     otoole prep datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip ./simplicity.txt
@@ -30,9 +34,10 @@ Visualise the Reference Energy System::
 
     otoole viz res https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip res.png && open res.png
 
-Run OSeMOSYS with the modelfile and place the results in a folder::
+Alternatively, convert an OSeMOSYS datafile to a datapackage::
 
-    otoole run --modelfile simplicity.txt --datapackage results
+    otoole convert --convert_from datafile --convert_to datapackage --from_file simplicity.txt --to_file simplicity
+
 
 Contents
 ========
