@@ -25,6 +25,26 @@ The aim of the package is to provide a community resource which
 centralises the commonly used pre- and post-processing steps
 around the use of OSeMOSYS.
 
+.. image:: img/osemosys_dataflow.png
+
+**otoole** aims to support different ways of storing input data and results,
+including csv files, databases, datapackages and Excel workbooks,
+as well as different implementations of the OSeMOSYS model.
+
+Dependencies
+------------
+
+*otoole* requires a number of dependencies, including pygraphviz,
+which can be difficult to install on Windows.
+
+The easiest way to install the dependencies is to use miniconda.
+
+1. Obtain the .. _miniconda package: https://docs.conda.io/en/latest/miniconda.html
+2. Add the **conda-forge** channel ``conda config --add channels conda-forge``
+3. Create a new Python environment ``conda create -n myenv python=3.7 networkx datapackage pandas pulp pygraphviz xlrd``
+4. Activate the new environment ``conda activate myenv``
+5. Use pip to install otoole ``pip install otoole``
+
 
 Installation
 ============
@@ -39,19 +59,14 @@ To upgrade **otoole** using pip::
     pip install otoole --upgrade
 
 
-Dependencies
-------------
+Usage
+=====
 
-*otoole* requires a number of dependencies, including pygraphviz,
-which can be difficult to install on Windows.
+For detailed instructions of the use of the tool, run the command line
+help function::
 
-The easiest way to install the dependencies is to use miniconda.
+    otoole --help
 
-1. Obtain the [miniconda package](https://docs.conda.io/en/latest/miniconda.html)
-2. Add the *conda-forge* channel ``conda config --add channels conda-forge``
-3. Create a new Python environment ``conda create -n myenv python=3.7 datapackage pandas pulp pygraphviz xlrd``
-4. Activate the new environment ``conda activate myenv``
-5. Use pip to install otoole ``pip install otoole``
 
 Contributing
 ============
@@ -71,12 +86,3 @@ first need to install the package in *develop mode*::
 Now, all changes made in the codebase will automatically be reflected
 in the installed Python version accessible on the command line or from
 importing otoole modules into other Python packages.
-
-
-Usage
-=====
-
-For detailed instructions of the use of the tool, run the command line
-help function::
-
-    otoole --help
