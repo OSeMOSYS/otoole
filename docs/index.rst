@@ -1,19 +1,4 @@
-======
-otoole
-======
-
-**otoole** is a Python package which provides a command-line interface
-for users of OSeMOSYS.
-
-The aim of the package is to provide a community resource which
-centralises the commonly used pre- and post-processing steps
-around the use of OSeMOSYS.
-
-.. image:: img/osemosys_dataflow.png
-
-**otoole** aims to support different ways of storing input data and results,
-including csv files, databases, datapackages and Excel workbooks,
-as well as different implementations of the OSeMOSYS model.
+.. include:: ../README.rst
 
 Getting Started
 ===============
