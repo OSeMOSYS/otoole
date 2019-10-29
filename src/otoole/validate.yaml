@@ -1,0 +1,194 @@
+codes:
+  emissions:
+    REN: Emission factor that was used to model the RET targets for each country
+    CO2: Emission factor for CO2
+    CH4: Emission factor for methane but it was not assigned in any fuel
+    N20: Emission factor for Nitrous Oxide but it was not assigned in any fuel
+    FGA: Emission factor for Fluorinated gases but it was not assigned in any fuel
+  fuels:
+    ETH: Ethanol fuel
+    CR1: Crude oil fuel
+    CR2: Crude oil fuel - processed
+    BIO: Biomass fuel
+    COA: Coal fuel
+    LFO: Light Fuel Oil fuel
+    GAS: Gas fuel
+    HFO: Heavy Fuel Oil fuel
+    SOL: Solar potential
+    WIN: Wind potential
+    URN: Uranium fuel
+    CHA: Charcoal fuel
+    WA1: Water withdrawal fuel
+    WA2: Water consumption fuel
+    EL1: Electricity from power plants
+    HE2: Heat from power plants
+    EL2: Electricity after transmission
+    FW3: Total Firewood demand (non-power sector)
+    HE3: Total Heat demand
+    EL3: Total Electricity demand
+    HF3: Total Heavy Fuel Oil demand (non-power sector)
+    LF3: Total Light Fuel Oil demand (non-power sector)
+    CH3: Total Charcoal demand (non-power sector)
+    GA3: Total Gas demand (non-power sector)
+    CO3: Total Coal demand (non-power sector)
+    BO3: Total Biofuel demand (non-power sector)
+    CR3: Total Crude Oil demand (for exports)
+    DEL: Electricity exports to non-African countries
+    DLG: LNG exports to non-African countries
+  technologies:
+    CH: biomass CHP plant
+    SC: Superctritical coal
+    CV: conventional geothermal
+    GC: gas cycle
+    LS: large size hydro
+    MS: medium size hydro
+    SS: small size hydro
+    SA: stand alone
+    RC: LFO
+    CC: combined cycle
+    PW: pressurized water reactor (nuclear)
+    CN: CSP (without storage)
+    CS: CSP (with storage)
+    PU: PV(utility)
+    PR: PV(roof top)
+    PS: PV (with storage)
+    ON: onshore (wind)
+    OF: offshore (wind)
+  trade:
+    IM: imports
+    PR: production/extraction
+    EX: export
+  process:
+    TR: transmission
+    DI: distribution
+  cooling:
+    00: No cooling type
+    01: AIR
+    02: MDT
+    03: NDT
+    04: OTF/OTS
+  age:
+    O: existing or historical plant
+    N: new plant
+    X: no distinction/not applicable
+  countries:
+    DZA: Algeria
+    AGO: Angola
+    BEN: Benin
+    BWA: Botswana
+    BFA: Burkina Faso
+    BDI: Burundi
+    CMR: Cameroon
+    CAF: Central African Republic
+    TCD: Chad
+    COD: Congo Democratic Republic
+    COG: Congo People Republic
+    CIV: Cote d'Ivoire
+    DJI: Djibouti
+    EGY: Egypt
+    GNQ: Equatorial Guinea
+    ERI: Eritrea
+    ETH: Ethiopia
+    GAB: Gabon
+    GMB: Gambia
+    GHA: Ghana
+    GIN: Guinea
+    GNB: Guinea-Bissau
+    KEN: Kenya
+    LSO: Lesotho
+    LBR: Liberia
+    LBY: Libya
+    MWI: Malawi
+    MLI: Mali
+    MRT: Mauritania
+    MAR: Morocco
+    MOZ: Mozambique
+    NAM: Namibia
+    NER: Niger
+    NGA: Nigeria
+    RWA: Rwanda
+    SEN: Senegal
+    SLE: Sierra Leone
+    SOM: Somalia
+    ZAF: South Africa
+    SDN: Sudan
+    SWZ: Swaziland
+    TZA: Tanzania
+    TGO: Togo
+    TUN: Tunisia
+    UGA: Uganda
+    ZMB: Zambia
+    ZWE: Zimbabwe
+    SSD: South Sudan
+schema:
+  fuel_name:
+  - name: countries
+    valid: countries
+    position: (1, 3)
+  - name: fuels
+    valid: fuels
+    position: (4, 6)
+  technology_name:
+  - name: countries
+    valid: countries
+    position: (1, 3)
+  - name: fuels
+    valid: fuels
+    position: (4, 6)
+  - name: technology
+    valid: technologies
+    position: (7, 8)
+  - name: ccs
+    valid: ['P', 'C']
+    position: (9, )
+  - name: cooling_type
+    valid: cooling
+    position: (10, 11)
+  - name: age
+    valid: age
+    position: (12, )
+  import_technologies:
+  - name: countries
+    valid: countries
+    position: (1, 3)
+  - name: fuels
+    valid: fuels
+    position: (4, 6)
+  - name: technology
+    valid: trade
+    position: (7, 8)
+  - name: ccs
+    valid: ['P']
+    position: (9, )
+  - name: cooling_type
+    valid: ['00']
+    position: (10, 11)
+  - name: age
+    valid: ['X']
+    position: (12, )
+  process_technology:
+  - name: countries
+    valid: countries
+    position: (1, 3)
+  - name: fuels
+    valid: fuels
+    position: (4, 6)
+  - name: technology
+    valid: process
+    position: (7, 8)
+  - name: ccs
+    valid: ['P']
+    position: (9, )
+  - name: cooling_type
+    valid: ['00']
+    position: (10, 11)
+  - name: age
+    valid: ['X']
+    position: (12, )
+  emission_commodities:
+  - name: countries
+    valid: countries
+    position: (1, 3)
+  - name: emission
+    valid: emissions
+    position: (4, 6)

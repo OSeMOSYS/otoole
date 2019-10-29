@@ -6,7 +6,38 @@ import logging
 import re
 from typing import List
 
+from otoole import read_packaged_file
+
 logger = logging.getLogger(__name__)
+
+
+def read_validation_config():
+
+    return read_packaged_file('validate.yaml', 'otoole')
+
+
+def compose_expression(schema: List) -> str:
+    """Generates a regular expression from a schema
+    """
+    expression = "^"
+    for x in schema:
+        valid_entries = "|".join(x['valid'])
+        expression += "({})".format(valid_entries)
+    return expression
+
+
+def validate(expression, name):
+    pattern = re.compile(expression)
+
+    if pattern.fullmatch(name):
+        msg = "{} is valid"
+        valid = True
+    else:
+        msg = "{} is invalid"
+        valid = False
+
+    logger.debug(msg.format(name))
+    return valid
 
 
 def validate_fuel_name(name: str, country_codes: List[str], fuel_codes: List[str]) -> bool:
