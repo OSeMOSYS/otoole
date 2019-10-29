@@ -6,7 +6,7 @@ from otoole.validate import compose_expression, create_schema, read_validation_c
 @pytest.mark.parametrize(
     "name,expected",
     [("DZAETH", True),
-     ("AGOCO1", True),
+     ("AGOCR1", True),
      ("CO1AGO", False),
      ("AGOETHETH", False),
      ("   ETH", False),
@@ -14,10 +14,7 @@ from otoole.validate import compose_expression, create_schema, read_validation_c
     )
 def test_validate_fuel_code_true(name, expected):
 
-    countries = ['DZA', 'AGO']
-    fuels = ['ETH', 'CO1']
-
-    actual = validate_fuel_name(name, countries, fuels)
+    actual = validate_fuel_name(name)
     assert actual == expected
 
 

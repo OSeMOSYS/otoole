@@ -38,6 +38,9 @@ def compose_expression(schema: List) -> str:
 
 
 def validate(expression, name):
+
+    valid = False
+
     pattern = re.compile(expression)
 
     if pattern.fullmatch(name):
@@ -51,7 +54,7 @@ def validate(expression, name):
     return valid
 
 
-def validate_fuel_name(name: str, country_codes: List[str], fuel_codes: List[str]) -> bool:
+def validate_fuel_name(name: str) -> bool:
     """Validate a fuel name
 
     Arguments
@@ -66,20 +69,10 @@ def validate_fuel_name(name: str, country_codes: List[str], fuel_codes: List[str
     otherwise False
     """
 
-    valid = False
+    schema = create_schema()
 
-    expression = '^({country})({fuel})'.format(
-        country="|".join(country_codes),
-        fuel="|".join(fuel_codes))
+    expression = compose_expression(schema['fuel_name'])
 
-    pattern = re.compile(expression)
+    valid = validate(expression, name)
 
-    if pattern.fullmatch(name):
-        msg = "Fuel code {} is valid"
-        valid = True
-    else:
-        msg = "Fuel code {} is invalid"
-        valid = False
-
-    logger.debug(msg.format(name))
     return valid
