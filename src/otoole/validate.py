@@ -15,8 +15,9 @@ def validate_fuel_code(fuel_code):
     country_codes = ['DZA', 'AGO']
     fuel_codes = ['ETH', 'CO1', 'CO2', 'BIO', 'COA', 'LFO', 'GAS', 'HFO', 'SOL']
 
-    expression = '^({country})({fuel})'.format(country="|".join(country_codes),
-                                               fuel="|".join(fuel_codes))
+    expression = '^({country})({fuel})'.format(
+        country="|".join(country_codes),
+        fuel="|".join(fuel_codes))
 
     pattern = re.compile(expression)
 
