@@ -16,6 +16,17 @@ def read_validation_config():
     return read_packaged_file('validate.yaml', 'otoole')
 
 
+def create_schema(config=None):
+    if config is None:
+        config = read_validation_config()
+
+    for _, schema in config['schema'].items():
+        for name in schema:
+            if isinstance(name['valid'], str):
+                name['valid'] = list(config['codes'][name['valid']].keys())
+    return config['schema']
+
+
 def compose_expression(schema: List) -> str:
     """Generates a regular expression from a schema
     """
