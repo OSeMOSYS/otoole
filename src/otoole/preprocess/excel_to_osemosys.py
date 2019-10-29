@@ -181,21 +181,10 @@ import os
 from typing import Dict, List
 
 import xlrd
-from yaml import SafeLoader, load
 
-try:
-    import importlib.resources as pkg_resources
-except ImportError:
-    # Try backported to PY<37 `importlib_resources`.
-    import importlib_resources as pkg_resources
+from otoole import read_packaged_file
 
 logger = logging.getLogger(__name__)
-
-
-def read_datapackage():
-    with pkg_resources.open_text('otoole.preprocess', 'datapackage.json') as json_file:
-        json = json_file.readlines()
-    return json
 
 
 def read_config(path_to_user_config: str = None) -> Dict:
@@ -211,11 +200,9 @@ def read_config(path_to_user_config: str = None) -> Dict:
     dict
     """
     if path_to_user_config:
-        with open(path_to_user_config, 'r') as user_config_file:
-            config = load(user_config_file, Loader=SafeLoader)
+        config = read_packaged_file(path_to_user_config, None)
     else:
-        with pkg_resources.open_text('otoole.preprocess', 'config.yaml') as config_file:
-            config = load(config_file, Loader=SafeLoader)
+        config = read_packaged_file('config.yaml', 'otoole.preprocess')
     return config
 
 

@@ -10,7 +10,7 @@ import sys
 
 from datapackage import Package
 
-from otoole.preprocess.excel_to_osemosys import read_config
+from otoole import read_packaged_file
 from otoole.preprocess.longify_data import main as longify
 
 logger = logging.getLogger()
@@ -43,7 +43,7 @@ def generate_package(path_to_package):
 
     package.commit()
 
-    config = read_config()
+    config = read_packaged_file('config.yaml', 'otoole.preprocess')
 
     new_resources = []
     for resource in package.resources:
