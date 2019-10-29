@@ -4,16 +4,27 @@
 
 import logging
 import re
+from typing import List
 
 logger = logging.getLogger(__name__)
 
 
-def validate_fuel_code(fuel_code):
+def validate_fuel_name(name: str, country_codes: List[str], fuel_codes: List[str]) -> bool:
+    """Validate a fuel name
+
+    Arguments
+    ---------
+    name : str
+    country_codes : list
+    fuel_codes : list
+
+    Returns
+    -------
+    True if ``name`` is valid according to ``country_codes`` and ``fuel_codes``
+    otherwise False
+    """
 
     valid = False
-
-    country_codes = ['DZA', 'AGO']
-    fuel_codes = ['ETH', 'CO1', 'CO2', 'BIO', 'COA', 'LFO', 'GAS', 'HFO', 'SOL']
 
     expression = '^({country})({fuel})'.format(
         country="|".join(country_codes),
@@ -21,12 +32,12 @@ def validate_fuel_code(fuel_code):
 
     pattern = re.compile(expression)
 
-    if pattern.fullmatch(fuel_code):
+    if pattern.fullmatch(name):
         msg = "Fuel code {} is valid"
         valid = True
     else:
         msg = "Fuel code {} is invalid"
         valid = False
 
-    logger.debug(msg.format(fuel_code))
+    logger.debug(msg.format(name))
     return valid
