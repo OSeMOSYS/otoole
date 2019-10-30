@@ -1,6 +1,7 @@
 datapackage
 flatten_dict
 importlib_resources; python_version<'3.7'
+networkx
 pandas
 pulp
 pygraphviz
