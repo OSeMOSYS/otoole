@@ -5,7 +5,7 @@ from typing import Dict
 
 import pandas as pd
 
-from otoole.preprocess.excel_to_osemosys import read_config
+from otoole import read_packaged_file
 
 logger = logging.getLogger()
 
@@ -109,7 +109,7 @@ def _cast_to_int(value):
 def main(output_folder, narrow_folder):
     """Read in a folder of irregular wide-format files and write as narrow csvs
     """
-    config = read_config()
+    config = read_packaged_file('config.yaml', 'otoole.preprocess')
 
     for parameter, details in config.items():
         logger.info("Looking for %s", parameter)

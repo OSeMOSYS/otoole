@@ -10,7 +10,7 @@ import pandas as pd
 from flatten_dict import flatten
 from pulp import Amply
 
-from otoole.preprocess.excel_to_osemosys import read_config, read_datapackage
+from otoole import read_packaged_file
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype, write_out_dataframe
 
 logger = logging.getLogger(__name__)
@@ -26,14 +26,14 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
         Path to the folder in which to write the new Tabular Data Package
 
     """
-    config = read_config()
+    config = read_packaged_file('config.yaml', 'otoole.preprocess')
     amply_datafile = read_in_datafile(path_to_datafile, config)
     dict_of_dataframes = convert_amply_to_dataframe(amply_datafile, config)
     if not os.path.exists(path_to_datapackage):
         os.mkdir(path_to_datapackage)
     for name, df in dict_of_dataframes.items():
         write_out_dataframe(path_to_datapackage, name, df)
-    datapackage = read_datapackage()
+    datapackage = read_packaged_file('datapackage.json', 'otoole.preprocess')
     filepath = os.path.join(path_to_datapackage, 'datapackage.json')
     with open(filepath, 'w') as destination:
         destination.writelines(datapackage)
