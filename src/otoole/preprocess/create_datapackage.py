@@ -9,6 +9,7 @@ import os
 import sys
 
 from datapackage import Package
+from sqlalchemy import create_engine
 
 from otoole import read_packaged_file
 from otoole.preprocess.longify_data import main as longify
@@ -92,6 +93,14 @@ def main(wide_folder, narrow_folder):
     generate_package(narrow_folder)
     absolute_path = os.path.join(narrow_folder, 'datapackage.json')
     validate_contents(absolute_path)
+
+
+def convert_datapackage_to_sqlite(path_to_datapackage, sqlite):
+    """Load and save table to SQLite
+    """
+    dp = Package(path_to_datapackage)
+    engine = create_engine('sqlite:///{}'.format(sqlite))
+    dp.save(storage='sql', engine=engine)
 
 
 if __name__ == '__main__':

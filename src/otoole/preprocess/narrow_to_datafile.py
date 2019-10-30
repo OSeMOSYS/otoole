@@ -4,6 +4,7 @@ import sys
 
 import pandas as pd
 from datapackage import Package
+from sqlalchemy import create_engine
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +46,13 @@ def read_narrow_csv(filepath):
     return df
 
 
-def main(datapackage, datafilepath):
+def main(datapackage, datafilepath, sql=False):
 
-    package = Package(datapackage)
+    if sql:
+        engine = create_engine('sqlite:///{}'.format(datapackage))
+        package = Package(storage='sql', engine=engine)
+    else:
+        package = Package(datapackage)
 
     with open(datafilepath, 'w') as filepath:
 
@@ -56,6 +61,7 @@ def main(datapackage, datafilepath):
                 logger.info("%s is valid", resource.name)
 
                 data = resource.read()
+                resource.infer()
 
                 if data:
                     headers = resource.headers

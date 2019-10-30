@@ -1,23 +1,36 @@
 """Provides a command line interface to the ``otoole`` package
 
+The key functions are **convert**, **cplex** and **viz**.
+
+The **convert** command allows convertion of multiple different OSeMOSYS input formats including
+from/to csv, an AMPL format datafile, a Tabular Data Package, a folder of CSVs, an Excel workbook with
+one tab per parameter, an SQLite database
+
+The **cplex** command provides access to scripts which transform and process a CPLEX solution file
+into a format which is more readily processed - either to CBC or CSV format.
+
+The **viz** command allows you to produce a Reference Energy System diagram from a Tabular Data Package.
+
 Example
 -------
->>> otoole --help
-usage: otoole [-h] [--verbose] [--version] {prep,convert,cplex,viz} ...
 
-otoole: Python toolkit of OSeMOSYS users
+Ask for help on the command line::
 
-positional arguments:
-  {prep,convert,cplex,viz}
-    prep                Prepare an OSeMOSYS datafile
-    convert             Convert from one input format to another
-    cplex               Process a CPLEX solution file
-    viz                 Visualise the model
+    >>> $ otoole --help
+    usage: otoole [-h] [--verbose] [--version] {convert,cplex,viz} ...
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --verbose, -v         Enable debug mode
-  --version, -V         The version of otoole
+    otoole: Python toolkit of OSeMOSYS users
+
+    positional arguments:
+    {convert,cplex,viz}
+        convert            Convert from one input format to another
+        cplex              Process a CPLEX solution file
+        viz                Visualise the model
+
+    optional arguments:
+    -h, --help           show this help message and exit
+    --verbose, -v        Enable debug mode
+    --version, -V        The version of otoole
 
 """
 import argparse
@@ -26,16 +39,9 @@ import sys
 
 from otoole import __version__
 from otoole.preprocess import convert_file_to_package, create_datafile, create_datapackage, generate_csv_from_excel
+from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
 from otoole.results.convert import convert_cplex_file
 from otoole.visualise import create_res
-
-
-def excel2csv(args):
-    generate_csv_from_excel(args.workbook, args.output_folder)
-
-
-def csv2datapackage(args):
-    create_datapackage(args.csv_folder, args.datapackage)
 
 
 def cplex2cbc(args):
@@ -43,15 +49,55 @@ def cplex2cbc(args):
                        args.end_year, args.output_format)
 
 
-def datapackage2datafile(args):
-    create_datafile(args.datapackage, args.datafile)
-
-
 def conversion_matrix(args):
-    if (args.convert_from == 'datafile') and (args.convert_to == 'datapackage'):
-        convert_file_to_package(args.from_file, args.to_file)
+    """
+    from\to     ex cs dp sq df
+    excel       -- yy
+    csv         nn -- yy nn nn
+    datapackage nn ?? -- yy yy
+    sql         nn       -- yy
+    datafile    nn ?? yy    --
+
+    """
+
+    msg = "Conversion from {} to {} is not yet implemented".format(args.from_format, args.to_format)
+
+    if args.from_format == 'datafile':
+
+        if args.to_format == 'datapackage':
+            convert_file_to_package(args.from_path, args.to_path)
+        else:
+            raise NotImplementedError(msg)
+
+    elif (args.from_format == 'datapackage'):
+
+        if args.to_format == 'sql':
+            convert_datapackage_to_sqlite(args.from_path, args.to_path)
+        elif args.to_format == 'datafile':
+            create_datafile(args.from_path, args.to_path)
+        else:
+            raise NotImplementedError(msg)
+
+    elif args.from_format == 'sql':
+
+        if args.to_format == 'datafile':
+            create_datafile(args.from_path, args.to_path, sql=True)
+        else:
+            raise NotImplementedError(msg)
+
+    elif args.from_format == 'csv':
+        if args.to_format == 'datapackage':
+            create_datapackage(args.from_path, args.to_path)
+        else:
+            raise NotImplementedError(msg)
+
+    elif args.from_format == 'excel':
+        if args.to_format == 'csv':
+            generate_csv_from_excel(args.from_path, args.to_path)
+        else:
+            raise NotImplementedError(msg)
+
     else:
-        msg = "Conversion from {} to {} is not yet implemented".format(args.convert_from, args.convert_to)
         raise NotImplementedError(msg)
 
 
@@ -68,33 +114,14 @@ def get_parser():
 
     subparsers = parser.add_subparsers()
 
-    # Parser for pre-processing related commands
-    prep_parser = subparsers.add_parser('prep', help='Prepare an OSeMOSYS datafile')
-    prep_subparsers = prep_parser.add_subparsers()
-
-    excel_parser = prep_subparsers.add_parser('excel', help='Convert from an Excel workbook')
-    excel_parser.add_argument('workbook', help='Path to the Excel workbook')
-    excel_parser.add_argument('output_folder', help='Folder to which to write csv files')
-    excel_parser.set_defaults(func=excel2csv)
-
-    datapackage_parser = prep_subparsers.add_parser('datapackage',
-                                                    help='Convert a folder of csv file to a datapackage')
-    datapackage_parser.add_argument('csv_folder', help='Path to folder containing csv files')
-    datapackage_parser.add_argument('datapackage', help='Path to destination for datapackage')
-    datapackage_parser.set_defaults(func=csv2datapackage)
-
-    datafile_parser = prep_subparsers.add_parser('datafile',
-                                                 help='Convert an OSeMOSYS datapackage to a datafile')
-    datafile_parser.add_argument('datapackage', help='Path to destination for datapackage')
-    datafile_parser.add_argument('datafile', help='Path to datafile')
-    datafile_parser.set_defaults(func=datapackage2datafile)
-
     # Parser for conversion
     convert_parser = subparsers.add_parser('convert', help='Convert from one input format to another')
-    convert_parser.add_argument('--convert_from', '-f', help='Input data format to convert from')
-    convert_parser.add_argument('--convert_to', '-t', help='Input data format to convert to')
-    convert_parser.add_argument('--from_file', help="Path to file to convert from")
-    convert_parser.add_argument('--to_file', help='Path to file to convert to')
+    convert_parser.add_argument('from_format', help='Input data format to convert from',
+                                choices=sorted(['datafile', 'datapackage', 'sql', 'excel', 'csv']))
+    convert_parser.add_argument('to_format', help='Input data format to convert to',
+                                choices=sorted(['datafile', 'datapackage', 'sql', 'csv']))
+    convert_parser.add_argument('from_path', help="Path to file or folder to convert from")
+    convert_parser.add_argument('to_path', help='Path to file or folder to convert to')
     convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for the CPLEX related commands
