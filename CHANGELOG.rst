@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.4
+===========
+- Tidy up the command line interface
+- Convert to/from SQLite database from/to datapackage
+- Remove rotten pygraphviz dependency
+
 Version 0.3
 ===========
 

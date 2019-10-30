@@ -1,10 +1,11 @@
 """Visualise the reference energy system
 """
 import logging
+import os
 import sys
 from typing import Dict, List, Tuple
 
-import networkx as nx
+import networkx as nx  # mypy: ignore
 from datapackage import Package
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
     path_to_datapackage : str
         The path to the ``datapackage.json``
     path_to_resfile : str
-        The path to the PNG file to be created
+        The path to the image file to be created
     """
     logger.debug(path_to_resfile, path_to_resfile)
     package = load_datapackage(path_to_datapackage)
@@ -36,8 +37,8 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
     emission = package.get_resource('EMISSION').read()
 
     def extract_nodes(package_rows: List[List], node_type='technology',
-                      color='red', shape='circle') -> List:
-        nodes = [(x[0], {'type': node_type, 'name': x,
+                      color='red', shape='circle') -> List[Tuple[str, Dict]]:
+        nodes = [(x[0], {'type': node_type,
                          'fillcolor': color, 'shape': shape,
                          'style': 'filled'}
                   )
@@ -101,7 +102,7 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
     nodes += extract_nodes(emission, node_type='emission', color='grey')
     nodes += [('AnnualDemand',
                {'type': 'demand', 'fillcolor': 'green',
-                'name': 'AccumulatedAnnualDemand',
+                'label': 'AccumulatedAnnualDemand',
                 'style': 'filled'}
                )
               ]
@@ -146,17 +147,27 @@ def draw_graph(graph, path_to_resfile):
     path_to_resfile : str
         The file path of the PNG image file that will be created
     """
+    for node, attributes in graph.nodes.data():
+        logger.debug("%s: %s", node, attributes)
+    for source, sink, attributes in graph.edges.data():
+        logger.debug("%s-%s: %s", source, sink, attributes)
 
-    pygraph = nx.nx_agraph.to_agraph(graph)
-    pygraph.graph_attr['rankdir'] = 'LR'
-    pygraph.graph_attr['splines'] = 'ortho'
-    pygraph.graph_attr['concentrate'] = 'true'
+    filename, ext = os.path.splitext(path_to_resfile)
+    nx.write_graphml(graph, filename + '.graphml')
+    dot_graph = nx.nx_pydot.to_pydot(graph)
 
-    pygraph.layout(prog='dot')
-    pygraph.draw(path_to_resfile)
+    dot_graph.set('rankdir', 'LR')
+    dot_graph.set('splines', 'ortho')
+    dot_graph.set('concentrate', 'true')
+
+    image_format = ext.strip(".")
+
+    image = dot_graph.create(prog='dot', format=image_format)
+    with open(path_to_resfile, 'wb') as image_file:
+        image_file.write(image)
 
 
-def build_graph(nodes: List[Tuple], edges: List[Tuple[str, str, Dict]]):
+def build_graph(nodes: List[Tuple[str, Dict]], edges: List[Tuple[str, str, Dict]]) -> nx.DiGraph:
     """Builds the graph using networkx
 
     Arguments
