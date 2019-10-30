@@ -13,7 +13,7 @@ Check the version installed::
 
 Download an OSeMOSYS datapackage and convert it to a modelfile::
 
-    otoole prep datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip ./simplicity.txt
+    otoole convert datapackage datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip simplicity.txt
 
 Visualise the Reference Energy System::
 
@@ -21,7 +21,7 @@ Visualise the Reference Energy System::
 
 Alternatively, convert an OSeMOSYS datafile to a datapackage::
 
-    otoole convert --convert_from datafile --convert_to datapackage --from_file simplicity.txt --to_file simplicity
+    otoole convert datafile datapackage simplicity.txt simplicity
 
 
 Contents

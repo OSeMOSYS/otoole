@@ -26,7 +26,7 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
     path_to_datapackage : str
         The path to the ``datapackage.json``
     path_to_resfile : str
-        The path to the PNG file to be created
+        The path to the image file to be created
     """
     logger.debug(path_to_resfile, path_to_resfile)
     package = load_datapackage(path_to_datapackage)
@@ -152,7 +152,7 @@ def draw_graph(graph, path_to_resfile):
     for source, sink, attributes in graph.edges.data():
         logger.debug("%s-%s: %s", source, sink, attributes)
 
-    filename, _ = os.path.splitext(path_to_resfile)
+    filename, ext = os.path.splitext(path_to_resfile)
     nx.write_graphml(graph, filename + '.graphml')
     dot_graph = nx.nx_pydot.to_pydot(graph)
 
@@ -160,7 +160,9 @@ def draw_graph(graph, path_to_resfile):
     dot_graph.set('splines', 'ortho')
     dot_graph.set('concentrate', 'true')
 
-    image = dot_graph.create(prog='dot', format='pdf')
+    image_format = ext.strip(".")
+
+    image = dot_graph.create(prog='dot', format=image_format)
     with open(path_to_resfile, 'wb') as image_file:
         image_file.write(image)
 
