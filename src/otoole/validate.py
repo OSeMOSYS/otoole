@@ -33,13 +33,18 @@ import logging
 import re
 from typing import Dict, List
 
-from otoole import read_packaged_file
+from otoole import read_datapackage, read_packaged_file
 
 logger = logging.getLogger(__name__)
 
 
 def read_validation_config():
     return read_packaged_file('validate.yaml', 'otoole')
+
+
+def check_for_duplicates(codes: List) -> bool:
+    duplicate_values = len(codes) != len(set(codes))
+    return duplicate_values
 
 
 def create_schema(config: Dict = None):
@@ -57,6 +62,13 @@ def create_schema(config: Dict = None):
         for name in schema:
             if isinstance(name['valid'], str):
                 name['valid'] = list(config['codes'][name['valid']].keys())
+                logger.debug("create_schema: %s", name['valid'])
+            elif isinstance(name['valid'], list):
+                pass
+            else:
+                raise ValueError("Entry {} is not correct".format(name['name']))
+            if check_for_duplicates(name['valid']):
+                raise ValueError("There are duplicate values in codes for {}", name['name'])
     return config['schema']
 
 
@@ -69,6 +81,7 @@ def compose_expression(schema: List) -> str:
     """
     expression = "^"
     for x in schema:
+        logger.debug("compose_expression: %s", x['valid'])
         valid_entries = "|".join(x['valid'])
         expression += "({})".format(valid_entries)
     return expression
@@ -86,6 +99,7 @@ def validate(expression: str, name: str) -> bool:
     -------
     bool
     """
+    logger.debug("Running validation for %s", name)
 
     valid = False
 
@@ -98,7 +112,7 @@ def validate(expression: str, name: str) -> bool:
         msg = "{} is invalid"
         valid = False
 
-    logger.debug(msg.format(name))
+    logger.info(msg.format(name))
     return valid
 
 
@@ -124,3 +138,25 @@ def validate_fuel_name(name: str) -> bool:
     valid = validate(expression, name)
 
     return valid
+
+
+def validate_resource(package, schema, resource):
+
+    logger.debug(schema)
+
+    expression = compose_expression(schema)
+    resources = package.get_resource(resource).read(keyed=True)
+    for row in resources:
+        validate(expression, row['VALUE'])
+
+
+def main(file_format: str, filepath: str):
+
+    if file_format == 'datapackage':
+        package = read_datapackage(filepath)
+    elif file_format == 'sql':
+        package = read_datapackage(filepath, sql=True)
+
+    schema = create_schema()
+    validate_resource(package, schema['technology_name'], 'TECHNOLOGY')
+    validate_resource(package, schema['fuel_name'], 'FUEL')
