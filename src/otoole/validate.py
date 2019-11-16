@@ -164,7 +164,7 @@ def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
     return isolated_nodes
 
 
-def main(file_format: str, filepath: str):
+def main(file_format: str, filepath: str, config=None):
 
     print("\n***Beginning validation***")
     if file_format == 'datapackage':
@@ -172,7 +172,7 @@ def main(file_format: str, filepath: str):
     elif file_format == 'sql':
         package = read_datapackage(filepath, sql=True)
 
-    schema = create_schema()
+    schema = create_schema(config)
 
     print("\n***Checking TECHNOLOGY names***\n")
     validate_resource(package, schema['technology_name'], 'TECHNOLOGY')

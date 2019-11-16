@@ -37,7 +37,7 @@ import argparse
 import logging
 import sys
 
-from otoole import __version__
+from otoole import __version__, read_packaged_file
 from otoole.preprocess import convert_file_to_package, create_datafile, create_datapackage, generate_csv_from_excel
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
 from otoole.results.convert import convert_cplex_file
@@ -47,7 +47,12 @@ from otoole.visualise import create_res
 
 def validate_model(args):
     file_format = args.format
-    validate(file_format, args.filepath)
+
+    if args.config:
+        config = read_packaged_file(args.config)
+        validate(file_format, args.filepath, config)
+    else:
+        validate(file_format, args.filepath)
 
 
 def cplex2cbc(args):
@@ -153,6 +158,7 @@ def get_parser():
     valid_parser = subparsers.add_parser('validate', help='Validate an OSeMOSYS model')
     valid_parser.add_argument('format', help='The format of the OSeMOSYS model to validate')
     valid_parser.add_argument('filepath', help='Path to the OSeMOSYS model to validate')
+    valid_parser.add_argument('--config', help='Path to a user-defined validation-config file')
     valid_parser.set_defaults(func=validate_model)
 
     # Parser for visualisation
