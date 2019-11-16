@@ -1,6 +1,6 @@
 import pytest
 
-from otoole.validate import compose_expression, create_schema, read_validation_config, validate_fuel_name
+from otoole.validate import compose_expression, create_schema, read_validation_config, validate
 
 
 @pytest.mark.parametrize(
@@ -14,7 +14,7 @@ from otoole.validate import compose_expression, create_schema, read_validation_c
     )
 def test_validate_fuel_code_true(name, expected):
 
-    actual = validate_fuel_name(name)
+    actual = validate("^(DZA|AGO)(ETH|CR1)", name)
     assert actual == expected
 
 
@@ -25,12 +25,12 @@ def test_compose_expression():
                'position': (1, 3)
                },
               {'name': 'fuels',
-               'valid': ['ETH', 'CO1'],
+               'valid': ['ETH', 'CR1'],
                'postion': (4, 6)
                }]
 
     actual = compose_expression(schema)
-    expected = "^(DZA|AGO)(ETH|CO1)"
+    expected = "^(DZA|AGO)(ETH|CR1)"
     assert actual == expected
 
 
