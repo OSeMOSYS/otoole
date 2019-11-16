@@ -54,9 +54,8 @@ def read_datapackage(filepath: str, sql: bool = False):
     if sql:
         engine = create_engine('sqlite:///{}'.format(filepath))
         package = Package(storage='sql', engine=engine)
+        package.infer()
     else:
         package = Package(filepath)
-
-    package.infer()
 
     return package
