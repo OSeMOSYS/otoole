@@ -22,10 +22,10 @@ finally:
 
 
 def _read_file(open_file, ending):
-    if ending == '.txt':
-        contents = open_file.readlines()
-    elif ending == '.yaml' or ending == '.yml':
+    if ending == '.yaml' or ending == '.yml':
         contents = load(open_file, Loader=SafeLoader)
+    else:
+        contents = open_file.readlines()
     return contents
 
 
