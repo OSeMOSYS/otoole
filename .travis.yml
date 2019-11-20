@@ -12,8 +12,8 @@ before_script:
 - git config --global user.email "wusher@kth.com"
 - git config --global user.name "Will Usher"
 script:
-- python setup.py develop
-- pytest
+- pip install -r requirements.txt
+- python setup.py test
 - |
   if [[ "$COVERAGE" == "true" ]]; then
     pre-commit install
