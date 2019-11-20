@@ -1,9 +1,9 @@
 datapackage
 flatten_dict
+git+git://github.com/coin-or/pulp@a570ff9#egg=pulp
 importlib_resources; python_version<'3.7'
 networkx
 pandas
-pulp -e https://github.com/coin-or/pulp@a570ff9#egg=pulp
 pydot
 pyyaml
 xlrd
