@@ -3,7 +3,7 @@ flatten_dict
 importlib_resources; python_version<'3.7'
 networkx
 pandas
-pulp
+pulp -e https://github.com/coin-or/pulp@a570ff9#egg=pulp
 pydot
 pyyaml
 xlrd

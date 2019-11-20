@@ -8,6 +8,19 @@ from otoole.preprocess.datafile_to_datapackage import (
 )
 
 
+def test_amply():
+
+    Amply("""set REGION;
+          # set REGION := SIMPLICITY;
+          set TECHNOLOGY;
+          set TECHNOLOGY := ETHPLANT GAS_EXTRACTION;
+          set MODE_OF_OPERATION;
+          set MODE_OF_OPERATION := 1 2;
+          set YEAR;
+          set YEAR := 2014;
+          end;""")
+
+
 def test_convert_amply_to_dataframe():
 
     config = {'VariableCost': {'type': 'param',
