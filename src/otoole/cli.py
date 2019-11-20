@@ -2,12 +2,15 @@
 
 The key functions are **convert**, **cplex** and **viz**.
 
-The **convert** command allows convertion of multiple different OSeMOSYS input formats including
+The ``convert`` command allows convertion of multiple different OSeMOSYS input formats including
 from/to csv, an AMPL format datafile, a Tabular Data Package, a folder of CSVs, an Excel workbook with
 one tab per parameter, an SQLite database
 
-The **cplex** command provides access to scripts which transform and process a CPLEX solution file
+The ``cplex`` command provides access to scripts which transform and process a CPLEX solution file
 into a format which is more readily processed - either to CBC or CSV format.
+
+The ``validate`` command checks the technology and fuel names of a tabular data package against a standard
+or user defined configuration file.
 
 The **viz** command allows you to produce a Reference Energy System diagram from a Tabular Data Package.
 
@@ -17,20 +20,21 @@ Example
 Ask for help on the command line::
 
     >>> $ otoole --help
-    usage: otoole [-h] [--verbose] [--version] {convert,cplex,viz} ...
+    usage: otoole [-h] [--verbose] [--version] {convert,cplex,validate,viz} ...
 
     otoole: Python toolkit of OSeMOSYS users
 
     positional arguments:
-    {convert,cplex,viz}
-        convert            Convert from one input format to another
-        cplex              Process a CPLEX solution file
-        viz                Visualise the model
+    {convert,cplex,validate,viz}
+        convert             Convert from one input format to another
+        cplex               Process a CPLEX solution file
+        validate            Validate an OSeMOSYS model
+        viz                 Visualise the model
 
     optional arguments:
-    -h, --help           show this help message and exit
-    --verbose, -v        Enable debug mode
-    --version, -V        The version of otoole
+    -h, --help            show this help message and exit
+    --verbose, -v         Enable debug mode
+    --version, -V         The version of otoole
 
 """
 import argparse

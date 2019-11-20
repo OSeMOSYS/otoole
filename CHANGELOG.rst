@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.5
+===========
+- Add validation of names and fuels in datapackage
+  - Adds ``validate`` command to the command-line interface
+  - Define a validation config as a YAML file for names
+
 Version 0.4
 ===========
 - Tidy up the command line interface

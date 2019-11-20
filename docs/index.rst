@@ -23,6 +23,12 @@ Alternatively, convert an OSeMOSYS datafile to a datapackage::
 
     otoole convert datafile datapackage simplicity.txt simplicity
 
+Validate the names of technologies and fuels against the standard
+naming convention and identify isolated fuels, emissions and
+technologies::
+
+    otoole validate datapackage https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip
+
 
 Contents
 ========
