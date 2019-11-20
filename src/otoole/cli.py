@@ -37,11 +37,22 @@ import argparse
 import logging
 import sys
 
-from otoole import __version__
+from otoole import __version__, read_packaged_file
 from otoole.preprocess import convert_file_to_package, create_datafile, create_datapackage, generate_csv_from_excel
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
 from otoole.results.convert import convert_cplex_file
+from otoole.validate import main as validate
 from otoole.visualise import create_res
+
+
+def validate_model(args):
+    file_format = args.format
+
+    if args.config:
+        config = read_packaged_file(args.config)
+        validate(file_format, args.filepath, config)
+    else:
+        validate(file_format, args.filepath)
 
 
 def cplex2cbc(args):
@@ -50,13 +61,17 @@ def cplex2cbc(args):
 
 
 def conversion_matrix(args):
-    """
-    from\to     ex cs dp sq df
-    excel       -- yy
-    csv         nn -- yy nn nn
-    datapackage nn ?? -- yy yy
-    sql         nn       -- yy
-    datafile    nn ?? yy    --
+    """Convert from one format to another
+
+    Implemented conversion functions::
+
+        from\to     ex cs dp sq df
+        --------------------------
+        excel       -- yy
+        csv         nn -- yy nn nn
+        datapackage nn ?? -- yy yy
+        sql         nn       -- yy
+        datafile    nn ?? yy    --
 
     """
 
@@ -138,6 +153,13 @@ def get_parser():
                               help="Output only the results upto and including this year")
     cplex_parser.add_argument('output_format', choices=['csv', 'cbc'], default='cbc')
     cplex_parser.set_defaults(func=cplex2cbc)
+
+    # Parser for validation
+    valid_parser = subparsers.add_parser('validate', help='Validate an OSeMOSYS model')
+    valid_parser.add_argument('format', help='The format of the OSeMOSYS model to validate')
+    valid_parser.add_argument('filepath', help='Path to the OSeMOSYS model to validate')
+    valid_parser.add_argument('--config', help='Path to a user-defined validation-config file')
+    valid_parser.set_defaults(func=validate_model)
 
     # Parser for visualisation
     viz_parser = subparsers.add_parser('viz', help='Visualise the model')

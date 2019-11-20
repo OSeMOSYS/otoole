@@ -18,83 +18,101 @@ def load_datapackage(path_to_datapackage: str) -> Package:
     return package
 
 
-def create_res(path_to_datapackage: str, path_to_resfile: str):
-    """Create a reference energy system diagram from a Tabular Data Package
+def extract_nodes(package_rows: List[List], node_type='technology',
+                  color='red', shape='circle') -> List[Tuple[str, Dict]]:
+    """Add nodes from a Tabular Data Table
 
     Arguments
     ---------
-    path_to_datapackage : str
-        The path to the ``datapackage.json``
-    path_to_resfile : str
-        The path to the image file to be created
+    package_rows : list of dict
+    node_type : str, default='technology'
+    color : str, default='red'
+    shape : str, default='circle'
+
+    Returns
+    -------
+    list of tuple
+        A list of nodes with attributes
     """
-    logger.debug(path_to_resfile, path_to_resfile)
-    package = load_datapackage(path_to_datapackage)
+    nodes = [(x[0], {'type': node_type,
+                     'fillcolor': color, 'shape': shape,
+                     'style': 'filled'}
+              )
+             for x in package_rows]
 
-    technologies = package.get_resource('TECHNOLOGY').read()
-    storage = package.get_resource('STORAGE').read()
-    fuel = package.get_resource('FUEL').read()
-    emission = package.get_resource('EMISSION').read()
+    return nodes
 
-    def extract_nodes(package_rows: List[List], node_type='technology',
-                      color='red', shape='circle') -> List[Tuple[str, Dict]]:
-        nodes = [(x[0], {'type': node_type,
-                         'fillcolor': color, 'shape': shape,
-                         'style': 'filled'}
-                  )
+
+def add_fuel(package_rows: List[List]) -> List[Tuple[str, Dict]]:
+    """Add fuel nodes
+
+    Arguments
+    ---------
+    package_rows : list of dict
+
+    Returns
+    -------
+    list of tuple
+        A list of node names along with a dict of node attributes
+    """
+    nodes = [(x[0],
+              {'type': 'fuel', 'style': 'filled', 'shape': 'circle', 'height': 0.1, 'width': 0.1, 'label': ""}
+              )
+             for x in package_rows]
+    return nodes
+
+
+def extract_edges(package_rows: List[Dict], from_column: str,
+                  to_column: str, parameter_name: str,
+                  directed: bool = True) -> List[Tuple[str, str, Dict]]:
+    """Add edges from a Tabular Data Table
+
+    Arguments
+    ---------
+    package_rows : list of dict
+    from_column : str
+        The name of the column to use as source of the edge
+    to_column: str
+        The name of the column to use as a destination of the edge
+    parameter_name: str
+        The name of the parameter
+    directed: bool, default=True
+        Specifies whether the edge should have an arrow or not
+
+    Returns
+    -------
+    list of tuple
+        A list of edges with from/to nodes names and edge attributes
+    """
+    if directed:
+        edges = [(x[from_column], x[to_column],
+                 {parameter_name: float(x['VALUE']), 'dir': 'none'})
+                 for x in package_rows]
+    else:
+        edges = [(x[from_column], x[to_column],
+                 {parameter_name: float(x['VALUE']), 'xlabel': x[from_column]})
                  for x in package_rows]
 
-        return nodes
+    return edges
 
-    def add_fuel(package_rows: List[List]) -> List[Tuple[str, Dict]]:
-        """Add fuel nodes
 
-        Arguments
-        ---------
-        package_rows : list of dict
+def create_graph(datapackage: Package):
+    """Creates a graph of technologies and fuels
 
-        Returns
-        -------
-        list of tuple
-            A list of node names along with a dict of node attributes
-        """
-        nodes = [(x[0],
-                 {'type': 'fuel', 'style': 'filled', 'shape': 'circle', 'height': 0.1, 'width': 0.1, 'label': ""})
-                 for x in package_rows]
-        return nodes
+    Arguments
+    ---------
+    datapackage : datapackage.Package
 
-    def extract_edges(package_rows: List[Dict], from_column: str,
-                      to_column: str, parameter_name: str,
-                      directed: bool = True) -> List[Tuple[str, str, Dict]]:
-        """Add edges from a Tabular Data Table
+    Returns
+    -------
+    graph
+        networkx.DiGraph
+    """
 
-        Arguments
-        ---------
-        package_rows : list of dict
-        from_column : str
-            The name of the column to use as source of the edge
-        to_column: str
-            The name of the column to use as a destination of the edge
-        parameter_name: str
-            The name of the parameter
-        directed: bool, default=True
-            Specifies whether the edge should have an arrow or not
-
-        Returns
-        -------
-        list of tuple
-            A list of edges with from/to nodes names and edge attributes
-        """
-        if directed:
-            edges = [(x[from_column], x[to_column],
-                     {parameter_name: float(x['VALUE']), 'dir': 'none'})
-                     for x in package_rows]
-        else:
-            edges = [(x[from_column], x[to_column],
-                     {parameter_name: float(x['VALUE']), 'xlabel': x[from_column]})
-                     for x in package_rows]
-
-        return edges
+    technologies = datapackage.get_resource('TECHNOLOGY').read()
+    storage = datapackage.get_resource('STORAGE').read()
+    fuel = datapackage.get_resource('FUEL').read()
+    emission = datapackage.get_resource('EMISSION').read()
 
     nodes = extract_nodes(technologies, shape='rectangle', color='yellow')
     nodes += extract_nodes(storage, node_type='storage', shape='triangle', color='lightblue')
@@ -107,13 +125,13 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
                )
               ]
 
-    input_activity = package.get_resource('InputActivityRatio').read(keyed=True)
-    output_activity = package.get_resource('OutputActivityRatio').read(keyed=True)
-    emission_activity = package.get_resource('EmissionActivityRatio').read(keyed=True)
-    tech2storage = package.get_resource('TechnologyToStorage').read(keyed=True)
-    techfromstorage = package.get_resource('TechnologyFromStorage').read(keyed=True)
-    acc_demand = package.get_resource('AccumulatedAnnualDemand').read(keyed=True)
-    spec_demand = package.get_resource('SpecifiedAnnualDemand').read(keyed=True)
+    input_activity = datapackage.get_resource('InputActivityRatio').read(keyed=True)
+    output_activity = datapackage.get_resource('OutputActivityRatio').read(keyed=True)
+    emission_activity = datapackage.get_resource('EmissionActivityRatio').read(keyed=True)
+    tech2storage = datapackage.get_resource('TechnologyToStorage').read(keyed=True)
+    techfromstorage = datapackage.get_resource('TechnologyFromStorage').read(keyed=True)
+    acc_demand = datapackage.get_resource('AccumulatedAnnualDemand').read(keyed=True)
+    spec_demand = datapackage.get_resource('SpecifiedAnnualDemand').read(keyed=True)
 
     edges = extract_edges(input_activity, 'FUEL', 'TECHNOLOGY', 'input_ratio', directed=False)
 
@@ -133,6 +151,24 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
               for x in spec_demand]
 
     graph = build_graph(nodes, edges)
+
+    return graph
+
+
+def create_res(path_to_datapackage: str, path_to_resfile: str):
+    """Create a reference energy system diagram from a Tabular Data Package
+
+    Arguments
+    ---------
+    path_to_datapackage : str
+        The path to the ``datapackage.json``
+    path_to_resfile : str
+        The path to the image file to be created
+    """
+    logger.debug(path_to_resfile, path_to_resfile)
+    package = load_datapackage(path_to_datapackage)
+
+    graph = create_graph(package)
     draw_graph(graph, path_to_resfile)
 
 
@@ -173,7 +209,9 @@ def build_graph(nodes: List[Tuple[str, Dict]], edges: List[Tuple[str, str, Dict]
     Arguments
     ---------
     nodes : list
+        A list of node tuples
     edges : list
+        A list of edge tuples
 
     Returns
     -------

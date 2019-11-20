@@ -37,7 +37,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # provided versions
     # (prefer local venv, since the miniconda folder is cached)
     conda config --add channels conda-forge
-    conda create -p ./.venv --yes python=${PYTHON_VERSION} pip virtualenv pandas xlrd pyyaml graphviz networkx pulp
+    conda create -p ./.venv --yes python=${PYTHON_VERSION} pip virtualenv pyyaml graphviz datapackage pulp
     source activate ./.venv
 fi
 

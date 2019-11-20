@@ -31,15 +31,24 @@ Create a yaml validation config with the following format::
 
 import logging
 import re
+from collections import defaultdict
 from typing import Dict, List
 
-from otoole import read_packaged_file
+import networkx.algorithms.isolate as isolate
+
+from otoole import read_datapackage, read_packaged_file
+from otoole.visualise.res import create_graph
 
 logger = logging.getLogger(__name__)
 
 
 def read_validation_config():
     return read_packaged_file('validate.yaml', 'otoole')
+
+
+def check_for_duplicates(codes: List) -> bool:
+    duplicate_values = len(codes) != len(set(codes))
+    return duplicate_values
 
 
 def create_schema(config: Dict = None):
@@ -57,6 +66,13 @@ def create_schema(config: Dict = None):
         for name in schema:
             if isinstance(name['valid'], str):
                 name['valid'] = list(config['codes'][name['valid']].keys())
+                logger.debug("create_schema: %s", name['valid'])
+            elif isinstance(name['valid'], list):
+                pass
+            else:
+                raise ValueError("Entry {} is not correct".format(name['name']))
+            if check_for_duplicates(name['valid']):
+                raise ValueError("There are duplicate values in codes for {}", name['name'])
     return config['schema']
 
 
@@ -69,6 +85,7 @@ def compose_expression(schema: List) -> str:
     """
     expression = "^"
     for x in schema:
+        logger.debug("compose_expression: %s", x['valid'])
         valid_entries = "|".join(x['valid'])
         expression += "({})".format(valid_entries)
     return expression
@@ -86,41 +103,87 @@ def validate(expression: str, name: str) -> bool:
     -------
     bool
     """
+    logger.debug("Running validation for %s", name)
 
     valid = False
 
     pattern = re.compile(expression)
 
     if pattern.fullmatch(name):
-        msg = "{} is valid"
         valid = True
     else:
-        msg = "{} is invalid"
         valid = False
-
-    logger.debug(msg.format(name))
     return valid
 
 
-def validate_fuel_name(name: str) -> bool:
-    """Validate a fuel name
+def validate_resource(package, schema, resource):
 
-    Arguments
-    ---------
-    name : str
-    country_codes : list
-    fuel_codes : list
+    logger.debug(schema)
+
+    expression = compose_expression(schema)
+    resources = package.get_resource(resource).read(keyed=True)
+
+    valid_names = []
+    invalid_names = []
+
+    for row in resources:
+        name = row['VALUE']
+        valid = validate(expression, row['VALUE'])
+        if valid:
+            valid_names.append(name)
+        else:
+            invalid_names.append(name)
+
+    if invalid_names:
+        msg = "{} invalid names:\n    {}"
+        print(msg.format(len(invalid_names), ", ".join(invalid_names)))
+    if valid_names:
+        msg = "{} valid names:\n    {}"
+        print(msg.format(len(valid_names), ", ".join(valid_names)))
+
+
+def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
+    """Returns a list of fuels and technologies which are unconnected
 
     Returns
     -------
-    True if ``name`` is valid according to ``country_codes`` and ``fuel_codes``
-    otherwise False
+    dict
+
     """
+    graph = create_graph(package)
 
-    schema = create_schema()
+    number_of_isolates = isolate.number_of_isolates(graph)
+    logger.debug("There are {} isolated nodes in the graph".format(number_of_isolates))
 
-    expression = compose_expression(schema['fuel_name'])
+    isolated_nodes = defaultdict(list)
 
-    valid = validate(expression, name)
+    for node_name in list(isolate.isolates(graph)):
+        node_data = graph.nodes[node_name]
+        isolated_nodes[node_data['type']].append(node_name)
 
-    return valid
+    return isolated_nodes
+
+
+def main(file_format: str, filepath: str, config=None):
+
+    print("\n***Beginning validation***")
+    if file_format == 'datapackage':
+        package = read_datapackage(filepath)
+    elif file_format == 'sql':
+        package = read_datapackage(filepath, sql=True)
+
+    schema = create_schema(config)
+
+    print("\n***Checking TECHNOLOGY names***\n")
+    validate_resource(package, schema['technology_name'], 'TECHNOLOGY')
+
+    print("\n***Checking FUEL names***\n")
+    validate_resource(package, schema['fuel_name'], 'FUEL')
+
+    print("\n***Checking graph structure***")
+    isolated_nodes = identify_orphaned_fuels_techs(package)
+    msg = ""
+    for node_type, node_names in isolated_nodes.items():
+        msg += "\n{} '{}' nodes are isolated:\n     {}\n".format(
+            len(node_names), node_type, ", ".join(node_names))
+    print(msg)

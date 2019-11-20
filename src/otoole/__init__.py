@@ -2,6 +2,8 @@
 from pkg_resources import get_distribution, DistributionNotFound
 import os
 from yaml import SafeLoader, load
+from datapackage import Package
+from sqlalchemy import create_engine
 
 try:
     import importlib.resources as resources
@@ -39,3 +41,21 @@ def read_packaged_file(filename: str, module_name: str = None):
             contents = _read_file(open_file, ending)
 
     return contents
+
+
+def read_datapackage(filepath: str, sql: bool = False):
+    """Open an OSeMOSYS datapackage
+
+    Arguments
+    ---------
+    filepath : str
+    sql : bool, default=False
+    """
+    if sql:
+        engine = create_engine('sqlite:///{}'.format(filepath))
+        package = Package(storage='sql', engine=engine)
+        package.infer()
+    else:
+        package = Package(filepath)
+
+    return package
