@@ -187,6 +187,14 @@ def main():
     if args.verbose > 2:
         logging.basicConfig(level=logging.DEBUG)
 
+    def exception_handler(exception_type, exception, traceback, debug_hook=sys.excepthook):
+        if args.verbose:
+            debug_hook(exception_type, exception, traceback)
+        else:
+            print("{}: {}".format(exception_type.__name__, exception.message))
+
+    sys.excepthook = exception_handler
+
     if 'func' in args:
         args.func(args)
     else:
