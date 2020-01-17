@@ -2099,12 +2099,12 @@
                     },
                     {
                         "name": "YEAR",
-                        "type": "string",
+                        "type": "integer",
                         "format": "default"
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -2365,12 +2365,12 @@
                     },
                     {
                         "name": "YEAR",
-                        "type": "string",
+                        "type": "integer",
                         "format": "default"
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
