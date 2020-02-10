@@ -73,7 +73,7 @@ help function::
 Contributing
 ============
 
-New ideas and bugs are found on the repository Issue Tracker.
+New ideas and bugs `should be submitted: <https://github.com/OSeMOSYS/otoole/issues/new>`_ to the repository Issue Tracker.
 Please do contribute by discussing and developing these ideas further,
 or by developing the codebase.
 
