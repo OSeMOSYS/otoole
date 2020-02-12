@@ -36,7 +36,8 @@ def extract_nodes(package_rows: List[List], node_type='technology',
     """
     nodes = [(x[0], {'type': node_type,
                      'fillcolor': color, 'shape': shape,
-                     'style': 'filled'}
+                     'style': 'filled',
+                     'label': x[0]}
               )
              for x in package_rows]
 
