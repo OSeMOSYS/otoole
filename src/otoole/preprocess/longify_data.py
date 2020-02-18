@@ -1,3 +1,5 @@
+"""Read in a folder of irregular wide-format csv files and write them out as narrow csvs
+"""
 import logging
 import os
 import sys

@@ -16,6 +16,19 @@ from otoole.preprocess.longify_data import check_datatypes, check_set_datatype, 
 logger = logging.getLogger(__name__)
 
 
+def write_default_values(filepath):
+
+    config = read_packaged_file('config.yaml', 'otoole.preprocess')
+
+    default_values_path = os.path.join(filepath, 'data', 'default_values.csv')
+    with open(default_values_path, 'w') as csv_file:
+        csv_file.write('name,default_value\n')
+
+        for name, contents in config.items():
+            if contents['type'] == 'param':
+                csv_file.write('{},{}\n'.format(name, contents['default']))
+
+
 def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
     """Converts an OSeMOSYS datafile to a Tabular Data Package
 
@@ -37,6 +50,7 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
     filepath = os.path.join(path_to_datapackage, 'datapackage.json')
     with open(filepath, 'w') as destination:
         destination.writelines(datapackage)
+    write_default_values(path_to_datapackage)
 
 
 def read_in_datafile(path_to_datafile: str, config: Dict) -> Amply:

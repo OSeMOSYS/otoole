@@ -1,6 +1,6 @@
-import io
 import logging
 import sys
+from typing import TextIO
 
 import pandas as pd
 from datapackage import Package
@@ -12,7 +12,7 @@ from otoole.exceptions import OtooleRelationError, OtooleValidationError
 logger = logging.getLogger(__name__)
 
 
-def write_parameter(filepath: io.TextIOBase, df: pd.DataFrame, parameter_name, default):
+def write_parameter(filepath: TextIO, df: pd.DataFrame, parameter_name, default):
     """
 
     Arguments
@@ -28,7 +28,7 @@ def write_parameter(filepath: io.TextIOBase, df: pd.DataFrame, parameter_name, d
     return filepath
 
 
-def write_set(filepath: io.TextIOBase, df: pd.DataFrame, set_name):
+def write_set(filepath: TextIO, df: pd.DataFrame, set_name):
     """
 
     Arguments
@@ -49,15 +49,18 @@ def read_narrow_csv(filepath):
     return df
 
 
-def main(datapackage, datafilepath, sql=False):
+def main(datapackage: str, datafilepath: str, sql: bool = False):
 
     if sql:
         engine = create_engine('sqlite:///{}'.format(datapackage))
         package = Package(storage='sql', engine=engine)
     else:
-        package = Package(datapackage)
+        package = Package(datapackage)  # typing: datapackage.Package
 
     with open(datafilepath, 'w') as filepath:
+
+        default_resource = package.get_resource('default_values')
+        default_values = {x[0]: float(x[1]) for x in default_resource.read()}
 
         for resource in package.resources:
 
@@ -74,8 +77,7 @@ def main(datapackage, datafilepath, sql=False):
                         fields = resource.descriptor['schema']['fields']
                         headers = [x['name'] for x in fields]
                     df = pd.DataFrame(data, columns=headers)
-
-                    default_value = resource.descriptor['schema']['missingValues'][0]
+                    default_value = default_values[resource.name]
                     if len(headers) > 1:
                         write_parameter(filepath, df, resource.name, default=default_value)
                     else:
@@ -84,6 +86,8 @@ def main(datapackage, datafilepath, sql=False):
                 raise OtooleValidationError(resource.name, "in resource '{}' - {}".format(resource.name, str(ex)))
             except RelationError as ex:
                 raise OtooleRelationError(resource.name, "", "in resource '{}': {}".format(resource.name, str(ex)))
+            except KeyError:
+                logger.info("KeyError caused by {}".format(resource.name))
 
 
 if __name__ == '__main__':

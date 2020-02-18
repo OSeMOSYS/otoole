@@ -64,7 +64,7 @@ def generate_package(path_to_package):
 
             descriptor['schema']['foreignKeys'] = foreign_keys
             descriptor['schema']['primaryKey'] = indices
-            descriptor['schema']['missingValues'] = [str(config[name]['default'])]
+            descriptor['schema']['missingValues'] = []
 
         new_resources.append(descriptor)
 
