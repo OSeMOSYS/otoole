@@ -45,6 +45,28 @@ class TestDataFrameWriting:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
+    def test_write_parameter_skip_defaults(self):
+
+        data = [['SIMPLICITY', 'BIOMASS', 0.95969],
+                ['SIMPLICITY', 'ETH1', 4.69969],
+                ['SIMPLICITY', 'ETH2', -1],
+                ['SIMPLICITY', 'ETH3', -1]]
+
+        df = pd.DataFrame(data=data, columns=['REGION', 'FUEL', 'VALUE'])
+
+        stream = io.StringIO()
+        write_parameter(stream, df, 'test_parameter', -1)
+
+        stream.seek(0)
+        expected = ['param default -1 : test_parameter :=\n',
+                    'SIMPLICITY BIOMASS 0.95969\n',
+                    'SIMPLICITY ETH1 4.69969\n',
+                    ';\n']
+        actual = stream.readlines()
+
+        for actual_line, expected_line in zip(actual, expected):
+            assert actual_line == expected_line
+
     def test_write_set(self):
 
         data = [['BIOMASS'],

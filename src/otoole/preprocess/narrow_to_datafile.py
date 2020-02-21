@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def write_parameter(filepath: TextIO, df: pd.DataFrame, parameter_name, default):
-    """
+    """Write parameter data to a csv file, omitting data which matches the default value
 
     Arguments
     ---------
@@ -23,6 +23,9 @@ def write_parameter(filepath: TextIO, df: pd.DataFrame, parameter_name, default)
     default : int
     """
     filepath.write('param default {} : {} :=\n'.format(default, parameter_name))
+
+    df = df[df.VALUE != default]
+
     df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
     filepath.write(';\n')
     return filepath
