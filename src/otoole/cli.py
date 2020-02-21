@@ -44,6 +44,7 @@ import sys
 from otoole import __version__, read_packaged_file
 from otoole.preprocess import (
     convert_datapackage_to_datafile,
+    convert_datapackage_to_excel,
     convert_file_to_package,
     create_datapackage,
     generate_csv_from_excel
@@ -99,6 +100,8 @@ def conversion_matrix(args):
             convert_datapackage_to_sqlite(args.from_path, args.to_path)
         elif args.to_format == 'datafile':
             convert_datapackage_to_datafile(args.from_path, args.to_path)
+        elif args.to_format == 'excel':
+            convert_datapackage_to_excel(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 
@@ -143,7 +146,7 @@ def get_parser():
     convert_parser.add_argument('from_format', help='Input data format to convert from',
                                 choices=sorted(['datafile', 'datapackage', 'sql', 'excel', 'csv']))
     convert_parser.add_argument('to_format', help='Input data format to convert to',
-                                choices=sorted(['datafile', 'datapackage', 'sql', 'csv']))
+                                choices=sorted(['datafile', 'datapackage', 'sql', 'csv', 'excel']))
     convert_parser.add_argument('from_path', help="Path to file or folder to convert from")
     convert_parser.add_argument('to_path', help='Path to file or folder to convert to')
     convert_parser.set_defaults(func=conversion_matrix)
