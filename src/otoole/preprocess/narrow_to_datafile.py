@@ -57,37 +57,47 @@ def main(datapackage: str, datafilepath: str, sql: bool = False):
     else:
         package = Package(datapackage)  # typing: datapackage.Package
 
-    with open(datafilepath, 'w') as filepath:
-
         default_resource = package.get_resource('default_values')
         default_values = {x[0]: float(x[1]) for x in default_resource.read()}
 
-        for resource in package.resources:
+    with open(datafilepath, 'w') as filepath:
+        filepath.write("# Model file written by *otoole* using datapackage {}\n".format(package.descriptor['name']))
+    for resource in package.resources:
 
-            try:
-                if resource.check_relations():
-                    logger.info("%s is valid", resource.name)
+        try:
+            if resource.check_relations():
+                logger.info("%s is valid", resource.name)
 
-                    data = resource.read()
-                    resource.infer()
+                data = resource.read()
+                resource.infer()
 
-                    if data:
-                        headers = resource.headers
-                    else:
-                        fields = resource.descriptor['schema']['fields']
-                        headers = [x['name'] for x in fields]
-                    df = pd.DataFrame(data, columns=headers)
-                    default_value = default_values[resource.name]
-                    if len(headers) > 1:
-                        write_parameter(filepath, df, resource.name, default=default_value)
-                    else:
-                        write_set(filepath, df, resource.name)
-            except ValidationError as ex:
-                raise OtooleValidationError(resource.name, "in resource '{}' - {}".format(resource.name, str(ex)))
-            except RelationError as ex:
-                raise OtooleRelationError(resource.name, "", "in resource '{}': {}".format(resource.name, str(ex)))
-            except KeyError:
-                logger.info("KeyError caused by {}".format(resource.name))
+            if data:
+                headers = resource.headers
+            else:
+                fields = resource.descriptor['schema']['fields']
+                headers = [x['name'] for x in fields]
+
+        except ValidationError as ex:
+            raise OtooleValidationError(resource.name, "in resource '{}' - {}".format(resource.name, str(ex)))
+        except RelationError as ex:
+            raise OtooleRelationError(resource.name, "", "in resource '{}': {}".format(resource.name, str(ex)))
+
+        if resource.name == 'default_values':
+            pass
+        else:
+            df = pd.DataFrame(data, columns=headers)
+            if len(headers) > 1:
+                default_value = default_values[resource.name]
+                with open(datafilepath, 'a') as filepath:
+                    write_parameter(filepath, df, resource.name, default=default_value)
+
+            else:
+
+                with open(datafilepath, 'a') as filepath:
+                    write_set(filepath, df, resource.name)
+
+    with open(datafilepath, 'a') as filepath:
+        filepath.write('end;\n')
 
 
 if __name__ == '__main__':
