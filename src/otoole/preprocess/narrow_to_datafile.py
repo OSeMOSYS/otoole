@@ -100,8 +100,8 @@ class DataPackageToCsv(DataPackageTo):
 
     def header(self):
         with open(self.datafilepath, 'w') as filepath:
-            msg = "# Model file written by *otoole* using datapackage {}\n"
-            filepath.write(msg.format(self.package.descriptor['name']))
+            msg = "# Model file written by *otoole*\n"
+            filepath.write(msg)
 
     def write_parameter(self, df: pd.DataFrame, parameter_name: str, default: float):
         """Write parameter data to a csv file, omitting data which matches the default value
@@ -138,10 +138,6 @@ class DataPackageToCsv(DataPackageTo):
     def footer(self, writable):
 
         with open(self.datafilepath, 'a') as filepath:
-
-            for name, df in writable:
-                df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
-
             filepath.write('end;\n')
 
 
