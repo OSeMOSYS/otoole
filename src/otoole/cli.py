@@ -42,7 +42,12 @@ import logging
 import sys
 
 from otoole import __version__, read_packaged_file
-from otoole.preprocess import convert_file_to_package, create_datafile, create_datapackage, generate_csv_from_excel
+from otoole.preprocess import (
+    convert_datapackage_to_datafile,
+    convert_file_to_package,
+    create_datapackage,
+    generate_csv_from_excel
+)
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
 from otoole.results.convert import convert_cplex_file
 from otoole.validate import main as validate
@@ -93,14 +98,14 @@ def conversion_matrix(args):
         if args.to_format == 'sql':
             convert_datapackage_to_sqlite(args.from_path, args.to_path)
         elif args.to_format == 'datafile':
-            create_datafile(args.from_path, args.to_path)
+            convert_datapackage_to_datafile(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 
     elif args.from_format == 'sql':
 
         if args.to_format == 'datafile':
-            create_datafile(args.from_path, args.to_path, sql=True)
+            convert_datapackage_to_datafile(args.from_path, args.to_path, sql=True)
         else:
             raise NotImplementedError(msg)
 

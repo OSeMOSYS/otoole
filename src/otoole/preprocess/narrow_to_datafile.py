@@ -1,5 +1,6 @@
 import logging
 import sys
+from abc import abstractmethod
 from typing import TextIO
 
 import pandas as pd
@@ -12,99 +13,136 @@ from otoole.exceptions import OtooleRelationError, OtooleValidationError
 logger = logging.getLogger(__name__)
 
 
-def write_parameter(filepath: TextIO, df: pd.DataFrame, parameter_name, default):
-    """Write parameter data to a csv file, omitting data which matches the default value
+class DataPackageTo(object):
 
-    Arguments
-    ---------
-    filepath : StreamIO
-    df : pandas.DataFrame
-    parameter_name : str
-    default : int
-    """
-    filepath.write('param default {} : {} :=\n'.format(default, parameter_name))
+    def __init__(self, datapackage: str, datafilepath: str, sql: bool = False):
 
-    df = df[df.VALUE != default]
+        self.datapackage = datapackage
+        self.datafilepath = datafilepath
+        self.sql = sql
+        self.package = self.get_package()
+        self.default_values = self.get_default_values()
 
-    df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
-    filepath.write(';\n')
-    return filepath
+    def get_package(self):
 
-
-def write_set(filepath: TextIO, df: pd.DataFrame, set_name):
-    """
-
-    Arguments
-    ---------
-    filepath : StreamIO
-    df : pandas.DataFrame
-    parameter_name : str
-    """
-    filepath.write('set {} :=\n'.format(set_name))
-    df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
-    filepath.write(';\n')
-    return filepath
-
-
-def read_narrow_csv(filepath):
-
-    df = pd.read_csv(filepath)
-    return df
-
-
-def main(datapackage: str, datafilepath: str, sql: bool = False):
-
-    if sql:
-        engine = create_engine('sqlite:///{}'.format(datapackage))
-        package = Package(storage='sql', engine=engine)
-    else:
-        package = Package(datapackage)  # typing: datapackage.Package
-
-        default_resource = package.get_resource('default_values')
-        default_values = {x[0]: float(x[1]) for x in default_resource.read()}
-
-    with open(datafilepath, 'w') as filepath:
-        filepath.write("# Model file written by *otoole* using datapackage {}\n".format(package.descriptor['name']))
-    for resource in package.resources:
-
-        try:
-            if resource.check_relations():
-                logger.info("%s is valid", resource.name)
-
-                data = resource.read()
-                resource.infer()
-
-            if data:
-                headers = resource.headers
-            else:
-                fields = resource.descriptor['schema']['fields']
-                headers = [x['name'] for x in fields]
-
-        except ValidationError as ex:
-            raise OtooleValidationError(resource.name, "in resource '{}' - {}".format(resource.name, str(ex)))
-        except RelationError as ex:
-            raise OtooleRelationError(resource.name, "", "in resource '{}': {}".format(resource.name, str(ex)))
-
-        if resource.name == 'default_values':
-            pass
+        if self.sql:
+            engine = create_engine('sqlite:///{}'.format(self.datapackage))
+            package = Package(storage='sql', engine=engine)
         else:
-            df = pd.DataFrame(data, columns=headers)
-            if len(headers) > 1:
-                default_value = default_values[resource.name]
-                with open(datafilepath, 'a') as filepath:
-                    write_parameter(filepath, df, resource.name, default=default_value)
+            package = Package(self.datapackage)  # typing: datapackage.Package
 
+        return package
+
+    def get_default_values(self):
+        default_resource = self.package.get_resource('default_values')
+        return {x[0]: float(x[1]) for x in default_resource.read()}
+
+    def convert(self):
+
+        self.header()
+
+        for resource in self.package.resources:
+
+            try:
+                if resource.check_relations():
+                    logger.info("%s is valid", resource.name)
+
+                    data = resource.read()
+                    resource.infer()
+
+                if data:
+                    headers = resource.headers
+                else:
+                    fields = resource.descriptor['schema']['fields']
+                    headers = [x['name'] for x in fields]
+
+            except ValidationError as ex:
+                raise OtooleValidationError(resource.name, "in resource '{}' - {}".format(resource.name, str(ex)))
+            except RelationError as ex:
+                raise OtooleRelationError(resource.name, "", "in resource '{}': {}".format(resource.name, str(ex)))
+
+            if resource.name == 'default_values':
+                pass
             else:
+                df = pd.DataFrame(data, columns=headers)
+                if len(headers) > 1:
+                    default_value = self.default_values[resource.name]
+                    self.write_parameter(self.datafilepath, df, resource.name, default=default_value)
 
-                with open(datafilepath, 'a') as filepath:
-                    write_set(filepath, df, resource.name)
+                else:
+                    self.write_set(self.datafilepath, df, resource.name)
 
-    with open(datafilepath, 'a') as filepath:
-        filepath.write('end;\n')
+        self.footer()
+
+    @abstractmethod
+    def header():
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_parameter(self, filepath: TextIO, df: pd.DataFrame, parameter_name: str, default: float):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_set(self, filepath: TextIO, df: pd.DataFrame, set_name):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def footer():
+        raise NotImplementedError()
+
+
+class DataPackageToCsv(DataPackageTo):
+
+    def header(self):
+        with open(self.datafilepath, 'w') as filepath:
+            msg = "# Model file written by *otoole* using datapackage {}\n"
+            filepath.write(msg.format(self.package.descriptor['name']))
+
+    def write_parameter(self, filepath: TextIO, df: pd.DataFrame, parameter_name: str, default: float):
+        """Write parameter data to a csv file, omitting data which matches the default value
+
+        Arguments
+        ---------
+        filepath : StreamIO
+        df : pandas.DataFrame
+        parameter_name : str
+        default : int
+        """
+        with open(self.datafilepath, 'a') as filepath:
+            filepath.write('param default {} : {} :=\n'.format(default, parameter_name))
+
+            df = df[df.VALUE != default]
+
+            df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
+            filepath.write(';\n')
+
+    def write_set(self, filepath: TextIO, df: pd.DataFrame, set_name):
+        """
+
+        Arguments
+        ---------
+        filepath : StreamIO
+        df : pandas.DataFrame
+        parameter_name : str
+        """
+        with open(self.datafilepath, 'a') as filepath:
+            filepath.write('set {} :=\n'.format(set_name))
+            df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
+            filepath.write(';\n')
+
+    def footer(self):
+        with open(self.datafilepath, 'a') as filepath:
+            filepath.write('end;\n')
+
+
+def convert_datapackage_to_datafile(path_to_datapackage, path_to_datafile):
+    dp = DataPackageToCsv(path_to_datapackage, path_to_datafile)
+    dp.convert()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     path_to_datapackage = sys.argv[1]
     path_to_datafile = sys.argv[2]
-    main(path_to_datapackage, path_to_datafile)
+
+    DataPackageToCsv(path_to_datapackage, path_to_datafile)
