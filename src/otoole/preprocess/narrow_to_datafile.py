@@ -1,7 +1,7 @@
 import logging
 import sys
 from abc import abstractmethod
-from typing import Dict
+from typing import Dict, TextIO
 
 import pandas as pd
 from datapackage import Package
@@ -53,10 +53,8 @@ class DataPackageTo(object):
         """Perform the conversion from datapackage to destination format
         """
 
-        self.header()
+        handle = self.header()
         logger.debug(self.default_values)
-
-        writable = {}
 
         for name, df in self.package.items():
             logger.debug(name)
@@ -72,38 +70,41 @@ class DataPackageTo(object):
             logger.debug("Number of columns: %s, %s", len(df.columns), df.columns)
             if len(df.columns) > 1:
                 default_value = self.default_values[name]
-                writable[name] = self.write_parameter(df, name, default=default_value)
+                self.write_parameter(df, name, handle, default=default_value)
 
             else:
-                writable[name] = self.write_set(df, name)
+                self.write_set(df, name, handle)
 
-        self.footer(writable)
+        self.footer(handle)
+
+        handle.close()
 
     @abstractmethod
-    def header(self):
+    def header(self) -> TextIO:
         raise NotImplementedError()
 
     @abstractmethod
-    def write_parameter(self, df: pd.DataFrame, parameter_name: str, default: float) -> pd.DataFrame:
+    def write_parameter(self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def write_set(self, df: pd.DataFrame, set_name) -> pd.DataFrame:
+    def write_set(self, df: pd.DataFrame, set_name, handle: TextIO) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def footer(self, dataframes: Dict[str, pd.DataFrame]):
+    def footer(self, handle: TextIO):
         raise NotImplementedError()
 
 
 class DataPackageToCsv(DataPackageTo):
 
     def header(self):
-        with open(self.datafilepath, 'w') as filepath:
-            msg = "# Model file written by *otoole*\n"
-            filepath.write(msg)
+        filepath = open(self.datafilepath, 'w')
+        msg = "# Model file written by *otoole*\n"
+        filepath.write(msg)
+        return filepath
 
-    def write_parameter(self, df: pd.DataFrame, parameter_name: str, default: float):
+    def write_parameter(self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float):
         """Write parameter data to a csv file, omitting data which matches the default value
 
         Arguments
@@ -111,34 +112,32 @@ class DataPackageToCsv(DataPackageTo):
         filepath : StreamIO
         df : pandas.DataFrame
         parameter_name : str
+        handle: TextIO
         default : int
         """
-        with open(self.datafilepath, 'a') as filepath:
-            filepath.write('param default {} : {} :=\n'.format(default, parameter_name))
+        handle.write('param default {} : {} :=\n'.format(default, parameter_name))
 
-            df = df[df.VALUE != default]
+        df = df[df.VALUE != default]
 
-            df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
-            filepath.write(';\n')
+        df.to_csv(path_or_buf=handle, sep=" ", header=False, index=False)
+        handle.write(';\n')
 
-    def write_set(self, df: pd.DataFrame, set_name):
+    def write_set(self, df: pd.DataFrame, set_name, handle: TextIO):
         """
 
         Arguments
         ---------
-        filepath : StreamIO
         df : pandas.DataFrame
-        parameter_name : str
+        set_name : str
+        handle: TextIO
         """
-        with open(self.datafilepath, 'a') as filepath:
-            filepath.write('set {} :=\n'.format(set_name))
-            df.to_csv(path_or_buf=filepath, sep=" ", header=False, index=False)
-            filepath.write(';\n')
+        handle.write('set {} :=\n'.format(set_name))
+        df.to_csv(path_or_buf=handle, sep=" ", header=False, index=False)
+        handle.write(';\n')
 
-    def footer(self, writable):
-
-        with open(self.datafilepath, 'a') as filepath:
-            filepath.write('end;\n')
+    def footer(self, handle: TextIO):
+        handle.write('end;\n')
+        handle.close()
 
 
 class DataPackageToExcel(DataPackageTo):

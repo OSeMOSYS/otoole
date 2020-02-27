@@ -1,21 +1,35 @@
 import io
+from unittest.mock import Mock
+
+from pytest import fixture
 
 import pandas as pd
 
 from otoole.preprocess.excel_to_osemosys import read_config
-from otoole.preprocess.narrow_to_datafile import write_parameter, write_set
+from otoole.preprocess.narrow_to_datafile import DataPackageToCsv
 
 
 class TestDataFrameWriting:
 
-    def test_write_empty_parameter_with_defaults(self):
+    @fixture
+    def setup(self) -> DataPackageToCsv:
+
+        dp = DataPackageToCsv
+        dp._get_package = Mock()
+        dp._get_default_values = Mock()
+
+        return dp('', '')
+
+    def test_write_empty_parameter_with_defaults(self, setup):
+
+        convert = setup  # typing: DataPackageToCsv
 
         data = []
 
         df = pd.DataFrame(data=data, columns=['REGION', 'FUEL', 'VALUE'])
 
         stream = io.StringIO()
-        write_parameter(stream, df, 'test_parameter', 0)
+        convert.write_parameter(df, 'test_parameter', stream, 0)
 
         stream.seek(0)
         expected = ['param default 0 : test_parameter :=\n',
@@ -25,7 +39,7 @@ class TestDataFrameWriting:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_as_tabbing_format(self):
+    def test_write_parameter_as_tabbing_format(self, setup):
 
         data = [['SIMPLICITY', 'BIOMASS', 0.95969],
                 ['SIMPLICITY', 'ETH1', 4.69969]]
@@ -33,7 +47,8 @@ class TestDataFrameWriting:
         df = pd.DataFrame(data=data, columns=['REGION', 'FUEL', 'VALUE'])
 
         stream = io.StringIO()
-        write_parameter(stream, df, 'test_parameter', 0)
+        convert = setup
+        convert.write_parameter(df, 'test_parameter', stream, 0)
 
         stream.seek(0)
         expected = ['param default 0 : test_parameter :=\n',
@@ -45,7 +60,7 @@ class TestDataFrameWriting:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_skip_defaults(self):
+    def test_write_parameter_skip_defaults(self, setup):
 
         data = [['SIMPLICITY', 'BIOMASS', 0.95969],
                 ['SIMPLICITY', 'ETH1', 4.69969],
@@ -55,7 +70,8 @@ class TestDataFrameWriting:
         df = pd.DataFrame(data=data, columns=['REGION', 'FUEL', 'VALUE'])
 
         stream = io.StringIO()
-        write_parameter(stream, df, 'test_parameter', -1)
+        convert = setup
+        convert.write_parameter(df, 'test_parameter', stream, -1)
 
         stream.seek(0)
         expected = ['param default -1 : test_parameter :=\n',
@@ -67,7 +83,7 @@ class TestDataFrameWriting:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_set(self):
+    def test_write_set(self, setup):
 
         data = [['BIOMASS'],
                 ['ETH1']]
@@ -75,7 +91,8 @@ class TestDataFrameWriting:
         df = pd.DataFrame(data=data, columns=['VALUE'])
 
         stream = io.StringIO()
-        write_set(stream, df, 'TECHNOLOGY')
+        convert = setup
+        convert.write_set(df, 'TECHNOLOGY', stream)
 
         stream.seek(0)
         expected = ['set TECHNOLOGY :=\n',
