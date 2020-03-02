@@ -4,6 +4,7 @@ git+git://github.com/coin-or/pulp@master#egg=pulp
 importlib_resources; python_version<'3.7'
 networkx
 pandas
+pandas_datapackage_reader
 pydot
 pyyaml
 xlrd

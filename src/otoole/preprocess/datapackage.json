@@ -2993,7 +2993,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
