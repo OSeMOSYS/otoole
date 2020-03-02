@@ -2,6 +2,14 @@
 Changelog
 =========
 
+Version 0.6
+===========
+- Fixes bug in writing to datafile where any values that matched the default were
+  ignored
+- Adds CLI command to convert to Excel from datapackage e.g.
+  ``otoole convert datapackage excel <datapackage.json> <to.xlsx>``
+- Uses black code style and uses mypy and black for syntax checking and formatting
+
 Version 0.5
 ===========
 - Add validation of names and fuels in datapackage

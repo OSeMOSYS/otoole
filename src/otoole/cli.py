@@ -86,9 +86,9 @@ def conversion_matrix(args):
         --------------------------
         excel       -- yy
         csv         nn -- yy nn nn
-        datapackage nn ?? -- yy yy
+        datapackage yy -- -- yy yy
         sql         nn       -- yy
-        datafile    nn ?? yy    --
+        datafile    nn -- yy    --
 
     """
 
