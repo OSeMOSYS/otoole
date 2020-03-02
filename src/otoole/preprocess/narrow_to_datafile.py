@@ -196,6 +196,7 @@ class DataPackageToExcel(DataPackageTo):
             else:
                 logger.debug("One column for {}: {}".format(parameter_name, names))
                 pivot = df.copy()
+                pivot = pivot.reset_index(drop=True)
 
         else:
             logger.debug("Dataframe {} is empty".format(parameter_name))
@@ -214,7 +215,7 @@ class DataPackageToExcel(DataPackageTo):
         df.to_excel(handle, sheet_name=parameter_name, merge_cells=False)
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: pd.ExcelWriter):
-        df.to_excel(handle, sheet_name=set_name, merge_cells=False)
+        df.to_excel(handle, sheet_name=set_name, merge_cells=False, index=False)
 
     def _footer(self, handle=pd.ExcelWriter):
         handle.close()

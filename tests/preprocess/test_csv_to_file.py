@@ -30,15 +30,15 @@ class TestDataFrameWritingExcel:
         expected = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_two_columns(self, setup):
+    def test_form_one_columns(self, setup):
 
         convert = setup  # typing: DataPackageToExcel
 
-        data = []
+        data = ["A", "B", "C"]
 
-        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
-        actual = convert._form_parameter(df, "test_parameter", 0)
-        expected = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
+        df = pd.DataFrame(data=data, columns=["FUEL"])
+        actual = convert._form_parameter(df, "test_set", 0)
+        expected = pd.DataFrame(data=["A", "B", "C"], columns=["FUEL"])
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_form_three_columns(self, setup):
