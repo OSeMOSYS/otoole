@@ -1,6 +1,12 @@
 exclude: '^docs/conf.py'
 
 repos:
+- repo: https://github.com/psf/black
+  rev: stable
+  hooks:
+    - id: black
+      language_version: python3.7
+
 - repo: git://github.com/pre-commit/pre-commit-hooks
   rev: v2.2.3
   hooks:
@@ -23,12 +29,6 @@ repos:
   rev: v4.3.4
   hooks:
   - id: isort
-
-- repo: https://github.com/psf/black
-  rev: stable
-  hooks:
-    - id: black
-      language_version: python3.7
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: master  # Use the sha / tag you want to point at
