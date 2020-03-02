@@ -2,17 +2,19 @@
 
 The key functions are **convert**, **cplex** and **viz**.
 
-The ``convert`` command allows convertion of multiple different OSeMOSYS input formats including
-from/to csv, an AMPL format datafile, a Tabular Data Package, a folder of CSVs, an Excel workbook with
-one tab per parameter, an SQLite database
+The ``convert`` command allows convertion of multiple different OSeMOSYS input formats
+including from/to csv, an AMPL format datafile, a Tabular Data Package, a folder of
+CSVs, an Excel workbook with one tab per parameter, an SQLite database
 
-The ``cplex`` command provides access to scripts which transform and process a CPLEX solution file
-into a format which is more readily processed - either to CBC or CSV format.
+The ``cplex`` command provides access to scripts which transform and process a CPLEX
+solution file into a format which is more readily processed - either to CBC or CSV
+format.
 
-The ``validate`` command checks the technology and fuel names of a tabular data package against a standard
-or user defined configuration file.
+The ``validate`` command checks the technology and fuel names of a tabular data package
+against a standard or user defined configuration file.
 
-The **viz** command allows you to produce a Reference Energy System diagram from a Tabular Data Package.
+The **viz** command allows you to produce a Reference Energy System diagram from a
+Tabular Data Package.
 
 Example
 -------
@@ -47,7 +49,7 @@ from otoole.preprocess import (
     convert_datapackage_to_excel,
     convert_file_to_package,
     create_datapackage,
-    generate_csv_from_excel
+    generate_csv_from_excel,
 )
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
 from otoole.results.convert import convert_cplex_file
@@ -66,8 +68,13 @@ def validate_model(args):
 
 
 def cplex2cbc(args):
-    convert_cplex_file(args.cplex_file, args.output_file, args.start_year,
-                       args.end_year, args.output_format)
+    convert_cplex_file(
+        args.cplex_file,
+        args.output_file,
+        args.start_year,
+        args.end_year,
+        args.output_format,
+    )
 
 
 def conversion_matrix(args):
@@ -85,41 +92,43 @@ def conversion_matrix(args):
 
     """
 
-    msg = "Conversion from {} to {} is not yet implemented".format(args.from_format, args.to_format)
+    msg = "Conversion from {} to {} is not yet implemented".format(
+        args.from_format, args.to_format
+    )
 
-    if args.from_format == 'datafile':
+    if args.from_format == "datafile":
 
-        if args.to_format == 'datapackage':
+        if args.to_format == "datapackage":
             convert_file_to_package(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 
-    elif (args.from_format == 'datapackage'):
+    elif args.from_format == "datapackage":
 
-        if args.to_format == 'sql':
+        if args.to_format == "sql":
             convert_datapackage_to_sqlite(args.from_path, args.to_path)
-        elif args.to_format == 'datafile':
+        elif args.to_format == "datafile":
             convert_datapackage_to_datafile(args.from_path, args.to_path)
-        elif args.to_format == 'excel':
+        elif args.to_format == "excel":
             convert_datapackage_to_excel(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 
-    elif args.from_format == 'sql':
+    elif args.from_format == "sql":
 
-        if args.to_format == 'datafile':
+        if args.to_format == "datafile":
             convert_datapackage_to_datafile(args.from_path, args.to_path, sql=True)
         else:
             raise NotImplementedError(msg)
 
-    elif args.from_format == 'csv':
-        if args.to_format == 'datapackage':
+    elif args.from_format == "csv":
+        if args.to_format == "datapackage":
             create_datapackage(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 
-    elif args.from_format == 'excel':
-        if args.to_format == 'csv':
+    elif args.from_format == "excel":
+        if args.to_format == "csv":
             generate_csv_from_excel(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
@@ -133,53 +142,89 @@ def datapackage2res(args):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description="otoole: Python toolkit of OSeMOSYS users")
+    parser = argparse.ArgumentParser(
+        description="otoole: Python toolkit of OSeMOSYS users"
+    )
 
-    parser.add_argument('--verbose', '-v', help='Enable debug mode', action='count', default=0)
-    parser.add_argument('--version', '-V', action='version', version=__version__,
-                        help='The version of otoole')
+    parser.add_argument(
+        "--verbose", "-v", help="Enable debug mode", action="count", default=0
+    )
+    parser.add_argument(
+        "--version",
+        "-V",
+        action="version",
+        version=__version__,
+        help="The version of otoole",
+    )
 
     subparsers = parser.add_subparsers()
 
     # Parser for conversion
-    convert_parser = subparsers.add_parser('convert', help='Convert from one input format to another')
-    convert_parser.add_argument('from_format', help='Input data format to convert from',
-                                choices=sorted(['datafile', 'datapackage', 'sql', 'excel', 'csv']))
-    convert_parser.add_argument('to_format', help='Input data format to convert to',
-                                choices=sorted(['datafile', 'datapackage', 'sql', 'csv', 'excel']))
-    convert_parser.add_argument('from_path', help="Path to file or folder to convert from")
-    convert_parser.add_argument('to_path', help='Path to file or folder to convert to')
+    convert_parser = subparsers.add_parser(
+        "convert", help="Convert from one input format to another"
+    )
+    convert_parser.add_argument(
+        "from_format",
+        help="Input data format to convert from",
+        choices=sorted(["datafile", "datapackage", "sql", "excel", "csv"]),
+    )
+    convert_parser.add_argument(
+        "to_format",
+        help="Input data format to convert to",
+        choices=sorted(["datafile", "datapackage", "sql", "csv", "excel"]),
+    )
+    convert_parser.add_argument(
+        "from_path", help="Path to file or folder to convert from"
+    )
+    convert_parser.add_argument("to_path", help="Path to file or folder to convert to")
     convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for the CPLEX related commands
-    cplex_parser = subparsers.add_parser('cplex',
-                                         help='Process a CPLEX solution file')
+    cplex_parser = subparsers.add_parser("cplex", help="Process a CPLEX solution file")
 
-    cplex_parser.add_argument("cplex_file",
-                              help="The filepath of the OSeMOSYS cplex output file")
-    cplex_parser.add_argument("output_file",
-                              help="The filepath of the converted file that will be written")
-    cplex_parser.add_argument("-s", "--start_year", type=int, default=2015,
-                              help="Output only the results from this year onwards")
-    cplex_parser.add_argument("-e", "--end_year", type=int, default=2070,
-                              help="Output only the results upto and including this year")
-    cplex_parser.add_argument('output_format', choices=['csv', 'cbc'], default='cbc')
+    cplex_parser.add_argument(
+        "cplex_file", help="The filepath of the OSeMOSYS cplex output file"
+    )
+    cplex_parser.add_argument(
+        "output_file", help="The filepath of the converted file that will be written"
+    )
+    cplex_parser.add_argument(
+        "-s",
+        "--start_year",
+        type=int,
+        default=2015,
+        help="Output only the results from this year onwards",
+    )
+    cplex_parser.add_argument(
+        "-e",
+        "--end_year",
+        type=int,
+        default=2070,
+        help="Output only the results upto and including this year",
+    )
+    cplex_parser.add_argument("output_format", choices=["csv", "cbc"], default="cbc")
     cplex_parser.set_defaults(func=cplex2cbc)
 
     # Parser for validation
-    valid_parser = subparsers.add_parser('validate', help='Validate an OSeMOSYS model')
-    valid_parser.add_argument('format', help='The format of the OSeMOSYS model to validate')
-    valid_parser.add_argument('filepath', help='Path to the OSeMOSYS model to validate')
-    valid_parser.add_argument('--config', help='Path to a user-defined validation-config file')
+    valid_parser = subparsers.add_parser("validate", help="Validate an OSeMOSYS model")
+    valid_parser.add_argument(
+        "format", help="The format of the OSeMOSYS model to validate"
+    )
+    valid_parser.add_argument("filepath", help="Path to the OSeMOSYS model to validate")
+    valid_parser.add_argument(
+        "--config", help="Path to a user-defined validation-config file"
+    )
     valid_parser.set_defaults(func=validate_model)
 
     # Parser for visualisation
-    viz_parser = subparsers.add_parser('viz', help='Visualise the model')
+    viz_parser = subparsers.add_parser("viz", help="Visualise the model")
     viz_subparsers = viz_parser.add_subparsers()
 
-    res_parser = viz_subparsers.add_parser('res', help='Generate a reference energy system')
-    res_parser.add_argument('datapackage', help='Path to model datapackage')
-    res_parser.add_argument('resfile', help='Path to reference energy system')
+    res_parser = viz_subparsers.add_parser(
+        "res", help="Generate a reference energy system"
+    )
+    res_parser.add_argument("datapackage", help="Path to model datapackage")
+    res_parser.add_argument("resfile", help="Path to reference energy system")
     res_parser.set_defaults(func=datapackage2res)
 
     return parser
@@ -195,7 +240,9 @@ def main():
     if args.verbose > 2:
         logging.basicConfig(level=logging.DEBUG)
 
-    def exception_handler(exception_type, exception, traceback, debug_hook=sys.excepthook):
+    def exception_handler(
+        exception_type, exception, traceback, debug_hook=sys.excepthook
+    ):
         if args.verbose:
             debug_hook(exception_type, exception, traceback)
         else:
@@ -203,7 +250,7 @@ def main():
 
     sys.excepthook = exception_handler
 
-    if 'func' in args:
+    if "func" in args:
         args.func(args)
     else:
         parser.print_help()

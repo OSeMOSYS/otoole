@@ -2,6 +2,7 @@ class OtooleException(Exception):
     """Base class for all otoole exceptions.
 
     """
+
     pass
 
 
@@ -16,6 +17,7 @@ class OtooleValidationError(OtooleException):
         Error message
 
     """
+
     def __init__(self, resource, message):
         self.resource = resource
         self.message = message
@@ -34,6 +36,7 @@ class OtooleRelationError(OtooleException):
         Error message
 
     """
+
     def __init__(self, resource, foreign_resource, message):
         self.resource = resource
         self.foreign_resource = foreign_resource

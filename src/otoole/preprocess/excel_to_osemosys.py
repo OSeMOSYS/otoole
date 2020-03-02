@@ -106,8 +106,10 @@ Performance parameters::
     param AvailabilityFactor{r in REGION, t in TECHNOLOGY, y in YEAR};
     param OperationalLife{r in REGION, t in TECHNOLOGY};
     param ResidualCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
-    param InputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
-    param OutputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL, m in MODE_OF_OPERATION, y in YEAR};
+    param InputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL,
+                             m in MODE_OF_OPERATION, y in YEAR};
+    param OutputActivityRatio{r in REGION, t in TECHNOLOGY, f in FUEL,
+                              m in MODE_OF_OPERATION, y in YEAR};
 
 
 Technology Costs parameters::
@@ -119,8 +121,10 @@ Technology Costs parameters::
 
 Storage parameters::
 
-    param TechnologyToStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
-    param TechnologyFromStorage{r in REGION, t in TECHNOLOGY, s in STORAGE, m in MODE_OF_OPERATION};
+    param TechnologyToStorage{r in REGION, t in TECHNOLOGY, s in STORAGE,
+                              m in MODE_OF_OPERATION};
+    param TechnologyFromStorage{r in REGION, t in TECHNOLOGY, s in STORAGE,
+                              m in MODE_OF_OPERATION};
     param StorageLevelStart{r in REGION, s in STORAGE};
     param StorageMaxChargeRate{r in REGION, s in STORAGE};
     param StorageMaxDischargeRate{r in REGION, s in STORAGE};
@@ -145,8 +149,10 @@ Investment Constraints parameters::
 
 Activity Constraints parameters::
 
-    param TotalTechnologyAnnualActivityUpperLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
-    param TotalTechnologyAnnualActivityLowerLimit{r in REGION, t in TECHNOLOGY, y in YEAR};
+    param TotalTechnologyAnnualActivityUpperLimit{r in REGION, t in TECHNOLOGY,
+                                                  y in YEAR};
+    param TotalTechnologyAnnualActivityLowerLimit{r in REGION, t in TECHNOLOGY,
+                                                  y in YEAR};
     param TotalTechnologyModelPeriodActivityUpperLimit{r in REGION, t in TECHNOLOGY};
     param TotalTechnologyModelPeriodActivityLowerLimit{r in REGION, t in TECHNOLOGY};
 
@@ -167,7 +173,8 @@ RE Generation Target parameters::
 
 Emissions & Penalties parameters::
 
-    param EmissionActivityRatio{r in REGION, t in TECHNOLOGY, e in EMISSION, m in MODE_OF_OPERATION, y in YEAR};
+    param EmissionActivityRatio{r in REGION, t in TECHNOLOGY, e in EMISSION,
+                                m in MODE_OF_OPERATION, y in YEAR};
     param EmissionsPenalty{r in REGION, e in EMISSION, y in YEAR};
     param AnnualExogenousEmission{r in REGION, e in EMISSION, y in YEAR};
     param AnnualEmissionLimit{r in REGION, e in EMISSION, y in YEAR};
@@ -202,7 +209,7 @@ def read_config(path_to_user_config: str = None) -> Dict:
     if path_to_user_config:
         config = read_packaged_file(path_to_user_config, None)
     else:
-        config = read_packaged_file('config.yaml', 'otoole.preprocess')
+        config = read_packaged_file("config.yaml", "otoole.preprocess")
     return config
 
 
@@ -245,8 +252,8 @@ def _csv_from_excel(workbook, output_folder):
         mod_name = _modify_names([name])
 
         # Open the sheet name in the xlsx file and write it in csv format]
-        filepath = os.path.join(output_folder, mod_name[0] + '.csv')
-        with open(filepath, 'w', newline='') as your_csv_file:
+        filepath = os.path.join(output_folder, mod_name[0] + ".csv")
+        with open(filepath, "w", newline="") as your_csv_file:
             wr = csv.writer(your_csv_file, quoting=csv.QUOTE_NONNUMERIC)
 
             for rownum in range(sheet.nrows):  # reads each row in the csv file
@@ -260,17 +267,17 @@ def _modify_names(sheet_names: List) -> List:
     """
     modifiedNames = sheet_names.copy()
     for name in modifiedNames:
-        if (name == "TotalAnnualMaxCapacityInvestmen"):
+        if name == "TotalAnnualMaxCapacityInvestmen":
             name = "TotalAnnualMaxCapacityInvestment"
-        elif (name == "TotalAnnualMinCapacityInvestmen"):
+        elif name == "TotalAnnualMinCapacityInvestmen":
             name = "TotalAnnualMinCapacityInvestment"
-        elif (name == "TotalTechnologyAnnualActivityLo"):
+        elif name == "TotalTechnologyAnnualActivityLo":
             name = "TotalTechnologyAnnualActivityLowerLimit"
-        elif (name == "TotalTechnologyAnnualActivityUp"):
+        elif name == "TotalTechnologyAnnualActivityUp":
             name = "TotalTechnologyAnnualActivityUpperLimit"
-        elif (name == "TotalTechnologyModelPeriodActLo"):
+        elif name == "TotalTechnologyModelPeriodActLo":
             name = "TotalTechnologyModelPeriodActivityLowerLimit"
-        elif (name == "TotalTechnologyModelPeriodActUp"):
+        elif name == "TotalTechnologyModelPeriodActUp":
             name = "TotalTechnologyModelPeriodActivityUpperLimit"
     return modifiedNames
 

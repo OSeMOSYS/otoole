@@ -24,7 +24,8 @@ Create a yaml validation config with the following format::
         valid: ['these', 'are__', 'all__', 'valid', 'entry', 'in__', 'a____', 'list_']
         position: (1, 5) # a tuple representing the start and end position
       - name: second_entry_in_schema
-        valid: some_valid_codes  # references an entry in the codes section of the config
+        valid: some_valid_codes  # references an entry in the codes section of the
+        config
         position: (6, 19) # a tuple representing the start and end position
 
 """
@@ -32,7 +33,7 @@ Create a yaml validation config with the following format::
 import logging
 import re
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Sequence
 
 import networkx.algorithms.isolate as isolate
 
@@ -43,15 +44,15 @@ logger = logging.getLogger(__name__)
 
 
 def read_validation_config():
-    return read_packaged_file('validate.yaml', 'otoole')
+    return read_packaged_file("validate.yaml", "otoole")
 
 
-def check_for_duplicates(codes: List) -> bool:
+def check_for_duplicates(codes: Sequence) -> bool:
     duplicate_values = len(codes) != len(set(codes))
     return duplicate_values
 
 
-def create_schema(config: Dict = None) -> Dict:
+def create_schema(config: Dict[str, Dict] = None) -> Dict:
     """Populate the dict of schema with codes from the validation config
 
     Arguments
@@ -62,24 +63,28 @@ def create_schema(config: Dict = None) -> Dict:
     if config is None:
         config = read_validation_config()
 
-    for resource_name, resource_schemas in config['schema'].items():
+    for resource_name, resource_schemas in config["schema"].items():
         logger.debug("%s", resource_name)
         for schema in resource_schemas:
 
-            for items in schema['items']:
+            for items in schema["items"]:  # typing: List
 
-                if isinstance(items['valid'], str):
-                    items['valid'] = list(config['codes'][items['valid']].keys())
-                    logger.debug("create_schema: %s", items['valid'])
-                elif isinstance(items['valid'], list):
+                if isinstance(items["valid"], str):
+                    items["valid"] = list(
+                        config["codes"][items["valid"]].keys()
+                    )  # typing: List
+                    logger.debug("create_schema: %s", items["valid"])
+                elif isinstance(items["valid"], list):
                     pass
                 else:
-                    raise ValueError("Entry {} is not correct".format(schema['name']))
+                    raise ValueError("Entry {} is not correct".format(schema["name"]))
 
-                if check_for_duplicates(items['valid']):
-                    raise ValueError("There are duplicate values in codes for {}", schema['name'])
+                if check_for_duplicates(items["valid"]):
+                    raise ValueError(
+                        "There are duplicate values in codes for {}", schema["name"]
+                    )
 
-    return config['schema']
+    return config["schema"]
 
 
 def compose_expression(schema: List) -> str:
@@ -91,8 +96,8 @@ def compose_expression(schema: List) -> str:
     """
     expression = "^"
     for x in schema:
-        logger.debug("compose_expression: %s", x['valid'])
-        valid_entries = "|".join(x['valid'])
+        logger.debug("compose_expression: %s", x["valid"])
+        valid_entries = "|".join(x["valid"])
         expression += "({})".format(valid_entries)
     return expression
 
@@ -105,7 +110,7 @@ def compose_multi_expression(resource: List) -> str:
     """
     expressions = []
     for schemas in resource:
-        expressions.append(compose_expression(schemas['items']))
+        expressions.append(compose_expression(schemas["items"]))
     return "|".join(expressions)
 
 
@@ -145,7 +150,11 @@ def validate_resource(package, resource: str, schemas: List[Dict]):
         The schema from which to create a validation expression
     """
 
-    print("Validating {} with {}\n".format(resource, ", ".join([x['name'] for x in schemas])))
+    print(
+        "Validating {} with {}\n".format(
+            resource, ", ".join([x["name"] for x in schemas])
+        )
+    )
 
     logger.debug(schemas)
 
@@ -156,8 +165,8 @@ def validate_resource(package, resource: str, schemas: List[Dict]):
     invalid_names = []
 
     for row in resources:
-        name = row['VALUE']
-        valid = validate(expression, row['VALUE'])
+        name = row["VALUE"]
+        valid = validate(expression, row["VALUE"])
         if valid:
             valid_names.append(name)
         else:
@@ -188,7 +197,7 @@ def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
 
     for node_name in list(isolate.isolates(graph)):
         node_data = graph.nodes[node_name]
-        isolated_nodes[node_data['type']].append(node_name)
+        isolated_nodes[node_data["type"]].append(node_name)
 
     return isolated_nodes
 
@@ -196,9 +205,9 @@ def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
 def main(file_format: str, filepath: str, config=None):
 
     print("\n***Beginning validation***\n")
-    if file_format == 'datapackage':
+    if file_format == "datapackage":
         package = read_datapackage(filepath)
-    elif file_format == 'sql':
+    elif file_format == "sql":
         package = read_datapackage(filepath, sql=True)
 
     schema = create_schema(config)
@@ -212,5 +221,6 @@ def main(file_format: str, filepath: str, config=None):
     msg = ""
     for node_type, node_names in isolated_nodes.items():
         msg += "\n{} '{}' nodes are isolated:\n     {}\n".format(
-            len(node_names), node_type, ", ".join(node_names))
+            len(node_names), node_type, ", ".join(node_names)
+        )
     print(msg)

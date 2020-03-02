@@ -11,22 +11,26 @@ from flatten_dict import flatten
 from pulp import Amply
 
 from otoole import read_packaged_file
-from otoole.preprocess.longify_data import check_datatypes, check_set_datatype, write_out_dataframe
+from otoole.preprocess.longify_data import (
+    check_datatypes,
+    check_set_datatype,
+    write_out_dataframe,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def write_default_values(filepath):
 
-    config = read_packaged_file('config.yaml', 'otoole.preprocess')
+    config = read_packaged_file("config.yaml", "otoole.preprocess")
 
-    default_values_path = os.path.join(filepath, 'data', 'default_values.csv')
-    with open(default_values_path, 'w') as csv_file:
-        csv_file.write('name,default_value\n')
+    default_values_path = os.path.join(filepath, "data", "default_values.csv")
+    with open(default_values_path, "w") as csv_file:
+        csv_file.write("name,default_value\n")
 
         for name, contents in config.items():
-            if contents['type'] == 'param':
-                csv_file.write('{},{}\n'.format(name, contents['default']))
+            if contents["type"] == "param":
+                csv_file.write("{},{}\n".format(name, contents["default"]))
 
 
 def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
@@ -39,16 +43,16 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
         Path to the folder in which to write the new Tabular Data Package
 
     """
-    config = read_packaged_file('config.yaml', 'otoole.preprocess')
+    config = read_packaged_file("config.yaml", "otoole.preprocess")
     amply_datafile = read_in_datafile(path_to_datafile, config)
     dict_of_dataframes = convert_amply_to_dataframe(amply_datafile, config)
     if not os.path.exists(path_to_datapackage):
         os.mkdir(path_to_datapackage)
     for name, df in dict_of_dataframes.items():
         write_out_dataframe(path_to_datapackage, name, df)
-    datapackage = read_packaged_file('datapackage.json', 'otoole.preprocess')
-    filepath = os.path.join(path_to_datapackage, 'datapackage.json')
-    with open(filepath, 'w') as destination:
+    datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
+    filepath = os.path.join(path_to_datapackage, "datapackage.json")
+    with open(filepath, "w") as destination:
         destination.writelines(datapackage)
     write_default_values(path_to_datapackage)
 
@@ -65,7 +69,7 @@ def read_in_datafile(path_to_datafile: str, config: Dict) -> Amply:
     datafile_parser = Amply(parameter_definitions)
     logger.debug(datafile_parser)
 
-    with open(path_to_datafile, 'r') as datafile:
+    with open(path_to_datafile, "r") as datafile:
         datafile_parser.load_file(datafile)
 
     return datafile_parser
@@ -88,11 +92,11 @@ def convert_amply_to_dataframe(datafile_parser, config) -> Dict[str, pd.DataFram
 
     for name in datafile_parser.symbols.keys():
         logger.debug("Extracting data for %s", name)
-        if config[name]['type'] == 'param':
-            indices = config[name]['indices']
-            indices_dtypes = [config[index]['dtype'] for index in indices]
-            indices.append('VALUE')
-            indices_dtypes.append('float')
+        if config[name]["type"] == "param":
+            indices = config[name]["indices"]
+            indices_dtypes = [config[index]["dtype"] for index in indices]
+            indices.append("VALUE")
+            indices_dtypes.append("float")
 
             raw_data = datafile_parser[name].data
             data = convert_amply_data_to_list(raw_data)
@@ -100,14 +104,16 @@ def convert_amply_to_dataframe(datafile_parser, config) -> Dict[str, pd.DataFram
             try:
                 dict_of_dataframes[name] = check_datatypes(df, config, name)
             except ValueError as ex:
-                msg = "Validation error when checking datatype of {}: {}".format(name, str(ex))
+                msg = "Validation error when checking datatype of {}: {}".format(
+                    name, str(ex)
+                )
                 raise ValueError(msg)
-        elif config[name]['type'] == 'set':
+        elif config[name]["type"] == "set":
             data = datafile_parser[name].data
             logger.debug(data)
 
-            indices = ['VALUE']
-            df = pd.DataFrame(data=data, columns=indices, dtype=config[name]['dtype'])
+            indices = ["VALUE"]
+            df = pd.DataFrame(data=data, columns=indices, dtype=config[name]["dtype"])
             dict_of_dataframes[name] = check_set_datatype(df, config, name)
         logger.debug("\n%s\n", dict_of_dataframes[name])
 
@@ -141,16 +147,18 @@ def load_parameter_definitions(config: dict) -> str:
     elements = ""
 
     for name, attributes in config.items():
-        if attributes['type'] == 'param':
-            elements += 'param {} {};\n'.format(name, "{" + ",".join(attributes['indices']) + "}")
-        elif attributes['type'] == 'set':
-            elements += 'set {};\n'.format(name)
+        if attributes["type"] == "param":
+            elements += "param {} {};\n".format(
+                name, "{" + ",".join(attributes["indices"]) + "}"
+            )
+        elif attributes["type"] == "set":
+            elements += "set {};\n".format(name)
 
     logger.debug(elements)
     return elements
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     path_to_datafile = sys.argv[1]

@@ -20,7 +20,7 @@ class ConvertLine(object):
     VariableName(REGION,TECHCODE01,2017)       137958.84         0\\n
     """
 
-    def __init__(self, data: List, start_year: int, end_year: int, output_format='cbc'):
+    def __init__(self, data: List, start_year: int, end_year: int, output_format="cbc"):
         self.data = data
         self.start_year = start_year
         self.end_year = end_year
@@ -30,9 +30,9 @@ class ConvertLine(object):
         raise NotImplementedError()
 
     def convert(self) -> List[str]:
-        if self.output_format == 'cbc':
+        if self.output_format == "cbc":
             convert = self.convert_cbc()
-        elif self.output_format == 'csv':
+        elif self.output_format == "csv":
             convert = self.convert_csv()
         return convert
 
@@ -54,11 +54,7 @@ class ConvertLine(object):
 
                 full_dims = ",".join(dimensions + (str(year),))
 
-                formatted_data = '{0},"{1}",{2}\n'.format(
-                    variable,
-                    full_dims,
-                    value
-                    )
+                formatted_data = '{0},"{1}",{2}\n'.format(variable, full_dims, value)
 
                 data.append(formatted_data)
 
@@ -82,11 +78,7 @@ class ConvertLine(object):
 
                 full_dims = ",".join(dimensions + (str(year),))
 
-                formatted_data = "0 {0}({1}) {2} 0\n".format(
-                    variable,
-                    full_dims,
-                    value
-                    )
+                formatted_data = "0 {0}({1}) {2} 0\n".format(variable, full_dims, value)
 
                 cbc_data.append(formatted_data)
 
@@ -94,7 +86,6 @@ class ConvertLine(object):
 
 
 class RegionTimeSliceTechnologyMode(ConvertLine):
-
     def _do_it(self) -> Tuple:
         """Produces output indexed by Region, Timeslice, Tech and Mode
 
@@ -114,7 +105,6 @@ class RegionTimeSliceTechnologyMode(ConvertLine):
 
 
 class RegionTechnology(ConvertLine):
-
     def _do_it(self) -> Tuple:
         """Produces output indexed by dimensions Region and Technology
 
@@ -132,10 +122,9 @@ class RegionTechnology(ConvertLine):
         return (variable, dimensions, values)
 
 
-def process_line(line: str,
-                 start_year: int,
-                 end_year: int,
-                 output_format: str) -> List[str]:
+def process_line(
+    line: str, start_year: int, end_year: int, output_format: str
+) -> List[str]:
     """Processes an individual line in a CPLEX file
 
     A different ConvertLine implementation is chosen depending upon the
@@ -149,25 +138,35 @@ def process_line(line: str,
     output_format: str
         The file format required - either ``csv`` or ``cbc``
     """
-    row_as_list = line.split('\t')
+    row_as_list = line.split("\t")
     variable = row_as_list[0]
-    if variable in ['NewCapacity',
-                    'TotalCapacityAnnual',
-                    'CapitalInvestment',
-                    'AnnualFixedOperatingCost',
-                    'AnnualVariableOperatingCost']:
-        convertor = RegionTechnology(row_as_list, start_year, end_year, output_format).convert()
-    elif variable in ['RateOfActivity']:
-        convertor = RegionTimeSliceTechnologyMode(row_as_list, start_year, end_year, output_format).convert()
+    if variable in [
+        "NewCapacity",
+        "TotalCapacityAnnual",
+        "CapitalInvestment",
+        "AnnualFixedOperatingCost",
+        "AnnualVariableOperatingCost",
+    ]:
+        convertor = RegionTechnology(
+            row_as_list, start_year, end_year, output_format
+        ).convert()
+    elif variable in ["RateOfActivity"]:
+        convertor = RegionTimeSliceTechnologyMode(
+            row_as_list, start_year, end_year, output_format
+        ).convert()
     else:
         convertor = []
 
     return convertor
 
 
-def convert_cplex_file(cplex_filename: str, output_filename: str,
-                       start_year=2015, end_year=2070,
-                       output_format='cbc'):
+def convert_cplex_file(
+    cplex_filename: str,
+    output_filename: str,
+    start_year=2015,
+    end_year=2070,
+    output_format="cbc",
+):
     """Converts a CPLEX solution file into that of the CBC solution file
 
     Arguments
@@ -178,8 +177,8 @@ def convert_cplex_file(cplex_filename: str, output_filename: str,
         Path for the processed data to be written to
     """
 
-    with open(output_filename, 'w') as cbc_file:
-        with open(cplex_filename, 'r') as cplex_file:
+    with open(output_filename, "w") as cbc_file:
+        with open(cplex_filename, "r") as cplex_file:
             for linenum, line in enumerate(cplex_file):
                 try:
                     convertor = process_line(line, start_year, end_year, output_format)
@@ -190,29 +189,47 @@ def convert_cplex_file(cplex_filename: str, output_filename: str,
                     raise ValueError(msg.format(linenum, line))
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Convert OSeMOSYS CPLEX files into different formats")
-    parser.add_argument("cplex_file",
-                        help="The filepath of the OSeMOSYS cplex output file")
-    parser.add_argument("output_file",
-                        help="The filepath of the converted file that will be written")
-    parser.add_argument("-s", "--start_year", type=int, default=2015,
-                        help="Output only the results from this year onwards")
-    parser.add_argument("-e", "--end_year", type=int, default=2070,
-                        help="Output only the results upto and including this year")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Convert OSeMOSYS CPLEX files into different formats"
+    )
+    parser.add_argument(
+        "cplex_file", help="The filepath of the OSeMOSYS cplex output file"
+    )
+    parser.add_argument(
+        "output_file", help="The filepath of the converted file that will be written"
+    )
+    parser.add_argument(
+        "-s",
+        "--start_year",
+        type=int,
+        default=2015,
+        help="Output only the results from this year onwards",
+    )
+    parser.add_argument(
+        "-e",
+        "--end_year",
+        type=int,
+        default=2070,
+        help="Output only the results upto and including this year",
+    )
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--csv", action="store_true",
-                       help="Output file in comma-separated-values format")
-    group.add_argument("--cbc", action="store_true",
-                       help="Output file in CBC format, (default option)")
+    group.add_argument(
+        "--csv",
+        action="store_true",
+        help="Output file in comma-separated-values format",
+    )
+    group.add_argument(
+        "--cbc", action="store_true", help="Output file in CBC format, (default option)"
+    )
 
     args = parser.parse_args()
 
     if args.csv:
-        output_format = 'csv'
+        output_format = "csv"
     else:
-        output_format = 'cbc'
+        output_format = "cbc"
 
-    convert_cplex_file(args.cplex_file, args.output_file,
-                       args.start_year, args.end_year,
-                       output_format)
+    convert_cplex_file(
+        args.cplex_file, args.output_file, args.start_year, args.end_year, output_format
+    )

@@ -26,25 +26,32 @@ def generate_package(path_to_package):
     datapath = os.path.join(path_to_package)
     package = Package(base_path=datapath)
 
-    package.infer('data/*.csv')
+    package.infer("data/*.csv")
 
-    package.descriptor['licenses'] = [{"name": "CC-BY-4.0",
-                                       "path": "https://creativecommons.org/licenses/by/4.0/",
-                                       "title": "Creative Commons Attribution 4.0"}]
+    package.descriptor["licenses"] = [
+        {
+            "name": "CC-BY-4.0",
+            "path": "https://creativecommons.org/licenses/by/4.0/",
+            "title": "Creative Commons Attribution 4.0",
+        }
+    ]
 
-    package.descriptor['title'] = 'The OSeMOSYS Simplicity Example Model'
+    package.descriptor["title"] = "The OSeMOSYS Simplicity Example Model"
 
-    package.descriptor['name'] = 'osemosys_model_simplicity'
+    package.descriptor["name"] = "osemosys_model_simplicity"
 
-    package.descriptor['contributors'] = [{"title": "Will Usher",
-                                           "email": "wusher@kth.se",
-                                           "path": "http://www.kth.se/wusher",
-                                           "role": "author"
-                                           }]
+    package.descriptor["contributors"] = [
+        {
+            "title": "Will Usher",
+            "email": "wusher@kth.se",
+            "path": "http://www.kth.se/wusher",
+            "role": "author",
+        }
+    ]
 
     package.commit()
 
-    config = read_packaged_file('config.yaml', 'otoole.preprocess')
+    config = read_packaged_file("config.yaml", "otoole.preprocess")
 
     new_resources = []
     for resource in package.resources:
@@ -52,26 +59,29 @@ def generate_package(path_to_package):
         descriptor = resource.descriptor
 
         name = resource.name
-        if config[name]['type'] == 'param':
+        if config[name]["type"] == "param":
 
-            indices = config[name]['indices']
+            indices = config[name]["indices"]
             logger.debug("Indices of %s are %s", name, indices)
 
             foreign_keys = []
             for index in indices:
-                key = {'fields': index, 'reference': {'resource': index, 'fields': 'VALUE'}}
+                key = {
+                    "fields": index,
+                    "reference": {"resource": index, "fields": "VALUE"},
+                }
                 foreign_keys.append(key)
 
-            descriptor['schema']['foreignKeys'] = foreign_keys
-            descriptor['schema']['primaryKey'] = indices
-            descriptor['schema']['missingValues'] = [""]
+            descriptor["schema"]["foreignKeys"] = foreign_keys
+            descriptor["schema"]["primaryKey"] = indices
+            descriptor["schema"]["missingValues"] = [""]
 
         new_resources.append(descriptor)
 
-    package.descriptor['resources'] = new_resources
+    package.descriptor["resources"] = new_resources
     package.commit()
 
-    filepath = os.path.join(path_to_package, 'datapackage.json')
+    filepath = os.path.join(path_to_package, "datapackage.json")
     package.save(filepath)
 
 
@@ -91,7 +101,7 @@ def validate_contents(path_to_package):
 def main(wide_folder, narrow_folder):
     longify(wide_folder, narrow_folder)
     generate_package(narrow_folder)
-    absolute_path = os.path.join(narrow_folder, 'datapackage.json')
+    absolute_path = os.path.join(narrow_folder, "datapackage.json")
     validate_contents(absolute_path)
 
 
@@ -99,11 +109,11 @@ def convert_datapackage_to_sqlite(path_to_datapackage, sqlite):
     """Load and save table to SQLite
     """
     dp = Package(path_to_datapackage)
-    engine = create_engine('sqlite:///{}'.format(sqlite))
-    dp.save(storage='sql', engine=engine)
+    engine = create_engine("sqlite:///{}".format(sqlite))
+    dp.save(storage="sql", engine=engine)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
     wide_folder = sys.argv[1]
