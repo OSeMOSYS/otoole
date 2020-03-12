@@ -1,0 +1,150 @@
+AnnualEmissions:
+    indices: [REGION,EMISSION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+TotalDiscountedCost:
+    indices: [REGION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+AccumulatedNewCapacity:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+AnnualEmissionsResults:
+    indices: [REGION, EMISSION, YEAR]
+    type: param
+    dtype: float
+    default: 0
+AnnualFixedOperatingCost:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+AnnualTechnologyEmission:
+    indices: [REGION, TECHNOLOGY, EMISSION, YEAR]
+    type: param
+    dtype: float
+    default: 0
+AnnualTechnologyEmissionByMode:
+    indices: [REGION, TECHNOLOGY, EMISSION, MODE_OF_OPERATION, YEAR]
+    type: param
+    dtype: float
+    default: 0
+AnnualVariableOperatingCost:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+CapitalInvestmentResults:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+Demand:
+    indices: [REGION, TIMESLICE, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+DiscountedSalvageValueResults:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+DiscountedTechnologyEmissionsPenalty:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+NewCapacity:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+NewStorageCapacity:
+    indices: [REGION, s in STORAGE, YEAR]
+    type: param
+    dtype: float
+    default: 0
+NumberOfNewTechnologyUnits:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+ProductionByTechnology:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+ProductionByTechnologyAnnual:
+    indices: [REGION, TECHNOLOGY, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+RateOfActivity:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, YEAR]
+    type: param
+    dtype: float
+    default: 0
+RateOfProductionByTechnology:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+RateOfProductionByTechnologyByMode:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+RateOfUseByTechnology:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+RateOfUseByTechnologyByMode:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+SalvageValue:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+SalvageValueStorage:
+    indices: [REGION, s in STORAGE, YEAR]
+    type: param
+    dtype: float
+    default: 0
+TotalAnnualTechnologyActivityByMode:
+    indices: [REGION, TECHNOLOGY, MODE_OF_OPERATION, YEAR]
+    type: param
+    dtype: float
+    default: 0
+TotalCapacityAnnual:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+TotalTechnologyAnnualActivity:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+TotalTechnologyModelPeriodActivity:
+    indices: [REGION, TECHNOLOGY]
+    type: param
+    dtype: float
+    default: 0
+Trade:
+    indices: [REGION, rr in REGION, TIMESLICE, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0
+UseByTechnology:
+    indices: [REGION, TIMESLICE, TECHNOLOGY, FUEL, YEAR]
+    type: param
+    dtype: float
+    default: 0

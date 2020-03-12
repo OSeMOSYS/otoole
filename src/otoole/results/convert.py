@@ -2,7 +2,15 @@
 
 """
 import argparse
-from typing import List, Tuple
+import logging
+import os
+from typing import Dict, List, Tuple
+
+import pandas as pd
+
+from otoole import read_packaged_file
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ConvertLine(object):
@@ -187,6 +195,90 @@ def convert_cplex_file(
                 except ValueError:
                     msg = "Error caused at line {}: {}"
                     raise ValueError(msg.format(linenum, line))
+
+
+def convert_cbc_to_dataframe(data_file):
+    df = pd.read_csv(
+        data_file,
+        header=None,
+        names=["temp", "VALUE"],
+        delim_whitespace=True,
+        skiprows=2,
+        usecols=[1, 2],
+    )  # type: pd.DataFrame
+    df.columns = ["temp", "Value"]
+    df[["Variable", "Index"]] = df["temp"].str.split("(", expand=True)
+    df = df.drop("temp", axis=1)
+    df["Index"] = df["Index"].str.replace(")", "")
+    return df[["Variable", "Index", "Value"]]
+
+
+def convert_dataframe_to_csv(data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    """Convert from dataframe to csv
+
+    Arguments
+    ---------
+    from_format : str
+    to_format : str
+    data : List[str]
+
+    Example
+    -------
+    >>> df = pd.DataFrame(data=[
+            ['TotalDiscountedCost', "SIMPLICITY,2015", 187.01576],
+            ['TotalDiscountedCost', "SIMPLICITY,2016", 183.30788]],
+            columns=['Variable', 'Index', 'Value'])
+    >>> convert_dataframe_to_csv(df)
+    {'TotalDiscountedCost':        REGION  YEAR      VALUE
+    0  SIMPLICITY  2015  187.01576
+    1  SIMPLICITY  2016  183.30788}
+    """
+    input_config = read_packaged_file("config.yaml", "otoole.preprocess")
+    config = read_packaged_file("config.yaml", "otoole.results")
+
+    sets = {x: y for x, y in input_config.items() if y["type"] == "set"}
+
+    results = {}
+    for name, details in config.items():
+        LOGGER.debug("Extracting results for %s", name)
+        df = data[data["Variable"] == name]
+
+        if not df.empty:
+
+            indices = details["indices"]
+
+            df[indices] = df["Index"].str.split(",", expand=True)
+
+            for index in indices:
+                index_type = sets[index]["dtype"]
+                df[index] = df[index].astype(index_type)
+
+            df = df.drop(columns=["Variable", "Index"])
+
+            df = df.rename(columns={"Value": "VALUE"})
+
+            results[name] = df[indices + ["VALUE"]]
+
+    return results
+
+
+def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
+    """Write out CSV files from CBC file
+
+    Arguments
+    ---------
+    results_path : str
+    results : dict
+    """
+    for name, df in results.items():
+        filename = os.path.join(results_path, name + ".csv")
+        df.to_csv(filename, index=False)
+
+
+def convert_cbc_to_csv(from_file, to_file):
+    df = convert_cbc_to_dataframe(from_file)
+    csv = convert_dataframe_to_csv(df)
+    write_csvs(to_file, csv)
 
 
 if __name__ == "__main__":
