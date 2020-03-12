@@ -38,7 +38,7 @@ AnnualVariableOperatingCost:
     type: param
     dtype: float
     default: 0
-CapitalInvestmentResults:
+CapitalInvestment:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: param
     dtype: float
@@ -48,7 +48,7 @@ Demand:
     type: param
     dtype: float
     default: 0
-DiscountedSalvageValueResults:
+DiscountedSalvageValue:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: param
     dtype: float
