@@ -6,6 +6,7 @@ from pandas.testing import assert_frame_equal
 from otoole.results.calculate import (
     compute_accumulated_new_capacity,
     compute_annual_emissions,
+    compute_annual_technology_emission_by_mode,
     compute_annual_technology_emissions,
 )
 
@@ -151,7 +152,7 @@ def year():
 
 
 class TestCalculateAnnualEmissions:
-    def test_compute_annual_emissions_null(self):
+    def test_null(self):
         """
         """
         emission_activity_ratio = pd.DataFrame()
@@ -166,9 +167,7 @@ class TestCalculateAnnualEmissions:
 
         assert_frame_equal(actual, expected)
 
-    def test_compute_annual_emissions_minimal(
-        self, emission_activity_ratio, yearsplit, rate_of_activity
-    ):
+    def test_minimal(self, emission_activity_ratio, yearsplit, rate_of_activity):
         """
         """
         actual = compute_annual_emissions(
@@ -182,7 +181,7 @@ class TestCalculateAnnualEmissions:
 
         assert_frame_equal(actual, expected)
 
-    def test_compute_annual_emissions_missing_tech(
+    def test_missing_tech(
         self, emission_activity_ratio, yearsplit, rate_of_activity_two_tech
     ):
         """
@@ -200,7 +199,7 @@ class TestCalculateAnnualEmissions:
 
 
 class TestCalculateAnnualTechnologyEmissions:
-    def test_compute_annual_emissions_null(self):
+    def test_null(self):
         """
         """
         emission_activity_ratio = pd.DataFrame()
@@ -215,7 +214,7 @@ class TestCalculateAnnualTechnologyEmissions:
 
         assert_frame_equal(actual, expected)
 
-    def test_compute_annual_emissions_minimal(
+    def test_minimal(
         self, emission_activity_ratio, yearsplit, rate_of_activity_two_tech
     ):
         """
@@ -231,7 +230,7 @@ class TestCalculateAnnualTechnologyEmissions:
 
         assert_frame_equal(actual, expected)
 
-    def test_compute_annual_emissions_no_zeros(
+    def test_no_zeros(
         self, emission_activity_ratio_two_techs, yearsplit, rate_of_activity_two_tech
     ):
         """
@@ -246,6 +245,72 @@ class TestCalculateAnnualTechnologyEmissions:
                 ["SIMPLICITY", "GAS_EXTRACTION", "CO2", 2014, 1.0]
             ],
             columns=["REGION", "TECHNOLOGY", "EMISSION", "YEAR", "VALUE"],
+        )
+
+        assert_frame_equal(actual, expected)
+
+
+class TestCalculateAnnualTechnologyEmissionsByMode:
+    def test_null(self):
+        """
+        """
+        emission_activity_ratio = pd.DataFrame()
+        yearsplit = pd.DataFrame()
+        rate_of_activity = pd.DataFrame()
+
+        actual = compute_annual_technology_emission_by_mode(
+            emission_activity_ratio, yearsplit, rate_of_activity
+        )
+
+        expected = pd.DataFrame()
+
+        assert_frame_equal(actual, expected)
+
+    def test_minimal(
+        self, emission_activity_ratio, yearsplit, rate_of_activity_two_tech
+    ):
+        """
+        """
+        actual = compute_annual_technology_emission_by_mode(
+            emission_activity_ratio, yearsplit, rate_of_activity_two_tech
+        )
+
+        expected = pd.DataFrame(
+            data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],
+            columns=[
+                "REGION",
+                "TECHNOLOGY",
+                "EMISSION",
+                "MODE_OF_OPERATION",
+                "YEAR",
+                "VALUE",
+            ],
+        )
+
+        assert_frame_equal(actual, expected)
+
+    def test_no_zeros(
+        self, emission_activity_ratio_two_techs, yearsplit, rate_of_activity_two_tech
+    ):
+        """
+        """
+        actual = compute_annual_technology_emission_by_mode(
+            emission_activity_ratio_two_techs, yearsplit, rate_of_activity_two_tech
+        )
+
+        expected = pd.DataFrame(
+            data=[
+                # ['SIMPLICITY', 'DUMMY', 'CO2', 2014, 0.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]
+            ],
+            columns=[
+                "REGION",
+                "TECHNOLOGY",
+                "EMISSION",
+                "MODE_OF_OPERATION",
+                "YEAR",
+                "VALUE",
+            ],
         )
 
         assert_frame_equal(actual, expected)

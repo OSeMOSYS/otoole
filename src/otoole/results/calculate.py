@@ -95,6 +95,31 @@ def compute_annual_technology_emissions(
         return pd.DataFrame()
 
 
+def compute_annual_technology_emission_by_mode(
+    emission_activity_ratio: pd.DataFrame,
+    yearsplit: pd.DataFrame,
+    rate_of_activity: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    r~REGION, t~TECHNOLOGY, e~EMISSION, m~MODE_OF_OPERATION, y~YEAR,
+    sum{l in TIMESLICE: EmissionActivityRatio[r,t,e,m,y] <> 0}
+        EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
+            * YearSplit[l,y]
+    """
+    data = emission_activity_ratio.mul(yearsplit)
+    data = data.mul(rate_of_activity)
+
+    if not data.empty:
+        data = data.groupby(
+            by=["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"]
+        ).sum()
+
+        return data[(data != 0).all(1)].reset_index()
+
+    else:
+        return pd.DataFrame()
+
+
 def calculate_result(
     parameter_name: str, input_data: str, results_data: Dict[str, pd.DataFrame]
 ):
@@ -113,6 +138,13 @@ def calculate_result(
         yearsplit = package["YearSplit"]
         rate_of_activity = results_data["RateOfActivity"]
         return compute_annual_technology_emissions(
+            emission_activity_ratio, yearsplit, rate_of_activity
+        )
+    elif parameter_name == "AnnualTechnologyEmissionByMode":
+        emission_activity_ratio = package["EmissionActivityRatio"]
+        yearsplit = package["YearSplit"]
+        rate_of_activity = results_data["RateOfActivity"]
+        return compute_annual_technology_emission_by_mode(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
     else:

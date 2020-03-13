@@ -215,15 +215,14 @@ def convert_cbc_to_dataframe(data_file):
 
 
 def convert_dataframe_to_csv(
-    data: pd.DataFrame, input_data: str
+    data: pd.DataFrame, input_data: str = None
 ) -> Dict[str, pd.DataFrame]:
     """Convert from dataframe to csv
 
     Arguments
     ---------
-    from_format : str
-    to_format : str
-    data : List[str]
+    data : pandas.DataFrame
+    input_data : str
 
     Example
     -------
@@ -272,8 +271,15 @@ def convert_dataframe_to_csv(
     for name in not_found:
         details = config[name]
         if details["calculated"]:
-            LOGGER.info("Assuming running short code. Attempting to calculate %s", name)
-            results[name] = calculate_result(name, input_data, results)
+            if input_data:
+                LOGGER.info(
+                    "Assuming running short code. Attempting to calculate %s", name
+                )
+                results[name] = calculate_result(name, input_data, results)
+            else:
+                LOGGER.warning(
+                    "No input data provided, unable to calculate parameter '%s'", name
+                )
 
     return results
 
