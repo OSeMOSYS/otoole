@@ -190,7 +190,9 @@ def get_parser():
         "from_path", help="Path to file or folder to convert from"
     )
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
-    result_parser.add_argument("input_data", help="Input data need to compute results")
+    result_parser.add_argument(
+        "--input_data", help="Input data need to compute results", default=None
+    )
     result_parser.set_defaults(func=result_matrix)
 
     # Parser for conversion
