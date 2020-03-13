@@ -87,7 +87,7 @@ def result_matrix(args):
     if args.from_format == "cbc":
 
         if args.to_format == "csv":
-            convert_cbc_to_csv(args.from_path, args.to_path)
+            convert_cbc_to_csv(args.from_path, args.to_path, args.input_data)
         else:
             raise NotImplementedError(msg)
     else:
@@ -190,6 +190,7 @@ def get_parser():
         "from_path", help="Path to file or folder to convert from"
     )
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
+    result_parser.add_argument("input_data", help="Input data need to compute results")
     result_parser.set_defaults(func=result_matrix)
 
     # Parser for conversion

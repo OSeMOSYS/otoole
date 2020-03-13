@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from otoole import read_packaged_file
+from otoole.results.calculate import calculate_result
 
 LOGGER = logging.getLogger(__name__)
 
@@ -213,7 +214,9 @@ def convert_cbc_to_dataframe(data_file):
     return df[["Variable", "Index", "Value"]]
 
 
-def convert_dataframe_to_csv(data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+def convert_dataframe_to_csv(
+    data: pd.DataFrame, input_data: str
+) -> Dict[str, pd.DataFrame]:
     """Convert from dataframe to csv
 
     Arguments
@@ -239,25 +242,38 @@ def convert_dataframe_to_csv(data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     sets = {x: y for x, y in input_config.items() if y["type"] == "set"}
 
     results = {}
+
+    not_found = []
+
     for name, details in config.items():
-        LOGGER.debug("Extracting results for %s", name)
         df = data[data["Variable"] == name]
 
         if not df.empty:
 
+            LOGGER.debug("Extracting results for %s", name)
             indices = details["indices"]
 
             df[indices] = df["Index"].str.split(",", expand=True)
 
-            for index in indices:
-                index_type = sets[index]["dtype"]
-                df[index] = df[index].astype(index_type)
+            types = {index: sets[index]["dtype"] for index in indices}
+            df = df.astype(types)
 
             df = df.drop(columns=["Variable", "Index"])
 
             df = df.rename(columns={"Value": "VALUE"})
 
-            results[name] = df[indices + ["VALUE"]]
+            results[name] = df[indices + ["VALUE"]].set_index(indices)
+
+        else:
+            not_found.append(name)
+
+    LOGGER.debug("Unable to find CBC variables for: %s", ", ".join(not_found))
+
+    for name in not_found:
+        details = config[name]
+        if details["calculated"]:
+            LOGGER.info("Assuming running short code. Attempting to calculate %s", name)
+            results[name] = calculate_result(name, input_data, results)
 
     return results
 
@@ -272,12 +288,15 @@ def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
     """
     for name, df in results.items():
         filename = os.path.join(results_path, name + ".csv")
-        df.to_csv(filename, index=False)
+        if not df.empty:
+            df.to_csv(filename, index=False)
+        else:
+            LOGGER.warning("Result parameter %s is empty", name)
 
 
-def convert_cbc_to_csv(from_file, to_file):
+def convert_cbc_to_csv(from_file, to_file, input_data):
     df = convert_cbc_to_dataframe(from_file)
-    csv = convert_dataframe_to_csv(df)
+    csv = convert_dataframe_to_csv(df, input_data)
     write_csvs(to_file, csv)
 
 
