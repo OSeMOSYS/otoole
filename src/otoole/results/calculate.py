@@ -50,6 +50,8 @@ def compute_accumulated_new_capacity(
 
     new_capacity: pandas.DataFrame
 
+    year: pandas.Index
+
     Notes
     -----
     table AccumulatedNewCapacity
@@ -62,15 +64,27 @@ def compute_accumulated_new_capacity(
     sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
         NewCapacity[r,t,yy] ~VALUE;
     """
-    # new_capacity['OperationalLife'] = operational_life
+    new_capacity["OperationalLife"] = operational_life
 
-    # acc_capacity = new_capacity.reindex(year, level=-1)
+    regions = new_capacity.reset_index()["REGION"].unique()
+    technologies = new_capacity.reset_index()["TECHNOLOGY"].unique()
 
-    # acc_capacity['VALUE'] = new_capacity.groupby(by=['REGION', 'TECHNOLOGY']).cumsum()
+    index = pd.MultiIndex.from_product(
+        [regions, technologies, year.to_list()], names=["REGION", "TECHNOLOGY", "YEAR"]
+    )
 
-    # TODO df.groupby(level=-1).cumsum() <- does a cumulative sum along one level
+    acc_capacity = new_capacity.reindex(index, copy=True)
 
-    pass
+    for index, data in new_capacity.reset_index().groupby(by=["REGION", "TECHNOLOGY"]):
+        region, technology = index
+        for yr in year:
+            mask = (yr - data["YEAR"] < data["OperationalLife"]) & (
+                yr - data["YEAR"] >= 0
+            )
+            acc_capacity.loc[region, technology, yr] = data[mask].sum()
+
+    acc_capacity = acc_capacity.drop(columns="OperationalLife")
+    return acc_capacity[(acc_capacity != 0).all(1)].reset_index()
 
 
 def compute_annual_technology_emissions(
@@ -127,27 +141,31 @@ def compute_annual_technology_emission_by_mode(
 def calculate_result(
     parameter_name: str, input_data: str, results_data: Dict[str, pd.DataFrame]
 ):
-
     package = read_datapackage(input_data)  # typing: Dict[str, pd.DataFrame]
 
-    if parameter_name == "AnnualEmissions":
+    if parameter_name == "AccumulatedNewCapacity":
+        operational_life = package["OperationalLife"].copy()
+        new_capacity = results_data["NewCapacity"].copy()
+        year = pd.Index(package["YEAR"]["VALUE"].to_list())
+        return compute_accumulated_new_capacity(operational_life, new_capacity, year)
+    elif parameter_name == "AnnualEmissions":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
-        rate_of_activity = results_data["RateOfActivity"]
+        rate_of_activity = results_data["RateOfActivity"].copy()
         return compute_annual_emissions(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
     elif parameter_name == "AnnualTechnologyEmission":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
-        rate_of_activity = results_data["RateOfActivity"]
+        rate_of_activity = results_data["RateOfActivity"].copy()
         return compute_annual_technology_emissions(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
     elif parameter_name == "AnnualTechnologyEmissionByMode":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
-        rate_of_activity = results_data["RateOfActivity"]
+        rate_of_activity = results_data["RateOfActivity"].copy()
         return compute_annual_technology_emission_by_mode(
             emission_activity_ratio, yearsplit, rate_of_activity
         )

@@ -64,9 +64,34 @@ def new_capacity():
 
 
 @fixture
+def new_capacity_bitty():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 0.0300000000000001],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 0.0309999999999999],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 0.032],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 0.0329999999999999],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2018, 0.0330000000000002],
+            ["SIMPLICITY", "DUMMY", 2014, 0.9],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return df
+
+
+@fixture
 def operational_life():
     df = pd.DataFrame(
         data=[["SIMPLICITY", "GAS_EXTRACTION", 2], ["SIMPLICITY", "DUMMY", 3]],
+        columns=["REGION", "TECHNOLOGY", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY"])
+    return df
+
+
+@fixture
+def operational_life_overlap():
+    df = pd.DataFrame(
+        data=[["SIMPLICITY", "GAS_EXTRACTION", 30], ["SIMPLICITY", "DUMMY", 30]],
         columns=["REGION", "TECHNOLOGY", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY"])
     return df
@@ -315,10 +340,9 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
 
 
 class TestAccumulatedNewCapacity:
-    def test_compute_accumulated_new_capacity(
-        self, new_capacity, operational_life, year
-    ):
+    def test_individual(self, new_capacity, operational_life, year):
         actual = compute_accumulated_new_capacity(operational_life, new_capacity, year)
+        print(actual)
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.3],
@@ -328,6 +352,62 @@ class TestAccumulatedNewCapacity:
                 ["SIMPLICITY", "DUMMY", 2014, 0.9],
                 ["SIMPLICITY", "DUMMY", 2015, 0.9],
                 ["SIMPLICITY", "DUMMY", 2016, 0.9],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        )
+
+        assert_frame_equal(actual, expected)
+
+    def test_overlapping(self, new_capacity, operational_life_overlap, year):
+        actual = compute_accumulated_new_capacity(
+            operational_life_overlap, new_capacity, year
+        )
+        print(actual)
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.3],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1.3],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 2.9],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2017, 2.9],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2018, 2.9],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2019, 2.9],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2020, 2.9],
+                ["SIMPLICITY", "DUMMY", 2014, 0.9],
+                ["SIMPLICITY", "DUMMY", 2015, 0.9],
+                ["SIMPLICITY", "DUMMY", 2016, 0.9],
+                ["SIMPLICITY", "DUMMY", 2017, 0.9],
+                ["SIMPLICITY", "DUMMY", 2018, 0.9],
+                ["SIMPLICITY", "DUMMY", 2019, 0.9],
+                ["SIMPLICITY", "DUMMY", 2020, 0.9],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        )
+
+        assert_frame_equal(actual, expected)
+
+    def test_overlapping_bitty(
+        self, new_capacity_bitty, operational_life_overlap, year
+    ):
+        actual = compute_accumulated_new_capacity(
+            operational_life_overlap, new_capacity_bitty, year
+        )
+        print(actual)
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 0.0300000000000001],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 0.0609999999999999],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 0.093],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2017, 0.126],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2018, 0.159],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2019, 0.159],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2020, 0.159],
+                ["SIMPLICITY", "DUMMY", 2014, 0.9],
+                ["SIMPLICITY", "DUMMY", 2015, 0.9],
+                ["SIMPLICITY", "DUMMY", 2016, 0.9],
+                ["SIMPLICITY", "DUMMY", 2017, 0.9],
+                ["SIMPLICITY", "DUMMY", 2018, 0.9],
+                ["SIMPLICITY", "DUMMY", 2019, 0.9],
+                ["SIMPLICITY", "DUMMY", 2020, 0.9],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         )

@@ -204,7 +204,7 @@ def convert_cbc_to_dataframe(data_file):
         header=None,
         names=["temp", "VALUE"],
         delim_whitespace=True,
-        skiprows=2,
+        skiprows=1,
         usecols=[1, 2],
     )  # type: pd.DataFrame
     df.columns = ["temp", "Value"]
@@ -270,12 +270,19 @@ def convert_dataframe_to_csv(
 
     for name in not_found:
         details = config[name]
+        indices = details["indices"]
         if details["calculated"]:
             if input_data:
                 LOGGER.info(
                     "Assuming running short code. Attempting to calculate %s", name
                 )
-                results[name] = calculate_result(name, input_data, results)
+                df = calculate_result(name, input_data, results)
+                if not df.empty:
+                    results[name] = df.set_index(indices)
+                else:
+                    LOGGER.warning(
+                        "Calculation returned empty dataframe for parameter '%s'", name
+                    )
             else:
                 LOGGER.warning(
                     "No input data provided, unable to calculate parameter '%s'", name
@@ -295,7 +302,7 @@ def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
     for name, df in results.items():
         filename = os.path.join(results_path, name + ".csv")
         if not df.empty:
-            df.to_csv(filename, index=False)
+            df.to_csv(filename, index=True)
         else:
             LOGGER.warning("Result parameter %s is empty", name)
 
