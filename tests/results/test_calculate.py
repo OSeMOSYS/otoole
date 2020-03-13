@@ -59,8 +59,8 @@ def new_capacity():
             ["SIMPLICITY", "DUMMY", 2014, 0.9],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-    )
-    return df.set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return df
 
 
 @fixture
@@ -68,8 +68,8 @@ def operational_life():
     df = pd.DataFrame(
         data=[["SIMPLICITY", "GAS_EXTRACTION", 2], ["SIMPLICITY", "DUMMY", 3]],
         columns=["REGION", "TECHNOLOGY", "VALUE"],
-    )
-    return df.set_index(["REGION", "TECHNOLOGY"])
+    ).set_index(["REGION", "TECHNOLOGY"])
+    return df
 
 
 @fixture
@@ -146,9 +146,7 @@ def yearsplit():
 
 @fixture
 def year():
-    return pd.DataFrame(
-        data=[2014, 2015, 2016, 2017, 2018, 2019, 2020], columns=["VALUE"]
-    )
+    return pd.Index(data=[2014, 2015, 2016, 2017, 2018, 2019, 2020])
 
 
 class TestCalculateAnnualEmissions:

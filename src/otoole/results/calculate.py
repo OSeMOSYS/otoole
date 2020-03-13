@@ -41,9 +41,14 @@ def compute_annual_emissions(
 
 
 def compute_accumulated_new_capacity(
-    operational_life: pd.DataFrame, new_capacity: pd.DataFrame, year: pd.DataFrame
+    operational_life: pd.DataFrame, new_capacity: pd.DataFrame, year: pd.Index
 ):
     """
+    Arguments
+    ---------
+    operational_life: pandas.DataFrame
+
+    new_capacity: pandas.DataFrame
 
     Notes
     -----
@@ -57,16 +62,15 @@ def compute_accumulated_new_capacity(
     sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
         NewCapacity[r,t,yy] ~VALUE;
     """
+    # new_capacity['OperationalLife'] = operational_life
 
-    for yr in year["VALUE"].to_list():
-        data = new_capacity.filter(items=year["VALUE"] <= yr).sum()
+    # acc_capacity = new_capacity.reindex(year, level=-1)
 
-    if not data.empty:
+    # acc_capacity['VALUE'] = new_capacity.groupby(by=['REGION', 'TECHNOLOGY']).cumsum()
 
-        return data.reset_index()
+    # TODO df.groupby(level=-1).cumsum() <- does a cumulative sum along one level
 
-    else:
-        return pd.DataFrame()
+    pass
 
 
 def compute_annual_technology_emissions(
