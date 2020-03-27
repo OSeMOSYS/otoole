@@ -212,6 +212,36 @@ def compute_annual_variable_operating_cost(
         return data[(data != 0).all(1)]
 
 
+def compute_capital_investment(
+    capital_cost: pd.DataFrame, new_capacity: pd.DataFrame
+) -> pd.DataFrame:
+    """
+
+    Notes
+    -----
+    r~REGION, t~TECHNOLOGY, y~YEAR,
+    CapitalCost[r,t,y] * NewCapacity[r,t,y] ~VALUE;
+    """
+    data = capital_cost.mul(new_capacity, fill_value=0.0)
+    return data[(data != 0).all(1)]
+
+
+def compute_demand(
+    specified_annual_demand: pd.DataFrame, specified_demand_profile: pd.DataFrame
+) -> pd.DataFrame:
+    """
+
+    Notes
+    -----
+    r~REGION, l~TIMESLICE, f~FUEL, y~YEAR,
+    SpecifiedAnnualDemand[r,f,y] * SpecifiedDemandProfile[r,f,l,y] ~VALUE;
+    """
+    data = specified_annual_demand.mul(specified_demand_profile, fill_value=0.0)
+    if not data.empty:
+        data = data.reset_index().set_index(["REGION", "TIMESLICE", "FUEL", "YEAR"])
+    return data[(data != 0).all(1)]
+
+
 def calculate_result(
     parameter_name: str, input_data: str, results_data: Dict[str, pd.DataFrame]
 ):
@@ -263,5 +293,13 @@ def calculate_result(
         return compute_annual_variable_operating_cost(
             rate_of_activity, yearsplit, variable_cost
         )
+    elif parameter_name == "CapitalInvestment":
+        capital_cost = package["CapitalCost"]
+        new_capacity = results_data["NewCapacity"].copy()
+        return compute_capital_investment(capital_cost, new_capacity)
+    elif parameter_name == "Demand":
+        specified_annual_demand = package["SpecifiedAnnualDemand"]
+        specified_demand_profile = package["SpecifiedDemandProfile"]
+        return compute_demand(specified_annual_demand, specified_demand_profile)
     else:
         return pd.DataFrame()
