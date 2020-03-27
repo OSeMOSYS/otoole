@@ -17,8 +17,7 @@ class TestCbcSoltoDataFrame:
     test_data = [
         (
             dedent(
-                """
-                         Optimal - objective value 4483.96932237
+                """Optimal - objective value 4483.96932237
                              1 TotalDiscountedCost(SIMPLICITY,2015)                                                   187.01576                       0
                              2 TotalDiscountedCost(SIMPLICITY,2016)                                                   183.30788                       0
                              3 TotalDiscountedCost(SIMPLICITY,2017)                                                   181.05465                       0
@@ -42,7 +41,7 @@ class TestCbcSoltoDataFrame:
         )
     ]
 
-    @mark.parametrize("cbc_input,expected", test_data)
+    @mark.parametrize("cbc_input,expected", test_data, ids=["TotalDiscountedCost"])
     def test_read_cbc_to_dataframe(self, cbc_input, expected):
         with StringIO(cbc_input) as file_buffer:
             actual = convert_cbc_to_dataframe(file_buffer)
@@ -75,7 +74,7 @@ class TestCbctoCsv:
                             ["SIMPLICITY", 2020, 233.79202],
                         ],
                         columns=["REGION", "YEAR", "VALUE"],
-                    )
+                    ).set_index(["REGION", "YEAR"])
                 }
             ),
         ),
@@ -96,17 +95,17 @@ class TestCbctoCsv:
                         ["REGION", "CO2", 2019, 626159.9611543404],
                     ],
                     columns=["REGION", "EMISSION", "YEAR", "VALUE"],
-                )
+                ).set_index(["REGION", "EMISSION", "YEAR"])
             },
         ),
     ]
 
     @mark.parametrize(
-        "cbc_input,expected", test_data, ids=["TotalDiscountedCost", "AnnualEmissions"]
+        "df_input,expected", test_data, ids=["TotalDiscountedCost", "AnnualEmissions"]
     )
-    def test_convert_cbc_to_csv(self, cbc_input, expected):
+    def test_convert_cbc_to_csv(self, df_input, expected):
 
-        actual = convert_dataframe_to_csv(cbc_input)
+        actual = convert_dataframe_to_csv(df_input)
         assert isinstance(actual, dict)
         for name, df in actual.items():
             pd.testing.assert_frame_equal(df, expected[name])

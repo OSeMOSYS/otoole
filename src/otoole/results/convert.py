@@ -4,6 +4,7 @@
 import argparse
 import logging
 import os
+from io import StringIO
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -198,7 +199,13 @@ def convert_cplex_file(
                     raise ValueError(msg.format(linenum, line))
 
 
-def convert_cbc_to_dataframe(data_file):
+def convert_cbc_to_dataframe(data_file: StringIO) -> pd.DataFrame:
+    """Reads a CBC solution file into a pandas DataFrame
+
+    Arguments
+    ---------
+    data_file : StringIO
+    """
     df = pd.read_csv(
         data_file,
         header=None,
@@ -236,7 +243,7 @@ def convert_dataframe_to_csv(
     1  SIMPLICITY  2016  183.30788}
     """
     input_config = read_packaged_file("config.yaml", "otoole.preprocess")
-    config = read_packaged_file("config.yaml", "otoole.results")
+    results_config = read_packaged_file("config.yaml", "otoole.results")
 
     sets = {x: y for x, y in input_config.items() if y["type"] == "set"}
 
@@ -244,7 +251,7 @@ def convert_dataframe_to_csv(
 
     not_found = []
 
-    for name, details in config.items():
+    for name, details in results_config.items():
         df = data[data["Variable"] == name]
 
         if not df.empty:
@@ -269,7 +276,7 @@ def convert_dataframe_to_csv(
     LOGGER.debug("Unable to find CBC variables for: %s", ", ".join(not_found))
 
     for name in not_found:
-        details = config[name]
+        details = results_config[name]
         indices = details["indices"]
         if details["calculated"]:
             if input_data:
