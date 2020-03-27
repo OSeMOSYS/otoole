@@ -9,6 +9,7 @@ from otoole.results.calculate import (
     compute_annual_fixed_operating_cost,
     compute_annual_technology_emission_by_mode,
     compute_annual_technology_emissions,
+    compute_annual_variable_operating_cost,
     compute_total_capacity_annual,
 )
 
@@ -241,6 +242,23 @@ def fixed_cost():
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def variable_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 1, 2014, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 1, 2015, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 1, 2016, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 1, 2017, 1],
+            ["SIMPLICITY", "DUMMY", 1, 2014, 0.5],
+            ["SIMPLICITY", "DUMMY", 1, 2015, 0.5],
+            ["SIMPLICITY", "DUMMY", 1, 2016, 0.5],
+        ],
+        columns=["REGION", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"])
     return data
 
 
@@ -482,7 +500,7 @@ class TestAccumulatedNewCapacity:
         assert_frame_equal(actual, expected)
 
 
-class TestComputeFixedOperatingCost:
+class TestComputeFixedandVariableOperatingCost:
     """
 
     Notes
@@ -496,7 +514,7 @@ class TestComputeFixedOperatingCost:
     0.9 + 0.3 * 0.5 = 0.6
     """
 
-    def test_compute(self, total_capacity, fixed_cost):
+    def test_compute_fixed(self, total_capacity, fixed_cost):
         actual = compute_annual_fixed_operating_cost(total_capacity, fixed_cost)
         expected = pd.DataFrame(
             data=[
@@ -513,8 +531,40 @@ class TestComputeFixedOperatingCost:
 
         assert_frame_equal(actual, expected)
 
-    def test_compute_null(self):
+    def test_compute_null_fixed(self):
         actual = compute_annual_fixed_operating_cost(pd.DataFrame(), pd.DataFrame())
+        expected = pd.DataFrame()
+        assert_frame_equal(actual, expected)
+
+    def test_compute_variable(
+        self, rate_of_activity_two_tech, yearsplit, variable_cost
+    ):
+        """
+
+        ["ID", 2014, 0.1667],
+        ["IN", 2014, 0.0833],
+        ["SD", 2014, 0.1667],
+        ["SN", 2014, 0.0833],
+        ["WD", 2014, 0.3333],
+        ["WN", 2014, 0.1667],
+
+        """
+        actual = compute_annual_variable_operating_cost(
+            rate_of_activity_two_tech, yearsplit, variable_cost
+        )
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 0.5],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.0],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        assert_frame_equal(actual, expected)
+
+    def test_compute_null_variable(self):
+        actual = compute_annual_variable_operating_cost(
+            pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        )
         expected = pd.DataFrame()
         assert_frame_equal(actual, expected)
 

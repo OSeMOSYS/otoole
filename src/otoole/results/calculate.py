@@ -183,6 +183,35 @@ def compute_annual_technology_emission_by_mode(
         return pd.DataFrame()
 
 
+def compute_annual_variable_operating_cost(
+    rate_of_activity: pd.DataFrame, yearsplit: pd.DataFrame, variable_cost: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Arguments
+    ---------
+    rate_of_activity: pd.DataFrame
+        Rate of activity
+    yearsplit: pd.DataFrame
+        Year split
+    variable_cost: pd.DataFrame
+        Variable cost
+
+    Notes
+    -----
+    r~REGION, t~TECHNOLOGY, y~YEAR,
+    sum{m in MODE_OF_OPERATION, l in TIMESLICE}
+        RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y] ~VALUE;
+
+    """
+    split_activity = rate_of_activity.mul(yearsplit, fill_value=0.0)
+    operating_cost = split_activity.mul(variable_cost, fill_value=0.0)
+    if operating_cost.empty:
+        return operating_cost
+    else:
+        data = operating_cost.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+        return data[(data != 0).all(1)]
+
+
 def calculate_result(
     parameter_name: str, input_data: str, results_data: Dict[str, pd.DataFrame]
 ):
@@ -226,6 +255,13 @@ def calculate_result(
         rate_of_activity = results_data["RateOfActivity"].copy()
         return compute_annual_technology_emission_by_mode(
             emission_activity_ratio, yearsplit, rate_of_activity
+        )
+    elif parameter_name == "AnnualVariableOperatingCost":
+        rate_of_activity = results_data["RateOfActivity"]
+        yearsplit = package["YearSplit"]
+        variable_cost = package["VariableCost"]
+        return compute_annual_variable_operating_cost(
+            rate_of_activity, yearsplit, variable_cost
         )
     else:
         return pd.DataFrame()
