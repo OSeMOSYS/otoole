@@ -274,12 +274,56 @@ def compute_production_by_technology(
 def compute_production_by_technology_annual(
     production_by_technology: pd.DataFrame,
 ) -> pd.DataFrame:
-    """
+    """Aggregates production by technology to the annual level
     """
     data = production_by_technology
     if not data.empty:
         data = data.groupby(by=["REGION", "TECHNOLOGY", "FUEL", "YEAR"]).sum()
     return data[(data != 0).all(1)]
+
+
+def compute_rate_of_production_technology_mode(
+    rate_of_activity: pd.DataFrame, output_activity_ratio: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+
+    Arguments
+    ---------
+    rate_of_activity: pd.DataFrame
+    output_activity_ratio: pd.DataFrame
+
+    Notes
+    -----
+    r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
+    RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
+    """
+    data = rate_of_activity.mul(output_activity_ratio, fill_value=0.0)
+    if not data.empty:
+        data = data.reset_index().set_index(
+            ["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "FUEL", "YEAR"]
+        )
+    return data[(data != 0).all(1)].sort_index()
+
+
+def compute_rate_of_product_technology(
+    rate_of_production: pd.DataFrame,
+) -> pd.DataFrame:
+    """Sums up mode of operation for rate of production
+
+    Notes
+    -----
+    r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+    sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
+        RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
+
+
+    """
+    data = rate_of_production
+    if not data.empty:
+        data = data.groupby(
+            by=["REGION", "TIMESLICE", "TECHNOLOGY", "FUEL", "YEAR"]
+        ).sum()
+    return data[(data != 0).all(1)].sort_index()
 
 
 def calculate_result(
@@ -362,5 +406,18 @@ def calculate_result(
             "ProductionByTechnology", input_data, results_data
         )
         return compute_production_by_technology_annual(production_by_technology)
+
+    elif parameter_name == "RateOfProductionByTechnology":
+        rate_of_production = calculate_result(
+            "RateOfProductionByTechnologyByMode", input_data, results_data
+        )
+        return compute_rate_of_product_technology(rate_of_production)
+    elif parameter_name == "RateOfProductionByTechnologyByMode":
+        rate_of_activity = results_data["RateOfActivity"]
+        output_activity_ratio = package["OutputActivityRatio"]
+        return compute_rate_of_production_technology_mode(
+            rate_of_activity, output_activity_ratio
+        )
+
     else:
         return pd.DataFrame()
