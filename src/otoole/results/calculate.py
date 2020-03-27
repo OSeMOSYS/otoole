@@ -242,6 +242,35 @@ def compute_demand(
     return data[(data != 0).all(1)]
 
 
+def compute_production_by_technology(
+    rate_of_activity: pd.DataFrame,
+    output_activity_ratio: pd.DataFrame,
+    year_split: pd.DataFrame,
+) -> pd.DataFrame:
+    """Compute production by technology
+
+    Arguments
+    ---------
+    rate_of_activity: pd.DataFrame
+    output_activity_ratio: pd.DataFrame
+    year_split: pd.DataFrame
+
+    Notes
+    -----
+    r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+    sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
+        RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]
+        * YearSplit[l,y] ~VALUE;
+    """
+    split_activity = rate_of_activity.mul(year_split, fill_value=0.0)
+    data = split_activity.mul(output_activity_ratio, fill_value=0.0)
+    if not data.empty:
+        data = data.groupby(
+            by=["REGION", "TIMESLICE", "TECHNOLOGY", "FUEL", "YEAR"]
+        ).sum()
+    return data[(data != 0).all(1)]
+
+
 def calculate_result(
     parameter_name: str, input_data: str, results_data: Dict[str, pd.DataFrame]
 ):
@@ -260,18 +289,21 @@ def calculate_result(
         return compute_annual_emissions(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
+
     elif parameter_name == "TotalCapacityAnnual":
         acc_new_capacity = calculate_result(
             "AccumulatedNewCapacity", input_data, results_data
         )
         residual_capacity = package["ResidualCapacity"]
         return compute_total_capacity_annual(residual_capacity, acc_new_capacity)
+
     elif parameter_name == "AnnualFixedOperatingCost":
         total_capacity = calculate_result(
             "TotalCapacityAnnual", input_data, results_data
         )
         fixed_cost = package["FixedCost"]
         return compute_annual_fixed_operating_cost(total_capacity, fixed_cost)
+
     elif parameter_name == "AnnualTechnologyEmission":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
@@ -279,6 +311,7 @@ def calculate_result(
         return compute_annual_technology_emissions(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
+
     elif parameter_name == "AnnualTechnologyEmissionByMode":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
@@ -286,6 +319,7 @@ def calculate_result(
         return compute_annual_technology_emission_by_mode(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
+
     elif parameter_name == "AnnualVariableOperatingCost":
         rate_of_activity = results_data["RateOfActivity"]
         yearsplit = package["YearSplit"]
@@ -293,13 +327,24 @@ def calculate_result(
         return compute_annual_variable_operating_cost(
             rate_of_activity, yearsplit, variable_cost
         )
+
     elif parameter_name == "CapitalInvestment":
         capital_cost = package["CapitalCost"]
         new_capacity = results_data["NewCapacity"].copy()
         return compute_capital_investment(capital_cost, new_capacity)
+
     elif parameter_name == "Demand":
         specified_annual_demand = package["SpecifiedAnnualDemand"]
         specified_demand_profile = package["SpecifiedDemandProfile"]
         return compute_demand(specified_annual_demand, specified_demand_profile)
+
+    elif parameter_name == "ProductionByTechnology":
+        rate_of_activity = results_data["RateOfActivity"]
+        output_activity_ratio = package["OutputActivityRatio"]
+        year_split = package["YearSplit"]
+        return compute_production_by_technology(
+            rate_of_activity, output_activity_ratio, year_split
+        )
+
     else:
         return pd.DataFrame()

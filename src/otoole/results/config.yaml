@@ -87,13 +87,13 @@ ProductionByTechnology:
     type: param
     dtype: float
     default: 0
-    calculated: False
+    calculated: True
 ProductionByTechnologyAnnual:
     indices: [REGION, TECHNOLOGY, FUEL, YEAR]
     type: param
     dtype: float
     default: 0
-    calculated: False
+    calculated: True
 RateOfActivity:
     indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, YEAR]
     type: param
