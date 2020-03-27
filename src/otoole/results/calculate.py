@@ -271,6 +271,17 @@ def compute_production_by_technology(
     return data[(data != 0).all(1)]
 
 
+def compute_production_by_technology_annual(
+    production_by_technology: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    """
+    data = production_by_technology
+    if not data.empty:
+        data = data.groupby(by=["REGION", "TECHNOLOGY", "FUEL", "YEAR"]).sum()
+    return data[(data != 0).all(1)]
+
+
 def calculate_result(
     parameter_name: str, input_data: str, results_data: Dict[str, pd.DataFrame]
 ):
@@ -346,5 +357,10 @@ def calculate_result(
             rate_of_activity, output_activity_ratio, year_split
         )
 
+    elif parameter_name == "ProductionByTechnologyAnnual":
+        production_by_technology = calculate_result(
+            "ProductionByTechnology", input_data, results_data
+        )
+        return compute_production_by_technology_annual(production_by_technology)
     else:
         return pd.DataFrame()
