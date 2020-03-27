@@ -226,10 +226,16 @@ def convert_dataframe_to_csv(
 ) -> Dict[str, pd.DataFrame]:
     """Convert from dataframe to csv
 
+    Converts a pandas DataFrame containing all CBC results to reformatted
+    dictionary of pandas DataFrames in long format ready to write out as
+    csv files
+
     Arguments
     ---------
     data : pandas.DataFrame
-    input_data : str
+        CBC results stored in a dataframe
+    input_data : str, default=None
+        Path to the OSeMOSYS data file containing input data
 
     Example
     -------
@@ -285,14 +291,16 @@ def convert_dataframe_to_csv(
                 )
                 df = calculate_result(name, input_data, results)
                 if not df.empty:
-                    results[name] = df.set_index(indices)
+                    results[name] = df
                 else:
                     LOGGER.warning(
                         "Calculation returned empty dataframe for parameter '%s'", name
                     )
             else:
                 LOGGER.warning(
-                    "No input data provided, unable to calculate parameter '%s'", name
+                    "No OSeMOSYS data file provided, \
+                     unable to calculate parameter '%s'",
+                    name,
                 )
 
     return results

@@ -9,6 +9,7 @@ from otoole.results.calculate import (
     compute_annual_fixed_operating_cost,
     compute_annual_technology_emission_by_mode,
     compute_annual_technology_emissions,
+    compute_total_capacity_annual,
 )
 
 
@@ -193,23 +194,6 @@ def accumulated_new_capacity():
 
 
 @fixture
-def fixed_cost():
-    data = pd.DataFrame(
-        data=[
-            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1],
-            ["SIMPLICITY", "DUMMY", 2014, 0.5],
-            ["SIMPLICITY", "DUMMY", 2015, 0.5],
-            ["SIMPLICITY", "DUMMY", 2016, 0.5],
-        ],
-        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-    return data
-
-
-@fixture
 def residual_capacity():
     data = pd.DataFrame(
         data=[
@@ -220,6 +204,40 @@ def residual_capacity():
             ["SIMPLICITY", "DUMMY", 2014, 0.1],
             ["SIMPLICITY", "DUMMY", 2015, 0.2],
             ["SIMPLICITY", "DUMMY", 2016, 0.3],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def total_capacity():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 2.3],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 2.3],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1.6],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1.6],
+            ["SIMPLICITY", "DUMMY", 2014, 1.0],
+            ["SIMPLICITY", "DUMMY", 2015, 1.1],
+            ["SIMPLICITY", "DUMMY", 2016, 1.2],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def fixed_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1],
+            ["SIMPLICITY", "DUMMY", 2014, 0.5],
+            ["SIMPLICITY", "DUMMY", 2015, 0.5],
+            ["SIMPLICITY", "DUMMY", 2016, 0.5],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -478,10 +496,8 @@ class TestComputeFixedOperatingCost:
     0.9 + 0.3 * 0.5 = 0.6
     """
 
-    def test_compute(self, accumulated_new_capacity, residual_capacity, fixed_cost):
-        actual = compute_annual_fixed_operating_cost(
-            accumulated_new_capacity, residual_capacity, fixed_cost
-        )
+    def test_compute(self, total_capacity, fixed_cost):
+        actual = compute_annual_fixed_operating_cost(total_capacity, fixed_cost)
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 2.3],
@@ -498,8 +514,45 @@ class TestComputeFixedOperatingCost:
         assert_frame_equal(actual, expected)
 
     def test_compute_null(self):
-        actual = compute_annual_fixed_operating_cost(
-            pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        actual = compute_annual_fixed_operating_cost(pd.DataFrame(), pd.DataFrame())
+        expected = pd.DataFrame()
+        assert_frame_equal(actual, expected)
+
+
+class TestComputeTotalAnnualCapacity:
+    """
+
+    Notes
+    -----
+    1.3 + 1.0
+    1.3 + 1.0
+    1.6 + 0.0
+    1.6 + 0.0
+    0.9 + 0.1
+    0.9 + 0.2
+    0.9 + 0.3
+    """
+
+    def test_compute(self, accumulated_new_capacity, residual_capacity):
+        actual = compute_total_capacity_annual(
+            residual_capacity, accumulated_new_capacity
         )
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 2.3],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 2.3],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1.6],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1.6],
+                ["SIMPLICITY", "DUMMY", 2014, 1.0],
+                ["SIMPLICITY", "DUMMY", 2015, 1.1],
+                ["SIMPLICITY", "DUMMY", 2016, 1.2],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_compute_null(self):
+        actual = compute_total_capacity_annual(pd.DataFrame(), pd.DataFrame())
         expected = pd.DataFrame()
         assert_frame_equal(actual, expected)

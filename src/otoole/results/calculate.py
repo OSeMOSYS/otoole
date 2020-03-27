@@ -41,18 +41,14 @@ def compute_annual_emissions(
 
 
 def compute_annual_fixed_operating_cost(
-    acc_new_capacity: pd.DataFrame,
-    residual_capacity: pd.DataFrame,
-    fixed_cost: pd.DataFrame,
+    total_capacity: pd.DataFrame, fixed_cost: pd.DataFrame,
 ) -> pd.DataFrame:
     """Compute AnnualFixedOperatingCost result
 
     Arguments
     ---------
-    acc_new_capacity: pd.DataFrame
-        Accumulated new capacity
-    residual_capacity: pd.DataFrame
-        Residual capacity
+    total_capacity: pd.DataFrame
+        Total annual capacity (new and residual)
     fixed_cost: pd.DataFrame
         Fixed cost
 
@@ -64,9 +60,29 @@ def compute_annual_fixed_operating_cost(
         NewCapacity[r,t,yy]) + ResidualCapacity[r,t,y]) ~VALUE;
 
     """
-    total_capacity = acc_new_capacity + residual_capacity
-    total_fixed_costs = fixed_cost * total_capacity
-    return total_fixed_costs[(total_fixed_costs != 0).all(1)]
+    total_fixed_costs = total_capacity.mul(fixed_cost, fill_value=0.0)
+    return total_fixed_costs[(total_fixed_costs != 0).all(1)].dropna()
+
+
+def compute_total_capacity_annual(residual_capacity, acc_new_capacity):
+    """Compute TotalCapacityAnnual result
+
+    Arguments
+    ---------
+    acc_new_capacity: pd.DataFrame
+        Accumulated new capacity
+    residual_capacity: pd.DataFrame
+        Residual capacity
+
+    Notes
+    -----
+    r~REGION, t~TECHNOLOGY, y~YEAR,
+    ResidualCapacity[r,t,y] +
+    (sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+        NewCapacity[r,t,yy])~VALUE;
+    """
+    total_capacity = residual_capacity.add(acc_new_capacity, fill_value=0.0)
+    return total_capacity[(total_capacity != 0).all(1)]
 
 
 def compute_accumulated_new_capacity(
@@ -177,6 +193,7 @@ def calculate_result(
         new_capacity = results_data["NewCapacity"].copy()
         year = pd.Index(package["YEAR"]["VALUE"].to_list())
         return compute_accumulated_new_capacity(operational_life, new_capacity, year)
+
     elif parameter_name == "AnnualEmissions":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
@@ -184,6 +201,18 @@ def calculate_result(
         return compute_annual_emissions(
             emission_activity_ratio, yearsplit, rate_of_activity
         )
+    elif parameter_name == "TotalCapacityAnnual":
+        acc_new_capacity = calculate_result(
+            "AccumulatedNewCapacity", input_data, results_data
+        )
+        residual_capacity = package["ResidualCapacity"]
+        return compute_total_capacity_annual(residual_capacity, acc_new_capacity)
+    elif parameter_name == "AnnualFixedOperatingCost":
+        total_capacity = calculate_result(
+            "TotalCapacityAnnual", input_data, results_data
+        )
+        fixed_cost = package["FixedCost"]
+        return compute_annual_fixed_operating_cost(total_capacity, fixed_cost)
     elif parameter_name == "AnnualTechnologyEmission":
         emission_activity_ratio = package["EmissionActivityRatio"]
         yearsplit = package["YearSplit"]
