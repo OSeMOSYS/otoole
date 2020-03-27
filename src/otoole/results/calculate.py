@@ -34,10 +34,39 @@ def compute_annual_emissions(
     if not data.empty:
         data = data.groupby(by=["REGION", "EMISSION", "YEAR"]).sum()
 
-        return data.reset_index()
+        return data
 
     else:
         return pd.DataFrame()
+
+
+def compute_annual_fixed_operating_cost(
+    acc_new_capacity: pd.DataFrame,
+    residual_capacity: pd.DataFrame,
+    fixed_cost: pd.DataFrame,
+) -> pd.DataFrame:
+    """Compute AnnualFixedOperatingCost result
+
+    Arguments
+    ---------
+    acc_new_capacity: pd.DataFrame
+        Accumulated new capacity
+    residual_capacity: pd.DataFrame
+        Residual capacity
+    fixed_cost: pd.DataFrame
+        Fixed cost
+
+    Notes
+    -----
+    r~REGION, t~TECHNOLOGY, y~YEAR,
+    FixedCost[r,t,y] *
+    ((sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+        NewCapacity[r,t,yy]) + ResidualCapacity[r,t,y]) ~VALUE;
+
+    """
+    total_capacity = acc_new_capacity + residual_capacity
+    total_fixed_costs = fixed_cost * total_capacity
+    return total_fixed_costs[(total_fixed_costs != 0).all(1)]
 
 
 def compute_accumulated_new_capacity(
@@ -84,7 +113,7 @@ def compute_accumulated_new_capacity(
             acc_capacity.loc[region, technology, yr] = data[mask].sum()
 
     acc_capacity = acc_capacity.drop(columns="OperationalLife")
-    return acc_capacity[(acc_capacity != 0).all(1)].reset_index()
+    return acc_capacity[(acc_capacity != 0).all(1)]
 
 
 def compute_annual_technology_emissions(
@@ -107,7 +136,7 @@ def compute_annual_technology_emissions(
     if not data.empty:
         data = data.groupby(by=["REGION", "TECHNOLOGY", "EMISSION", "YEAR"]).sum()
 
-        return data[(data != 0).all(1)].reset_index()
+        return data[(data != 0).all(1)]
 
     else:
         return pd.DataFrame()
@@ -132,7 +161,7 @@ def compute_annual_technology_emission_by_mode(
             by=["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"]
         ).sum()
 
-        return data[(data != 0).all(1)].reset_index()
+        return data[(data != 0).all(1)]
 
     else:
         return pd.DataFrame()

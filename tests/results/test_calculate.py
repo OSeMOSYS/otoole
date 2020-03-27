@@ -6,6 +6,7 @@ from pandas.testing import assert_frame_equal
 from otoole.results.calculate import (
     compute_accumulated_new_capacity,
     compute_annual_emissions,
+    compute_annual_fixed_operating_cost,
     compute_annual_technology_emission_by_mode,
     compute_annual_technology_emissions,
 )
@@ -174,6 +175,57 @@ def year():
     return pd.Index(data=[2014, 2015, 2016, 2017, 2018, 2019, 2020])
 
 
+@fixture
+def accumulated_new_capacity():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.3],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1.3],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1.6],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1.6],
+            ["SIMPLICITY", "DUMMY", 2014, 0.9],
+            ["SIMPLICITY", "DUMMY", 2015, 0.9],
+            ["SIMPLICITY", "DUMMY", 2016, 0.9],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def fixed_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1],
+            ["SIMPLICITY", "DUMMY", 2014, 0.5],
+            ["SIMPLICITY", "DUMMY", 2015, 0.5],
+            ["SIMPLICITY", "DUMMY", 2016, 0.5],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def residual_capacity():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2017, 0],
+            ["SIMPLICITY", "DUMMY", 2014, 0.1],
+            ["SIMPLICITY", "DUMMY", 2015, 0.2],
+            ["SIMPLICITY", "DUMMY", 2016, 0.3],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
 class TestCalculateAnnualEmissions:
     def test_null(self):
         """
@@ -200,7 +252,7 @@ class TestCalculateAnnualEmissions:
         expected = pd.DataFrame(
             data=[["SIMPLICITY", "CO2", 2014, 1.0]],
             columns=["REGION", "EMISSION", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "EMISSION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -216,7 +268,7 @@ class TestCalculateAnnualEmissions:
         expected = pd.DataFrame(
             data=[["SIMPLICITY", "CO2", 2014, 1.0]],
             columns=["REGION", "EMISSION", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "EMISSION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -249,7 +301,7 @@ class TestCalculateAnnualTechnologyEmissions:
         expected = pd.DataFrame(
             data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 2014, 1.0]],
             columns=["REGION", "TECHNOLOGY", "EMISSION", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -268,7 +320,7 @@ class TestCalculateAnnualTechnologyEmissions:
                 ["SIMPLICITY", "GAS_EXTRACTION", "CO2", 2014, 1.0]
             ],
             columns=["REGION", "TECHNOLOGY", "EMISSION", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -308,7 +360,7 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
                 "YEAR",
                 "VALUE",
             ],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -334,7 +386,7 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
                 "YEAR",
                 "VALUE",
             ],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -342,7 +394,6 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
 class TestAccumulatedNewCapacity:
     def test_individual(self, new_capacity, operational_life, year):
         actual = compute_accumulated_new_capacity(operational_life, new_capacity, year)
-        print(actual)
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.3],
@@ -354,7 +405,7 @@ class TestAccumulatedNewCapacity:
                 ["SIMPLICITY", "DUMMY", 2016, 0.9],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -362,7 +413,6 @@ class TestAccumulatedNewCapacity:
         actual = compute_accumulated_new_capacity(
             operational_life_overlap, new_capacity, year
         )
-        print(actual)
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.3],
@@ -381,7 +431,7 @@ class TestAccumulatedNewCapacity:
                 ["SIMPLICITY", "DUMMY", 2020, 0.9],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -391,7 +441,6 @@ class TestAccumulatedNewCapacity:
         actual = compute_accumulated_new_capacity(
             operational_life_overlap, new_capacity_bitty, year
         )
-        print(actual)
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 0.0300000000000001],
@@ -410,6 +459,47 @@ class TestAccumulatedNewCapacity:
                 ["SIMPLICITY", "DUMMY", 2020, 0.9],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        )
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
+        assert_frame_equal(actual, expected)
+
+
+class TestComputeFixedOperatingCost:
+    """
+
+    Notes
+    -----
+    1.3 + 1.0 * 1.0 = 2.3
+    1.3 + 1.0 * 1.0 = 2.3
+    1.6 + 0.0 * 1.0 = 1.6
+    1.6 + 0.0 * 1.0 = 1.6
+    0.9 + 0.1 * 0.5 = 0.5
+    0.9 + 0.2 * 0.5 = 0.55
+    0.9 + 0.3 * 0.5 = 0.6
+    """
+
+    def test_compute(self, accumulated_new_capacity, residual_capacity, fixed_cost):
+        actual = compute_annual_fixed_operating_cost(
+            accumulated_new_capacity, residual_capacity, fixed_cost
+        )
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 2.3],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 2.3],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1.6],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2017, 1.6],
+                ["SIMPLICITY", "DUMMY", 2014, 0.5],
+                ["SIMPLICITY", "DUMMY", 2015, 0.55],
+                ["SIMPLICITY", "DUMMY", 2016, 0.6],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_compute_null(self):
+        actual = compute_annual_fixed_operating_cost(
+            pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        )
+        expected = pd.DataFrame()
         assert_frame_equal(actual, expected)
