@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from otoole import read_packaged_file
-from otoole.results.calculate import calculate_result
+from otoole.results.result_package import ResultsPackage
 
 LOGGER = logging.getLogger(__name__)
 
@@ -253,7 +253,7 @@ def convert_dataframe_to_csv(
 
     sets = {x: y for x, y in input_config.items() if y["type"] == "set"}
 
-    results = {}
+    results = {}  # type: Dict[str, pd.DataFrame]
 
     not_found = []
 
@@ -281,15 +281,23 @@ def convert_dataframe_to_csv(
 
     LOGGER.debug("Unable to find CBC variables for: %s", ", ".join(not_found))
 
+    results_package = ResultsPackage(results, input_data)
+
     for name in not_found:
+
         details = results_config[name]
-        indices = details["indices"]
+
         if details["calculated"]:
             if input_data:
                 LOGGER.info(
                     "Assuming running short code. Attempting to calculate %s", name
                 )
-                df = calculate_result(name, input_data, results)
+                try:
+                    df = results_package[name]
+                except KeyError:
+                    LOGGER.info("No calculation method available for %s", name)
+                    df = pd.DataFrame()
+
                 if not df.empty:
                     results[name] = df
                 else:
