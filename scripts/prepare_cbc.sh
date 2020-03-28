@@ -14,4 +14,4 @@ otoole -vvv results cbc csv simplicity.sol output
 
 ls output > output_files
 ls results > result_file
-diff -wylNs output_files result_files
+diff -wylNs output_files result_file
