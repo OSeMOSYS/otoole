@@ -316,7 +316,6 @@ def compute_rate_of_product_technology(
     sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
         RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
 
-
     """
     data = rate_of_production
     if not data.empty:
