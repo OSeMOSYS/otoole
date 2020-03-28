@@ -82,7 +82,7 @@ class ResultsPackage(Mapping):
             self.result_cache[name] = results
             return self.result_cache[name]
         else:
-            raise KeyError("'{}' is not accessible or available".format(name))
+            raise KeyError("{} is not accessible or available".format(name))
         return self.data[name]
 
     def __iter__(self):
@@ -90,6 +90,9 @@ class ResultsPackage(Mapping):
 
     def __len__(self):
         raise NotImplementedError()
+
+    def _msg(self, name: str, error: str):
+        return "Cannot calculate {} due to missing data: {}".format(name, error)
 
     def accumulated_new_capacity(self) -> pd.DataFrame:
         """
@@ -113,8 +116,11 @@ class ResultsPackage(Mapping):
         sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
             NewCapacity[r,t,yy] ~VALUE;
         """
-        new_capacity = self["NewCapacity"].copy()
-        year = pd.Index(self["YEAR"]["VALUE"].to_list())
+        try:
+            new_capacity = self["NewCapacity"].copy()
+            year = pd.Index(self["YEAR"]["VALUE"].to_list())
+        except KeyError as ex:
+            raise KeyError(self._msg("AccumulatedNewCapacity", str(ex)))
 
         new_capacity["OperationalLife"] = self["OperationalLife"].copy()
 
@@ -155,9 +161,12 @@ class ResultsPackage(Mapping):
             RateOfActivity[r,l,t,m,y] * EmissionActivityRatio[r,t,e,m,y]
                 * YearSplit[l,y]~VALUE;
         """
-        emission_activity_ratio = self["EmissionActivityRatio"]
-        yearsplit = self["YearSplit"]
-        rate_of_activity = self["RateOfActivity"]
+        try:
+            emission_activity_ratio = self["EmissionActivityRatio"]
+            yearsplit = self["YearSplit"]
+            rate_of_activity = self["RateOfActivity"]
+        except KeyError as ex:
+            raise KeyError(self._msg("AnnualEmissions", str(ex)))
 
         data = emission_activity_ratio.mul(yearsplit, fill_value=0.0)
         data = data.mul(rate_of_activity, fill_value=0.0)
@@ -181,13 +190,18 @@ class ResultsPackage(Mapping):
             NewCapacity[r,t,yy]) + ResidualCapacity[r,t,y]) ~VALUE;
 
         """
-        total_capacity = self["TotalCapacityAnnual"]
-        fixed_cost = self["FixedCost"]
+        try:
+            total_capacity = self["TotalCapacityAnnual"]
+            fixed_cost = self["FixedCost"]
+        except KeyError as ex:
+            raise KeyError(self._msg("AnnualFixedOperatingCost", str(ex)))
+
         total_fixed_costs = total_capacity.mul(fixed_cost, fill_value=0.0)
+
         return total_fixed_costs[(total_fixed_costs != 0).all(1)].dropna()
 
     def annual_technology_emissions(self) -> pd.DataFrame:
-        """Annual emissions by technology
+        """Calculates results ``AnnualTechnologyEmission``
 
         Notes
         -----
@@ -197,9 +211,12 @@ class ResultsPackage(Mapping):
         EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
             * YearSplit[l,y];
         """
-        emission_activity_ratio: pd.DataFrame = self["EmissionActivityRatio"]
-        yearsplit: pd.DataFrame = self["YearSplit"]
-        rate_of_activity: pd.DataFrame = self["RateOfActivity"]
+        try:
+            emission_activity_ratio = self["EmissionActivityRatio"]
+            yearsplit = self["YearSplit"]
+            rate_of_activity = self["RateOfActivity"]
+        except KeyError as ex:
+            raise KeyError(self._msg("AnnualTechnologyEmission", str(ex)))
 
         data = emission_activity_ratio.mul(yearsplit)
         data = data.mul(rate_of_activity)
@@ -222,9 +239,12 @@ class ResultsPackage(Mapping):
             EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
                 * YearSplit[l,y]
         """
-        emission_activity_ratio: pd.DataFrame = self["EmissionActivityRatio"]
-        yearsplit: pd.DataFrame = self["YearSplit"]
-        rate_of_activity: pd.DataFrame = self["RateOfActivity"]
+        try:
+            emission_activity_ratio: pd.DataFrame = self["EmissionActivityRatio"]
+            yearsplit: pd.DataFrame = self["YearSplit"]
+            rate_of_activity: pd.DataFrame = self["RateOfActivity"]
+        except KeyError as ex:
+            raise KeyError(self._msg("AnnualTechnologyEmissionByMode", str(ex)))
 
         data = emission_activity_ratio.mul(yearsplit)
         data = data.mul(rate_of_activity)
@@ -240,7 +260,7 @@ class ResultsPackage(Mapping):
             return pd.DataFrame()
 
     def annual_variable_operating_cost(self) -> pd.DataFrame:
-        """
+        """AnnualVariableOperatingCost
 
         Notes
         -----
@@ -249,9 +269,12 @@ class ResultsPackage(Mapping):
             RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y] ~VALUE;
 
         """
-        rate_of_activity = self["RateOfActivity"]
-        yearsplit = self["YearSplit"]
-        variable_cost = self["VariableCost"]
+        try:
+            rate_of_activity = self["RateOfActivity"]
+            yearsplit = self["YearSplit"]
+            variable_cost = self["VariableCost"]
+        except KeyError as ex:
+            raise KeyError(self._msg("AnnualVariableOperatingCost", str(ex)))
 
         split_activity = rate_of_activity.mul(yearsplit, fill_value=0.0)
         operating_cost = split_activity.mul(variable_cost, fill_value=0.0)
@@ -262,29 +285,35 @@ class ResultsPackage(Mapping):
             return data[(data != 0).all(1)]
 
     def capital_investment(self) -> pd.DataFrame:
-        """
+        """CapitalInvestment
 
         Notes
         -----
         r~REGION, t~TECHNOLOGY, y~YEAR,
         CapitalCost[r,t,y] * NewCapacity[r,t,y] ~VALUE;
         """
-        capital_cost = self["CapitalCost"]
-        new_capacity = self["NewCapacity"]
+        try:
+            capital_cost = self["CapitalCost"]
+            new_capacity = self["NewCapacity"]
+        except KeyError as ex:
+            raise KeyError(self._msg("CapitalInvestment", str(ex)))
 
         data = capital_cost.mul(new_capacity, fill_value=0.0)
         return data[(data != 0).all(1)]
 
     def demand(self) -> pd.DataFrame:
-        """
+        """Demand
 
         Notes
         -----
         r~REGION, l~TIMESLICE, f~FUEL, y~YEAR,
         SpecifiedAnnualDemand[r,f,y] * SpecifiedDemandProfile[r,f,l,y] ~VALUE;
         """
-        specified_annual_demand = self["SpecifiedAnnualDemand"]
-        specified_demand_profile = self["SpecifiedDemandProfile"]
+        try:
+            specified_annual_demand = self["SpecifiedAnnualDemand"]
+            specified_demand_profile = self["SpecifiedDemandProfile"]
+        except KeyError as ex:
+            raise KeyError(self._msg("Demand", str(ex)))
 
         data = specified_annual_demand.mul(specified_demand_profile, fill_value=0.0)
         if not data.empty:
@@ -294,6 +323,8 @@ class ResultsPackage(Mapping):
     def production_by_technology(self) -> pd.DataFrame:
         """Compute production by technology
 
+        ProductionByTechnology
+
         Notes
         -----
         r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
@@ -301,9 +332,12 @@ class ResultsPackage(Mapping):
             RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]
             * YearSplit[l,y] ~VALUE;
         """
-        rate_of_activity = self["RateOfActivity"]
-        output_activity_ratio = self["OutputActivityRatio"]
-        year_split = self["YearSplit"]
+        try:
+            rate_of_activity = self["RateOfActivity"]
+            output_activity_ratio = self["OutputActivityRatio"]
+            year_split = self["YearSplit"]
+        except KeyError as ex:
+            raise KeyError(self._msg("ProductionByTechnology", str(ex)))
 
         split_activity = rate_of_activity.mul(year_split, fill_value=0.0)
         data = split_activity.mul(output_activity_ratio, fill_value=0.0)
@@ -316,14 +350,18 @@ class ResultsPackage(Mapping):
     def production_by_technology_annual(self) -> pd.DataFrame:
         """Aggregates production by technology to the annual level
         """
-        production_by_technology = self["ProductionByTechnology"]
+        try:
+            production_by_technology = self["ProductionByTechnology"]
+        except KeyError as ex:
+            raise KeyError(self._msg("ProductionByTechnologyAnnual", str(ex)))
+
         data = production_by_technology
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "FUEL", "YEAR"]).sum()
         return data[(data != 0).all(1)]
 
     def rate_of_production_tech_mode(self) -> pd.DataFrame:
-        """
+        """RateOfProductionByTechnologyByMode
 
         Arguments
         ---------
@@ -335,8 +373,11 @@ class ResultsPackage(Mapping):
         r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
         RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
         """
-        rate_of_activity = self["RateOfActivity"]
-        output_activity_ratio = self["OutputActivityRatio"]
+        try:
+            rate_of_activity = self["RateOfActivity"]
+            output_activity_ratio = self["OutputActivityRatio"]
+        except KeyError as ex:
+            raise KeyError(self._msg("RateOfProductionByTechnologyByMode", str(ex)))
 
         data = rate_of_activity.mul(output_activity_ratio, fill_value=0.0)
         if not data.empty:
@@ -362,7 +403,10 @@ class ResultsPackage(Mapping):
             RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
 
         """
-        rate_of_production = self["RateOfProductionByTechnologyByMode"]
+        try:
+            rate_of_production = self["RateOfProductionByTechnologyByMode"]
+        except KeyError as ex:
+            raise KeyError(self._msg("RateOfProductionByTechnology", str(ex)))
 
         data = rate_of_production
         if not data.empty:
@@ -381,7 +425,11 @@ class ResultsPackage(Mapping):
         (sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
             NewCapacity[r,t,yy])~VALUE;
         """
-        residual_capacity = self["ResidualCapacity"]
-        acc_new_capacity = self["AccumulatedNewCapacity"]
+        try:
+            residual_capacity = self["ResidualCapacity"]
+            acc_new_capacity = self["AccumulatedNewCapacity"]
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalCapacityAnnual", str(ex)))
+
         total_capacity = residual_capacity.add(acc_new_capacity, fill_value=0.0)
         return total_capacity[(total_capacity != 0).all(1)]
