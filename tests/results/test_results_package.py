@@ -678,12 +678,12 @@ class TestCapitalRecoveryFactor:
 
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", 2010, 1],
-                ["SIMPLICITY", 2011, 0.95],
-                ["SIMPLICITY", 2012, 0.85],
-                ["SIMPLICITY", 2013, 0.7],
-                ["SIMPLICITY", 2014, 0.6],
-                ["SIMPLICITY", 2015, 0.5],
+                ["SIMPLICITY", 2010, 1.0],
+                ["SIMPLICITY", 2011, 1.05],
+                ["SIMPLICITY", 2012, 1.1025],
+                ["SIMPLICITY", 2013, 1.1576250000000001],
+                ["SIMPLICITY", 2014, 1.2155062500000002],
+                ["SIMPLICITY", 2015, 1.2762815625000004],
             ],
             columns=["REGION", "YEAR", "VALUE"],
         ).set_index(["REGION", "YEAR"])

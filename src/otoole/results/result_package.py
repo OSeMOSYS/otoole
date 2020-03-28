@@ -645,6 +645,14 @@ def capital_recovery_factor(
     regions: List, years: List, discount_rate: pd.DataFrame, adj: float = 0.0
 ) -> pd.DataFrame:
     """Calculates the capital recovery factor
+
+    Arguments
+    ---------
+    regions: list
+    years: list
+    discount_rate: pd.DataFrame
+    adj: float, default=0.0
+        Adjust to beginning of the year (default), mid year (0.5) or end year (1.0)
     """
     index = pd.MultiIndex.from_product([regions, years], names=["REGION", "YEAR"])
     crf = discount_rate.reindex(index)
