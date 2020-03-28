@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Mapping
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 from pandas_datapackage_reader import read_datapackage
@@ -46,7 +46,14 @@ class ResultsPackage(Mapping):
             "ProductionByTechnologyAnnual": self.production_by_technology_annual,
             "RateOfProductionByTechnology": self.rate_of_product_technology,
             "RateOfProductionByTechnologyByMode": self.rate_of_production_tech_mode,
+            "RateOfUseByTechnology": self.rate_of_use_by_technology,
+            "RateOfUseByTechnologyByMode": self.rate_of_use_by_technology_by_mode,
+            "TotalAnnualTechnologyActivityByMode": self.total_annual_tech_activity_mode,
             "TotalCapacityAnnual": self.total_capacity_annual,
+            "TotalDiscountedCost": self.total_discounted_cost,
+            "TotalTechnologyAnnualActivity": self.total_technology_annual_activity,
+            "TotalTechnologyModelPeriodActivity": self.total_tech_model_period_activity,
+            "UseByTechnology": self.use_by_technology,
         }
         self._result_cache = {}  # type: Dict[str, pd.DataFrame]
 
@@ -106,12 +113,6 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        table AccumulatedNewCapacity
-        {r in REGION, t in TECHNOLOGY, y in YEAR:
-            sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
-            NewCapacity[r,t,yy] > 0}
-        OUT "CSV"
-        ResultsPath & "/AccumulatedNewCapacity.csv" :
         r~REGION, t~TECHNOLOGY, y~YEAR,
         sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
             NewCapacity[r,t,yy] ~VALUE;
@@ -168,16 +169,12 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("AnnualEmissions", str(ex)))
 
-        data = emission_activity_ratio.mul(yearsplit, fill_value=0.0)
-        data = data.mul(rate_of_activity, fill_value=0.0)
+        mid = emission_activity_ratio.mul(yearsplit, fill_value=0.0)
+        data = mid.mul(rate_of_activity, fill_value=0.0)
 
         if not data.empty:
             data = data.groupby(by=["REGION", "EMISSION", "YEAR"]).sum()
-
-            return data
-
-        else:
-            return pd.DataFrame()
+        return data
 
     def annual_fixed_operating_cost(self) -> pd.DataFrame:
         """Compute AnnualFixedOperatingCost result
@@ -218,16 +215,13 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("AnnualTechnologyEmission", str(ex)))
 
-        data = emission_activity_ratio.mul(yearsplit)
-        data = data.mul(rate_of_activity)
+        mid = emission_activity_ratio.mul(yearsplit)
+        data = mid.mul(rate_of_activity)
 
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "EMISSION", "YEAR"]).sum()
 
-            return data[(data != 0).all(1)]
-
-        else:
-            return pd.DataFrame()
+        return data[(data != 0).all(1)]
 
     def annual_technology_emission_by_mode(self) -> pd.DataFrame:
         """
@@ -246,18 +240,15 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("AnnualTechnologyEmissionByMode", str(ex)))
 
-        data = emission_activity_ratio.mul(yearsplit)
-        data = data.mul(rate_of_activity)
+        mid = emission_activity_ratio.mul(yearsplit)
+        data = mid.mul(rate_of_activity)
 
         if not data.empty:
             data = data.groupby(
                 by=["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"]
             ).sum()
 
-            return data[(data != 0).all(1)]
-
-        else:
-            return pd.DataFrame()
+        return data[(data != 0).all(1)]
 
     def annual_variable_operating_cost(self) -> pd.DataFrame:
         """AnnualVariableOperatingCost
@@ -277,12 +268,10 @@ class ResultsPackage(Mapping):
             raise KeyError(self._msg("AnnualVariableOperatingCost", str(ex)))
 
         split_activity = rate_of_activity.mul(yearsplit, fill_value=0.0)
-        operating_cost = split_activity.mul(variable_cost, fill_value=0.0)
-        if operating_cost.empty:
-            return operating_cost
-        else:
-            data = operating_cost.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
-            return data[(data != 0).all(1)]
+        data = split_activity.mul(variable_cost, fill_value=0.0)
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+        return data[(data != 0).all(1)]
 
     def capital_investment(self) -> pd.DataFrame:
         """CapitalInvestment
@@ -351,7 +340,7 @@ class ResultsPackage(Mapping):
         """Aggregates production by technology to the annual level
         """
         try:
-            production_by_technology = self["ProductionByTechnology"]
+            production_by_technology = self["ProductionByTechnology"].copy(deep=True)
         except KeyError as ex:
             raise KeyError(self._msg("ProductionByTechnologyAnnual", str(ex)))
 
@@ -404,7 +393,9 @@ class ResultsPackage(Mapping):
 
         """
         try:
-            rate_of_production = self["RateOfProductionByTechnologyByMode"]
+            rate_of_production = self["RateOfProductionByTechnologyByMode"].copy(
+                deep=True
+            )
         except KeyError as ex:
             raise KeyError(self._msg("RateOfProductionByTechnology", str(ex)))
 
@@ -414,6 +405,65 @@ class ResultsPackage(Mapping):
                 by=["REGION", "TIMESLICE", "TECHNOLOGY", "FUEL", "YEAR"]
             ).sum()
         return data[(data != 0).all(1)].sort_index()
+
+    def rate_of_use_by_technology(self) -> pd.DataFrame:
+        """RateOfUseByTechnology
+
+        Notes
+        -----
+        r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+        sum{m in MODE_OF_OPERATION: InputActivityRatio[r,t,f,m,y]<>0}
+            RateOfActivity[r,l,t,m,y] * InputActivityRatio[r,t,f,m,y]~VALUE;
+        """
+        try:
+            rate_of_use_by_technology_by_mode = self[
+                "RateOfUseByTechnologyByMode"
+            ].copy(deep=True)
+        except KeyError as ex:
+            raise KeyError(self._msg("RateOfUseByTechnology", str(ex)))
+
+        data = rate_of_use_by_technology_by_mode
+        if not data.empty:
+            data = data.groupby(
+                by=["REGION", "TIMESLICE", "TECHNOLOGY", "FUEL", "YEAR"]
+            ).sum()
+        return data[(data != 0).all(1)]
+
+    def rate_of_use_by_technology_by_mode(self) -> pd.DataFrame:
+        """RateOfUseByTechnologyByMode
+
+        Notes
+        -----
+        r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
+        RateOfActivity[r,l,t,m,y] * InputActivityRatio[r,t,f,m,y]~VALUE;
+        """
+        try:
+            input_activity_ratio = self["InputActivityRatio"]
+            rate_of_activity = self["RateOfActivity"]
+        except KeyError as ex:
+            raise KeyError(self._msg("RateOfUseByTechnology", str(ex)))
+
+        data = input_activity_ratio.mul(rate_of_activity, fill_value=0.0)
+
+        return data[(data != 0).all(1)]
+
+    def total_annual_tech_activity_mode(self) -> pd.DataFrame:
+        """TotalAnnualTechnologyActivityByMode
+
+        Notes
+        -----
+        r~REGION, t~TECHNOLOGY, m~MODE_OF_OPERATION, y~YEAR,
+        sum{l in TIMESLICE}
+            RateOfActivity[r,l,t,m,y] * YearSplit[l,y]~VALUE;
+        """
+        try:
+            rate_of_activity = self["RateOfActivity"]
+            year_split = self["YearSplit"]
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalAnnualTechnologyActivityByMode", str(ex)))
+
+        data = rate_of_activity.mul(year_split, fill_value=0.0)
+        return data[(data != 0).all(1)]
 
     def total_capacity_annual(self) -> pd.DataFrame:
         """Compute TotalCapacityAnnual result
@@ -431,5 +481,175 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("TotalCapacityAnnual", str(ex)))
 
-        total_capacity = residual_capacity.add(acc_new_capacity, fill_value=0.0)
-        return total_capacity[(total_capacity != 0).all(1)]
+        data = residual_capacity.add(acc_new_capacity, fill_value=0.0)
+        return data[(data != 0).all(1)]
+
+    def total_discounted_cost(self) -> pd.DataFrame:
+        """TotalDiscountedCost
+
+        Notes
+        -----
+        r~REGION, y~YEAR,
+        sum{t in TECHNOLOGY}
+        ((((    (sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                    NewCapacity[r,t,yy])
+                    + ResidualCapacity[r,t,y])
+                * FixedCost[r,t,y]
+                + sum{m in MODE_OF_OPERATION, l in TIMESLICE}
+                    RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y])
+            / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)+0.5))
+            + CapitalCost[r,t,y] * NewCapacity[r,t,y]
+            / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
+            + DiscountedTechnologyEmissionsPenalty[r,t,y]
+            - DiscountedSalvageValue[r,t,y]
+        )    )
+        + sum{r in REGION, s in STORAGE, y in YEAR}
+            (CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
+            / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
+                - SalvageValueStorage[r,s,y]
+                / ((1+DiscountRate[r])^(max{yy in YEAR}
+                    max(yy)-min{yy in YEAR} min(yy)+1))
+            )~VALUE;
+        """
+        try:
+            discount_rate = self["DiscountRate"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+
+            annual_fixed_operating_cost = self["AnnualFixedOperatingCost"]
+            annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
+            capital_investment = self["CapitalInvestment"]
+
+            discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
+            discounted_salvage_value = self["DiscountedSalvageValue"]
+
+            # capital_cost_storage = self["CapitalCostStorage"]
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
+
+        crf_op = capital_recovery_factor(regions, years, discount_rate, 0.5)
+        crf_cap = capital_recovery_factor(regions, years, discount_rate, 0.0)
+        LOGGER.debug(crf_op, crf_cap)
+
+        undiscounted_operational_costs = annual_fixed_operating_cost.add(
+            annual_variable_operating_cost, fill_value=0.0
+        )
+        discounted_operational_costs = undiscounted_operational_costs.div(
+            crf_op, fill_value=0.0
+        )
+        discounted_capital_costs = capital_investment.div(crf_cap, fill_value=0.0)
+        discounted_total_costs = discounted_operational_costs.add(
+            discounted_capital_costs, fill_value=0.0
+        )
+        discounted_total_costs = discounted_total_costs.add(
+            discounted_emissions_penalty, fill_value=0.0
+        )
+        discounted_total_costs = discounted_total_costs.sub(
+            discounted_salvage_value, fill_value=0.0
+        )
+
+        # try:
+        # new_storage_capacity = self["NewStorageCapacity"]
+        # storage_investment = capital_investment.mul(
+        #     new_storage_capacity, fill_value=0.0
+        # )
+        # except KeyError:
+        #     LOGGER.info("Cannot find NewStorageCapacity, assuming empty")
+        # storage_investment = pd.DataFrame()
+
+        # try:
+        # salvage_value_storage = self["SalvageValueStorage"]
+        # except KeyError:
+        #     LOGGER.info("Cannot find SalvageValueStorage, assuming empty")
+        # salvage_value_storage = pd.DataFrame()
+
+        data = discounted_total_costs
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)].dropna()
+
+    def total_technology_annual_activity(self) -> pd.DataFrame:
+        """TotalTechnologyAnnualActivity
+
+        Notes
+        -----
+        ResultsPath & "/TotalTechnologyAnnualActivity.csv":
+        r~REGION, t~TECHNOLOGY, y~YEAR,
+        sum{l in TIMESLICE, m in MODE_OF_OPERATION}
+            RateOfActivity[r,l,t,m,y] * YearSplit[l,y]~VALUE;
+        """
+        try:
+            data = self["TotalAnnualTechnologyActivityByMode"].copy(deep=True)
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalTechnologyAnnualActivity", str(ex)))
+
+        if not data.empty:
+            data = data.groupby(["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def total_tech_model_period_activity(self) -> pd.DataFrame:
+        """TotalTechnologyModelPeriodActivity
+
+        Notes
+        -----
+        ResultsPath & "/TotalTechnologyModelPeriodActivity.csv":
+        r~REGION, t~TECHNOLOGY,
+        sum{l in TIMESLICE, m in MODE_OF_OPERATION, y in YEAR}
+            RateOfActivity[r,l,t,m,y]*YearSplit[l,y]~VALUE;
+        """
+        try:
+            data = self["TotalTechnologyAnnualActivity"].copy(deep=True)
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalTechnologyModelPeriodActivity", str(ex)))
+
+        if not data.empty:
+            data = data.groupby(["REGION", "TECHNOLOGY"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def use_by_technology(self) -> pd.DataFrame:
+        """UseByTechnology
+
+        Notes
+        -----
+        r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+        sum{m in MODE_OF_OPERATION}
+            RateOfActivity[r,l,t,m,y]
+            * InputActivityRatio[r,t,f,m,y]
+            * YearSplit[l,y]~VALUE;
+
+        """
+        try:
+            rate_of_use = self["RateOfUseByTechnologyByMode"]
+            year_split = self["YearSplit"]
+        except KeyError as ex:
+            raise KeyError(self._msg("UseByTechnology", str(ex)))
+
+        data = rate_of_use.mul(year_split, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(
+                ["REGION", "TIMESLICE", "TECHNOLOGY", "FUEL", "YEAR"]
+            ).sum()
+
+        return data[(data != 0).all(1)]
+
+
+def capital_recovery_factor(
+    regions: List, years: List, discount_rate: pd.DataFrame, adj: float = 0.0
+) -> pd.DataFrame:
+    """Calculates the capital recovery factor
+    """
+    index = pd.MultiIndex.from_product([regions, years], names=["REGION", "YEAR"])
+    crf = discount_rate.reindex(index)
+    crf = crf.reset_index(level="YEAR")
+    crf["NUM"] = crf["YEAR"] - crf["YEAR"].min()
+    crf["Rate"] = 1 + discount_rate
+    crf["VALUE"] = crf["Rate"].pow(crf["NUM"] + adj)
+    return crf.reset_index()[["REGION", "YEAR", "VALUE"]].set_index(["REGION", "YEAR"])

@@ -4,12 +4,6 @@ AnnualEmissions:
     dtype: float
     default: 0
     calculated: True
-TotalDiscountedCost:
-    indices: [REGION,YEAR]
-    type: param
-    dtype: float
-    default: 0
-    calculated: False
 AccumulatedNewCapacity:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: param
@@ -144,6 +138,12 @@ TotalAnnualTechnologyActivityByMode:
     calculated: True
 TotalCapacityAnnual:
     indices: [REGION, TECHNOLOGY, YEAR]
+    type: param
+    dtype: float
+    default: 0
+    calculated: True
+TotalDiscountedCost:
+    indices: [REGION,YEAR]
     type: param
     dtype: float
     default: 0
