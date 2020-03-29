@@ -43,9 +43,7 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
         Path to the folder in which to write the new Tabular Data Package
 
     """
-    config = read_packaged_file("config.yaml", "otoole.preprocess")
-    amply_datafile = read_in_datafile(path_to_datafile, config)
-    dict_of_dataframes = convert_amply_to_dataframe(amply_datafile, config)
+    dict_of_dataframes = read_datafile_to_dict(path_to_datafile)
     if not os.path.exists(path_to_datapackage):
         os.mkdir(path_to_datapackage)
     for name, df in dict_of_dataframes.items():
@@ -58,6 +56,12 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
 
 
 def read_datafile_to_dict(path_to_datafile: str) -> Dict[str, pd.DataFrame]:
+    """Reads in an OSeMOSYS GNUMathProg datafile into *otoole* format of choice
+
+    Arguments
+    ---------
+    path_to_datafile: str
+    """
     config = read_packaged_file("config.yaml", "otoole.preprocess")  # type: Dict
     amply_datafile = read_in_datafile(path_to_datafile, config)
     return convert_amply_to_dataframe(amply_datafile, config)

@@ -10,6 +10,7 @@ import pandas as pd
 from pandas_datapackage_reader import read_datapackage
 
 from otoole import read_packaged_file
+from otoole.preprocess import read_datafile_to_dict
 from otoole.results.result_package import ResultsPackage
 
 LOGGER = logging.getLogger(__name__)
@@ -332,7 +333,12 @@ def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
             LOGGER.warning("Result parameter %s is empty", name)
 
 
-def convert_cbc_to_csv(from_file: str, to_file: str, input_data_path: str = None):
+def convert_cbc_to_csv(
+    from_file: str,
+    to_file: str,
+    input_data_path: str = None,
+    input_data_format="datapackage",
+):
     """
 
     Arguments
@@ -344,10 +350,13 @@ def convert_cbc_to_csv(from_file: str, to_file: str, input_data_path: str = None
     input_data_path: str
         Optional path to input data (required if using short or fast versions
         of OSeMOSYS)
+    input_data_format : str, default='datapackage
 
     """
-    if input_data_path:
+    if input_data_format == "datapackage" and input_data_path:
         input_data = read_datapackage(input_data_path)
+    elif input_data_format == "datafile" and input_data_path:
+        input_data = read_datafile_to_dict(input_data_path)
     else:
         input_data = None
     df = convert_cbc_to_dataframe(from_file)

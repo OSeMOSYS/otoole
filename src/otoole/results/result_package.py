@@ -22,6 +22,7 @@ class ResultsPackage(Mapping):
         A dictionary of results data
     input_data: dict, default=None
         Dictionary of input data
+
     """
 
     def __init__(
@@ -115,7 +116,8 @@ class ResultsPackage(Mapping):
         return "Cannot calculate {} due to missing data: {}".format(name, error)
 
     def accumulated_new_capacity(self) -> pd.DataFrame:
-        """
+        """AccumulatedNewCapacity
+
         Arguments
         ---------
         operational_life: pandas.DataFrame
@@ -126,9 +128,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, y~YEAR,
-        sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
-            NewCapacity[r,t,yy] ~VALUE;
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                NewCapacity[r,t,yy] ~VALUE;
+
         """
         try:
             new_capacity = self["NewCapacity"].copy()
@@ -169,11 +174,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
+        From the formulation::
 
-        sum{t in TECHNOLOGY, l in TIMESLICE, m in MODE_OF_OPERATION:
-                EmissionActivityRatio[r,t,e,m,y]<>0}
-            RateOfActivity[r,l,t,m,y] * EmissionActivityRatio[r,t,e,m,y]
-                * YearSplit[l,y]~VALUE;
+            sum{t in TECHNOLOGY, l in TIMESLICE, m in MODE_OF_OPERATION:
+                    EmissionActivityRatio[r,t,e,m,y]<>0}
+                RateOfActivity[r,l,t,m,y] * EmissionActivityRatio[r,t,e,m,y]
+                    * YearSplit[l,y]~VALUE;
         """
         try:
             emission_activity_ratio = self["EmissionActivityRatio"]
@@ -194,10 +200,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, y~YEAR,
-        FixedCost[r,t,y] *
-        ((sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
-            NewCapacity[r,t,yy]) + ResidualCapacity[r,t,y]) ~VALUE;
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            FixedCost[r,t,y] *
+            ((sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                NewCapacity[r,t,yy]) + ResidualCapacity[r,t,y]) ~VALUE;
 
         """
         try:
@@ -215,21 +223,19 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        REGION, TECHNOLOGY, EMISSION, YEAR,
-        sum{l in TIMESLICE, m in MODE_OF_OPERATION:
-            EmissionActivityRatio[r,t,e,m,y]<>0}
-        EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
-            * YearSplit[l,y];
+        From the formulation::
+
+            REGION, TECHNOLOGY, EMISSION, YEAR,
+            sum{l in TIMESLICE, m in MODE_OF_OPERATION:
+                EmissionActivityRatio[r,t,e,m,y]<>0}
+            EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
+                * YearSplit[l,y];
+
         """
         try:
-            emission_activity_ratio = self["EmissionActivityRatio"]
-            yearsplit = self["YearSplit"]
-            rate_of_activity = self["RateOfActivity"]
+            data = self["AnnualTechnologyEmissionByMode"].copy(deep=True)
         except KeyError as ex:
             raise KeyError(self._msg("AnnualTechnologyEmission", str(ex)))
-
-        mid = emission_activity_ratio.mul(yearsplit)
-        data = mid.mul(rate_of_activity)
 
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "EMISSION", "YEAR"]).sum()
@@ -241,10 +247,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, e~EMISSION, m~MODE_OF_OPERATION, y~YEAR,
-        sum{l in TIMESLICE: EmissionActivityRatio[r,t,e,m,y] <> 0}
-            EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
-                * YearSplit[l,y]
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, e~EMISSION, m~MODE_OF_OPERATION, y~YEAR,
+            sum{l in TIMESLICE: EmissionActivityRatio[r,t,e,m,y] <> 0}
+                EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
+                    * YearSplit[l,y]
         """
         try:
             emission_activity_ratio: pd.DataFrame = self["EmissionActivityRatio"]
@@ -268,9 +276,13 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, y~YEAR,
-        sum{m in MODE_OF_OPERATION, l in TIMESLICE}
-            RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y] ~VALUE;
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            sum{m in MODE_OF_OPERATION, l in TIMESLICE}
+                RateOfActivity[r,l,t,m,y]
+                * YearSplit[l,y]
+                * VariableCost[r,t,m,y] ~VALUE;
 
         """
         try:
@@ -291,8 +303,10 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, y~YEAR,
-        CapitalCost[r,t,y] * NewCapacity[r,t,y] ~VALUE;
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            CapitalCost[r,t,y] * NewCapacity[r,t,y] ~VALUE;
         """
         try:
             capital_cost = self["CapitalCost"]
@@ -308,8 +322,10 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, l~TIMESLICE, f~FUEL, y~YEAR,
-        SpecifiedAnnualDemand[r,f,y] * SpecifiedDemandProfile[r,f,l,y] ~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, f~FUEL, y~YEAR,
+            SpecifiedAnnualDemand[r,f,y] * SpecifiedDemandProfile[r,f,l,y] ~VALUE;
         """
         try:
             specified_annual_demand = self["SpecifiedAnnualDemand"]
@@ -329,10 +345,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
-        sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
-            RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]
-            * YearSplit[l,y] ~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+            sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
+                RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]
+                * YearSplit[l,y] ~VALUE;
         """
         try:
             rate_of_activity = self["RateOfActivity"]
@@ -365,15 +383,12 @@ class ResultsPackage(Mapping):
     def rate_of_production_tech_mode(self) -> pd.DataFrame:
         """RateOfProductionByTechnologyByMode
 
-        Arguments
-        ---------
-        rate_of_activity: pd.DataFrame
-        output_activity_ratio: pd.DataFrame
-
         Notes
         -----
-        r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
-        RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
+            RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
         """
         try:
             rate_of_activity = self["RateOfActivity"]
@@ -400,9 +415,11 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
-        sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
-            RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+            sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
+                RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
 
         """
         try:
@@ -424,9 +441,11 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
-        sum{m in MODE_OF_OPERATION: InputActivityRatio[r,t,f,m,y]<>0}
-            RateOfActivity[r,l,t,m,y] * InputActivityRatio[r,t,f,m,y]~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+            sum{m in MODE_OF_OPERATION: InputActivityRatio[r,t,f,m,y]<>0}
+                RateOfActivity[r,l,t,m,y] * InputActivityRatio[r,t,f,m,y]~VALUE;
         """
         try:
             rate_of_use_by_technology_by_mode = self[
@@ -447,8 +466,10 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
-        RateOfActivity[r,l,t,m,y] * InputActivityRatio[r,t,f,m,y]~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, t~TECHNOLOGY, m~MODE_OF_OPERATION, f~FUEL, y~YEAR,
+            RateOfActivity[r,l,t,m,y] * InputActivityRatio[r,t,f,m,y]~VALUE;
         """
         try:
             input_activity_ratio = self["InputActivityRatio"]
@@ -465,9 +486,11 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, m~MODE_OF_OPERATION, y~YEAR,
-        sum{l in TIMESLICE}
-            RateOfActivity[r,l,t,m,y] * YearSplit[l,y]~VALUE;
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, m~MODE_OF_OPERATION, y~YEAR,
+            sum{l in TIMESLICE}
+                RateOfActivity[r,l,t,m,y] * YearSplit[l,y]~VALUE;
         """
         try:
             rate_of_activity = self["RateOfActivity"]
@@ -483,10 +506,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, t~TECHNOLOGY, y~YEAR,
-        ResidualCapacity[r,t,y] +
-        (sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
-            NewCapacity[r,t,yy])~VALUE;
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            ResidualCapacity[r,t,y] +
+            (sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                NewCapacity[r,t,yy])~VALUE;
         """
         try:
             residual_capacity = self["ResidualCapacity"]
@@ -502,27 +527,32 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, y~YEAR,
-        sum{t in TECHNOLOGY}
-        ((((    (sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
-                    NewCapacity[r,t,yy])
-                    + ResidualCapacity[r,t,y])
-                * FixedCost[r,t,y]
-                + sum{m in MODE_OF_OPERATION, l in TIMESLICE}
-                    RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y])
-            / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)+0.5))
-            + CapitalCost[r,t,y] * NewCapacity[r,t,y]
-            / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
-            + DiscountedTechnologyEmissionsPenalty[r,t,y]
-            - DiscountedSalvageValue[r,t,y]
-        )    )
-        + sum{r in REGION, s in STORAGE, y in YEAR}
-            (CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
-            / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
-                - SalvageValueStorage[r,s,y]
-                / ((1+DiscountRate[r])^(max{yy in YEAR}
-                    max(yy)-min{yy in YEAR} min(yy)+1))
-            )~VALUE;
+        From the formulation::
+
+            r~REGION, y~YEAR,
+            sum{t in TECHNOLOGY}
+            ((((    (sum{yy in YEAR: y-yy
+                         < OperationalLife[r,t]
+                         && y-yy>=0}
+                        NewCapacity[r,t,yy])
+                        + ResidualCapacity[r,t,y])
+                    * FixedCost[r,t,y]
+                    + sum{m in MODE_OF_OPERATION, l in TIMESLICE}
+                        RateOfActivity[r,l,t,m,y] * YearSplit[l,y]
+                        * VariableCost[r,t,m,y])
+                / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)+0.5))
+                + CapitalCost[r,t,y] * NewCapacity[r,t,y]
+                / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
+                + DiscountedTechnologyEmissionsPenalty[r,t,y]
+                - DiscountedSalvageValue[r,t,y]
+            )    )
+            + sum{r in REGION, s in STORAGE, y in YEAR}
+                (CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
+                / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
+                    - SalvageValueStorage[r,s,y]
+                    / ((1+DiscountRate[r])^(max{yy in YEAR}
+                        max(yy)-min{yy in YEAR} min(yy)+1))
+                )~VALUE;
         """
         try:
             discount_rate = self["DiscountRate"]
@@ -591,10 +621,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        ResultsPath & "/TotalTechnologyAnnualActivity.csv":
-        r~REGION, t~TECHNOLOGY, y~YEAR,
-        sum{l in TIMESLICE, m in MODE_OF_OPERATION}
-            RateOfActivity[r,l,t,m,y] * YearSplit[l,y]~VALUE;
+        From the formulation::
+
+            ResultsPath & "/TotalTechnologyAnnualActivity.csv":
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            sum{l in TIMESLICE, m in MODE_OF_OPERATION}
+                RateOfActivity[r,l,t,m,y] * YearSplit[l,y]~VALUE;
         """
         try:
             data = self["TotalAnnualTechnologyActivityByMode"].copy(deep=True)
@@ -611,10 +643,12 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        ResultsPath & "/TotalTechnologyModelPeriodActivity.csv":
-        r~REGION, t~TECHNOLOGY,
-        sum{l in TIMESLICE, m in MODE_OF_OPERATION, y in YEAR}
-            RateOfActivity[r,l,t,m,y]*YearSplit[l,y]~VALUE;
+        From the formulation::
+
+            ResultsPath & "/TotalTechnologyModelPeriodActivity.csv":
+            r~REGION, t~TECHNOLOGY,
+            sum{l in TIMESLICE, m in MODE_OF_OPERATION, y in YEAR}
+                RateOfActivity[r,l,t,m,y]*YearSplit[l,y]~VALUE;
         """
         try:
             data = self["TotalTechnologyAnnualActivity"].copy(deep=True)
@@ -631,11 +665,13 @@ class ResultsPackage(Mapping):
 
         Notes
         -----
-        r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
-        sum{m in MODE_OF_OPERATION}
-            RateOfActivity[r,l,t,m,y]
-            * InputActivityRatio[r,t,f,m,y]
-            * YearSplit[l,y]~VALUE;
+        From the formulation::
+
+            r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
+            sum{m in MODE_OF_OPERATION}
+                RateOfActivity[r,l,t,m,y]
+                * InputActivityRatio[r,t,f,m,y]
+                * YearSplit[l,y]~VALUE;
 
         """
         try:

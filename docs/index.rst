@@ -36,6 +36,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   Core Functionality <functionality>
    License <license>
    Authors <authors>
    Changelog <changelog>

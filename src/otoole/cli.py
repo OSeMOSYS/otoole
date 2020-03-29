@@ -79,7 +79,8 @@ def cplex2cbc(args):
 
 
 def result_matrix(args):
-    """Post-process results
+    """Post-process results from CBC solution file into CSV format
+
     """
     msg = "Conversion from {} to {} is not yet implemented".format(
         args.from_format, args.to_format
@@ -87,7 +88,16 @@ def result_matrix(args):
     if args.from_format == "cbc":
 
         if args.to_format == "csv":
-            convert_cbc_to_csv(args.from_path, args.to_path, args.input_data)
+            if args.input_datapackage:
+                convert_cbc_to_csv(
+                    args.from_path, args.to_path, args.input_datapackage, "datapackage"
+                )
+            elif args.input_datafile:
+                convert_cbc_to_csv(
+                    args.from_path, args.to_path, args.input_datafile, "datafile"
+                )
+            else:
+                convert_cbc_to_csv(args.from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
     else:
@@ -191,7 +201,14 @@ def get_parser():
     )
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
     result_parser.add_argument(
-        "--input_data", help="Input data need to compute results", default=None
+        "--input_data",
+        help="Input data package required for OSeMOSYS short or fast results",
+        default=None,
+    )
+    result_parser.add_argument(
+        "--input_datafile",
+        help="Input GNUMathProg datafile required for OSeMOSYS short or fast results",
+        default=None,
     )
     result_parser.set_defaults(func=result_matrix)
 
