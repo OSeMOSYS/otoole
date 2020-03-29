@@ -4,10 +4,10 @@
 import argparse
 import logging
 import os
-from io import StringIO
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
+from pandas_datapackage_reader import read_datapackage
 
 from otoole import read_packaged_file
 from otoole.results.result_package import ResultsPackage
@@ -199,12 +199,12 @@ def convert_cplex_file(
                     raise ValueError(msg.format(linenum, line))
 
 
-def convert_cbc_to_dataframe(data_file: StringIO) -> pd.DataFrame:
+def convert_cbc_to_dataframe(data_file: str) -> pd.DataFrame:
     """Reads a CBC solution file into a pandas DataFrame
 
     Arguments
     ---------
-    data_file : StringIO
+    data_file : str
     """
     df = pd.read_csv(
         data_file,
@@ -222,7 +222,7 @@ def convert_cbc_to_dataframe(data_file: StringIO) -> pd.DataFrame:
 
 
 def convert_dataframe_to_csv(
-    data: pd.DataFrame, input_data: str = None
+    data: pd.DataFrame, input_data: Optional[Dict[str, pd.DataFrame]] = None
 ) -> Dict[str, pd.DataFrame]:
     """Convert from dataframe to csv
 
@@ -234,7 +234,7 @@ def convert_dataframe_to_csv(
     ---------
     data : pandas.DataFrame
         CBC results stored in a dataframe
-    input_data : str, default=None
+    input_data_path : str, default=None
         Path to the OSeMOSYS data file containing input data
 
     Example
@@ -245,8 +245,8 @@ def convert_dataframe_to_csv(
             columns=['Variable', 'Index', 'Value'])
     >>> convert_dataframe_to_csv(df)
     {'TotalDiscountedCost':        REGION  YEAR      VALUE
-    0  SIMPLICITY  2015  187.01576
-    1  SIMPLICITY  2016  183.30788}
+                                0  SIMPLICITY  2015  187.01576
+                                1  SIMPLICITY  2016  183.30788}
     """
     input_config = read_packaged_file("config.yaml", "otoole.preprocess")
     results_config = read_packaged_file("config.yaml", "otoole.results")
@@ -332,7 +332,24 @@ def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
             LOGGER.warning("Result parameter %s is empty", name)
 
 
-def convert_cbc_to_csv(from_file, to_file, input_data):
+def convert_cbc_to_csv(from_file: str, to_file: str, input_data_path: str = None):
+    """
+
+    Arguments
+    ---------
+    from_file: str
+        CBC solution file
+    to_file: str
+        Path to directory in which CSV files will be written
+    input_data_path: str
+        Optional path to input data (required if using short or fast versions
+        of OSeMOSYS)
+
+    """
+    if input_data_path:
+        input_data = read_datapackage(input_data_path)
+    else:
+        input_data = None
     df = convert_cbc_to_dataframe(from_file)
     csv = convert_dataframe_to_csv(df, input_data)
     write_csvs(to_file, csv)

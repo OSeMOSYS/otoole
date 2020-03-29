@@ -1,5 +1,6 @@
 from io import StringIO
 from textwrap import dedent
+from typing import List
 
 from pytest import mark
 
@@ -50,6 +51,7 @@ class TestCbcSoltoDataFrame:
 
 class TestCbctoCsv:
     test_data = [
+        # First case
         (
             pd.DataFrame(
                 data=[
@@ -62,6 +64,7 @@ class TestCbctoCsv:
                 ],
                 columns=["Variable", "Index", "Value"],
             ),
+            {},
             (
                 {
                     "TotalDiscountedCost": pd.DataFrame(
@@ -78,6 +81,7 @@ class TestCbctoCsv:
                 }
             ),
         ),
+        # Second case
         (
             pd.DataFrame(
                 data=[
@@ -87,6 +91,7 @@ class TestCbctoCsv:
                 ],
                 columns=["Variable", "Index", "Value"],
             ),
+            {},
             {
                 "AnnualEmissions": pd.DataFrame(
                     data=[
@@ -98,17 +103,73 @@ class TestCbctoCsv:
                 ).set_index(["REGION", "EMISSION", "YEAR"])
             },
         ),
-    ]
+    ]  # type: List
 
     @mark.parametrize(
-        "df_input,expected", test_data, ids=["TotalDiscountedCost", "AnnualEmissions"]
+        "results,input,expected",
+        test_data,
+        ids=["TotalDiscountedCost", "AnnualEmissions1"],
     )
-    def test_convert_cbc_to_csv(self, df_input, expected):
+    def test_convert_cbc_to_csv_long(self, results, input, expected):
 
-        actual = convert_dataframe_to_csv(df_input)
+        actual = convert_dataframe_to_csv(results, input)
         assert isinstance(actual, dict)
         for name, df in actual.items():
             pd.testing.assert_frame_equal(df, expected[name])
+
+    def test_convert_cbc_to_csv_short(self):
+        cbc_results = pd.DataFrame(
+            data=[
+                ["RateOfActivity", "SIMPLICITY,ID,GAS_EXTRACTION,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,IN,GAS_EXTRACTION,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,SD,GAS_EXTRACTION,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,SN,GAS_EXTRACTION,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,WD,GAS_EXTRACTION,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,WN,GAS_EXTRACTION,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,ID,DUMMY,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,IN,DUMMY,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,SD,DUMMY,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,SN,DUMMY,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,WD,DUMMY,1,2014", 1],
+                ["RateOfActivity", "SIMPLICITY,WN,DUMMY,1,2014", 1],
+            ],
+            columns=["Variable", "Index", "Value"],
+        )
+        input_data = {
+            "EmissionActivityRatio": pd.DataFrame(
+                data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],
+                columns=[
+                    "REGION",
+                    "TECHNOLOGY",
+                    "EMISSION",
+                    "MODE_OF_OPERATION",
+                    "YEAR",
+                    "VALUE",
+                ],
+            ).set_index(
+                ["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"]
+            ),
+            "YearSplit": pd.DataFrame(
+                data=[
+                    ["ID", 2014, 0.1667],
+                    ["IN", 2014, 0.0833],
+                    ["SD", 2014, 0.1667],
+                    ["SN", 2014, 0.0833],
+                    ["WD", 2014, 0.3333],
+                    ["WN", 2014, 0.1667],
+                ],
+                columns=["TIMESLICE", "YEAR", "VALUE"],
+            ).set_index(["TIMESLICE", "YEAR"]),
+        }
+
+        expected = pd.DataFrame(
+            data=[["SIMPLICITY", "CO2", 2014, 1.0]],
+            columns=["REGION", "EMISSION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "EMISSION", "YEAR"])
+
+        actual = convert_dataframe_to_csv(cbc_results, input_data)
+        assert isinstance(actual, dict)
+        pd.testing.assert_frame_equal(actual["AnnualEmissions"], expected)
 
 
 class TestCplexToCsv:

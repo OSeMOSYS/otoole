@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
-from pandas_datapackage_reader import read_datapackage
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,17 +19,19 @@ class ResultsPackage(Mapping):
     ---------
     data : dict
         A dictionary of results data
-    input_data: str, default=None
-        Path to the datapackage of input data
+    input_data: dict, default=None
+        Dictionary of input data
     """
 
-    def __init__(self, data: Dict[str, pd.DataFrame], input_data: Optional[str] = None):
+    def __init__(
+        self,
+        data: Dict[str, pd.DataFrame],
+        input_data: Optional[Dict[str, pd.DataFrame]] = None,
+    ):
         super().__init__()
         self._data = data
         if input_data:
-            self._package = read_datapackage(
-                input_data
-            )  # typing: Dict[str, pd.DataFrame]
+            self._package = input_data
         else:
             self._package = {}
         self._result_mapper = {
