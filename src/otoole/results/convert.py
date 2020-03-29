@@ -308,8 +308,8 @@ def convert_dataframe_to_csv(
                     )
             else:
                 LOGGER.warning(
-                    "No OSeMOSYS data file provided, \
-                     unable to calculate parameter '%s'",
+                    "No OSeMOSYS data file provided, "
+                    + "unable to calculate parameter '%s'",
                     name,
                 )
 

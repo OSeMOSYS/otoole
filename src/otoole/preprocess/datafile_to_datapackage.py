@@ -57,6 +57,12 @@ def convert_file_to_package(path_to_datafile: str, path_to_datapackage: str):
     write_default_values(path_to_datapackage)
 
 
+def read_datafile_to_dict(path_to_datafile: str) -> Dict[str, pd.DataFrame]:
+    config = read_packaged_file("config.yaml", "otoole.preprocess")  # type: Dict
+    amply_datafile = read_in_datafile(path_to_datafile, config)
+    return convert_amply_to_dataframe(amply_datafile, config)
+
+
 def read_in_datafile(path_to_datafile: str, config: Dict) -> Amply:
     """Read in a datafile using the Amply parsing class
 
@@ -75,7 +81,9 @@ def read_in_datafile(path_to_datafile: str, config: Dict) -> Amply:
     return datafile_parser
 
 
-def convert_amply_to_dataframe(datafile_parser, config) -> Dict[str, pd.DataFrame]:
+def convert_amply_to_dataframe(
+    datafile_parser: Amply, config: Dict
+) -> Dict[str, pd.DataFrame]:
     """Converts an amply parser to a dict of pandas dataframes
 
     Arguments

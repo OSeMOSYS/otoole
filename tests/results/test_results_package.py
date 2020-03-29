@@ -633,5 +633,4 @@ class TestCapitalRecoveryFactor:
             columns=["REGION", "YEAR", "VALUE"],
         ).set_index(["REGION", "YEAR"])
 
-        print(actual)
         assert_frame_equal(actual, expected)

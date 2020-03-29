@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
@@ -77,16 +78,27 @@ class ResultsPackage(Mapping):
         self._result_cache.update(value)
 
     def __getitem__(self, name: str) -> pd.DataFrame:
+        LOGGER.debug("Returning '%s' from ... ", name)
         if name in self.data.keys():
+            LOGGER.debug("    ... ResultsPackage.data")
             return self.data[name]
         elif name in self._package.keys():
+            LOGGER.debug("    ... ResultsPackage.input_data")
             return self._package[name]
         elif name in self.result_cache.keys():
+            LOGGER.debug("    ... ResultsPackage.result_cache")
             return self.result_cache[name]
         elif name in self.result_mapper.keys():
             # Implements a crude form of caching, where calculated results are
             # first stored in the internal dict, and then returned
+            LOGGER.debug("  ... ResultsPackage.calculating ...")
+            start = datetime.now()
             results = self.result_mapper[name]()
+            stop = datetime.now()
+            diff = stop - start
+            total = diff.total_seconds()
+            LOGGER.debug("Calculation took %s secs", total)
+            LOGGER.debug("Caching results for %s", name)
             self.result_cache[name] = results
             return self.result_cache[name]
         else:
