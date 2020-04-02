@@ -289,30 +289,19 @@ def convert_dataframe_to_csv(
         LOGGER.info("Looking for %s", name)
         details = results_config[name]
 
-        if details["calculated"]:
-            if input_data:
-                LOGGER.info(
-                    "Assuming running short code. Attempting to calculate %s", name
-                )
-                try:
-                    df = results_package[name]
-                except KeyError as ex:
-                    LOGGER.info("No calculation method available for %s", name)
-                    LOGGER.debug("Error calculating %s: %s", name, str(ex))
-                    df = pd.DataFrame()
+        try:
+            df = results_package[name]
+        except KeyError as ex:
+            LOGGER.info("No calculation method available for %s", name)
+            LOGGER.debug("Error calculating %s: %s", name, str(ex))
+            df = pd.DataFrame()
 
-                if not df.empty:
-                    results[name] = df
-                else:
-                    LOGGER.warning(
-                        "Calculation returned empty dataframe for parameter '%s'", name
-                    )
-            else:
-                LOGGER.warning(
-                    "No OSeMOSYS data file provided, "
-                    + "unable to calculate parameter '%s'",
-                    name,
-                )
+        if not df.empty:
+            results[name] = df
+        else:
+            LOGGER.warning(
+                "Calculation returned empty dataframe for parameter '%s'", name
+            )
 
     return results
 
