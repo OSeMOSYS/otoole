@@ -13,6 +13,31 @@ import pandas as pd
 
 
 @fixture
+def annual_technology_emissions_by_mode():
+    df = pd.DataFrame(
+        data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],
+        columns=[
+            "REGION",
+            "TECHNOLOGY",
+            "EMISSION",
+            "MODE_OF_OPERATION",
+            "YEAR",
+            "VALUE",
+        ],
+    ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"])
+    return df
+
+
+@fixture
+def discount_rate():
+    df = pd.DataFrame(
+        data=[["SIMPLICITY", 0.05]], columns=["REGION", "VALUE"]
+    ).set_index("REGION")
+
+    return df
+
+
+@fixture
 def emission_activity_ratio():
     df = pd.DataFrame(
         data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],
@@ -24,10 +49,8 @@ def emission_activity_ratio():
             "YEAR",
             "VALUE",
         ],
-    )
-    return df.set_index(
-        ["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"]
-    )
+    ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"])
+    return df
 
 
 @fixture
@@ -45,10 +68,22 @@ def emission_activity_ratio_two_techs():
             "YEAR",
             "VALUE",
         ],
-    )
-    return df.set_index(
-        ["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"]
-    )
+    ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"])
+
+    return df
+
+
+@fixture
+def emissions_penalty():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "CO2", 2014, 1.23],
+            ["SIMPLICITY", "CO2", 2015, 1.23],
+            ["SIMPLICITY", "CO2", 2016, 1.23],
+        ],
+        columns=["REGION", "EMISSION", "YEAR", "VALUE"],
+    ).set_index(["REGION", "EMISSION", "YEAR"])
+    return df
 
 
 @fixture
@@ -63,5 +98,5 @@ def yearsplit():
             ["WN", 2014, 0.1667],
         ],
         columns=["TIMESLICE", "YEAR", "VALUE"],
-    )
-    return df.set_index(["TIMESLICE", "YEAR"])
+    ).set_index(["TIMESLICE", "YEAR"])
+    return df

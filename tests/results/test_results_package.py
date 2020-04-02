@@ -6,23 +6,6 @@ from pandas.testing import assert_frame_equal
 from otoole.results.result_package import ResultsPackage, capital_recovery_factor
 
 
-class TestResultsPackage:
-    def test_results_package_init(self):
-
-        package = ResultsPackage({})
-
-        with raises(KeyError):
-            package["BlaBla"]
-
-    def test_results_package_dummy_results(self):
-        """Access results using dictionary keys
-
-        """
-        package = ResultsPackage({"BlaBla": pd.DataFrame()})
-
-        pd.testing.assert_frame_equal(package["BlaBla"], pd.DataFrame())
-
-
 @fixture
 def new_capacity():
     df = pd.DataFrame(
@@ -131,6 +114,11 @@ def year():
     return pd.DataFrame(
         data=[2014, 2015, 2016, 2017, 2018, 2019, 2020], columns=["VALUE"]
     )
+
+
+@fixture
+def region():
+    return pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
 
 
 @fixture
@@ -354,7 +342,6 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
         """
         package = two_tech
         actual = package.annual_technology_emission_by_mode()
-
         expected = pd.DataFrame(
             data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],
             columns=[
@@ -389,6 +376,34 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
                 "VALUE",
             ],
         ).set_index(["REGION", "TECHNOLOGY", "EMISSION", "MODE_OF_OPERATION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestDiscountedTechnologyEmissionsPenalty:
+    def test_calculate(
+        self,
+        emissions_penalty,
+        region,
+        year,
+        discount_rate,
+        annual_technology_emissions_by_mode,
+    ):
+
+        results = {
+            "AnnualTechnologyEmissionsByMode": annual_technology_emissions_by_mode,
+            "EmissionsPenalty": emissions_penalty,
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+        }
+        package = ResultsPackage(results)
+        actual = package.discounted_tech_emis_pen()
+
+        expected = pd.DataFrame(
+            data=[["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.2003570897266957]],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -612,13 +627,10 @@ class TestComputeTotalAnnualCapacity:
 
 
 class TestCapitalRecoveryFactor:
-    def test_crf(self):
+    def test_crf(self, discount_rate):
 
         regions = ["SIMPLICITY"]
         years = [2010, 2011, 2012, 2013, 2014, 2015]
-        discount_rate = pd.DataFrame(
-            data=[["SIMPLICITY", 0.05]], columns=["REGION", "VALUE"]
-        ).set_index("REGION")
         actual = capital_recovery_factor(regions, years, discount_rate)
 
         expected = pd.DataFrame(
@@ -634,3 +646,20 @@ class TestCapitalRecoveryFactor:
         ).set_index(["REGION", "YEAR"])
 
         assert_frame_equal(actual, expected)
+
+
+class TestResultsPackage:
+    def test_results_package_init(self):
+
+        package = ResultsPackage({})
+
+        with raises(KeyError):
+            package["BlaBla"]
+
+    def test_results_package_dummy_results(self):
+        """Access results using dictionary keys
+
+        """
+        package = ResultsPackage({"BlaBla": pd.DataFrame()})
+
+        pd.testing.assert_frame_equal(package["BlaBla"], pd.DataFrame())

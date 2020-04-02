@@ -45,6 +45,7 @@ class ResultsPackage(Mapping):
             "AnnualVariableOperatingCost": self.annual_variable_operating_cost,
             "CapitalInvestment": self.capital_investment,
             "Demand": self.demand,
+            "DiscountedTechnologyEmissionsPenalty": self.discounted_tech_emis_pen,
             "ProductionByTechnology": self.production_by_technology,
             "ProductionByTechnologyAnnual": self.production_by_technology_annual,
             "RateOfProductionByTechnology": self.rate_of_product_technology,
@@ -103,6 +104,7 @@ class ResultsPackage(Mapping):
             self.result_cache[name] = results
             return self.result_cache[name]
         else:
+            LOGGER.debug("  ... Not found in cache or calculation methods")
             raise KeyError("{} is not accessible or available".format(name))
         return self.data[name]
 
@@ -336,6 +338,39 @@ class ResultsPackage(Mapping):
         data = specified_annual_demand.mul(specified_demand_profile, fill_value=0.0)
         if not data.empty:
             data = data.reset_index().set_index(["REGION", "TIMESLICE", "FUEL", "YEAR"])
+        return data[(data != 0).all(1)]
+
+    def discounted_tech_emis_pen(self) -> pd.DataFrame:
+        """
+        Notes
+        -----
+        From the formulation::
+
+            DiscountedTechnologyEmissionsPenalty[r,t,y] :=
+
+            EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y] *
+            YearSplit[l,y] * EmissionsPenalty[r,e,y] /
+            ((1+DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5))
+
+        """
+        try:
+            annual_technology_emission_by_mode = self["AnnualTechnologyEmissionsByMode"]
+            emission_penalty = self["EmissionsPenalty"]
+            regions = self["REGION"]["VALUE"].to_list()
+            years = self["YEAR"]["VALUE"].to_list()
+            discount_rate = self["DiscountRate"]
+            crf = capital_recovery_factor(regions, years, discount_rate, adj=0.5)
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedTechnologyEmissionsPenalty", str(ex)))
+
+        emissions_penalty = annual_technology_emission_by_mode.mul(
+            emission_penalty, fill_value=0.0
+        )
+        data = emissions_penalty.div(crf, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
         return data[(data != 0).all(1)]
 
     def production_by_technology(self) -> pd.DataFrame:

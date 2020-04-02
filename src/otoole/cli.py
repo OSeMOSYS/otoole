@@ -201,7 +201,7 @@ def get_parser():
     )
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
     result_parser.add_argument(
-        "--input_data",
+        "--input_datapackage",
         help="Input data package required for OSeMOSYS short or fast results",
         default=None,
     )

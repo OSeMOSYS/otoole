@@ -327,6 +327,11 @@ def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
     """
     for name, df in results.items():
         filename = os.path.join(results_path, name + ".csv")
+
+        if not os.path.exists(results_path):
+            LOGGER.info("Creating new results folder at '%s'", results_path)
+            os.makedirs(results_path, exist_ok=True)
+
         if not df.empty:
             df.to_csv(filename, index=True)
         else:
