@@ -354,7 +354,7 @@ class ResultsPackage(Mapping):
 
         """
         try:
-            annual_technology_emission_by_mode = self["AnnualTechnologyEmissionsByMode"]
+            annual_technology_emission_by_mode = self["AnnualTechnologyEmissionByMode"]
             emission_penalty = self["EmissionsPenalty"]
             regions = self["REGION"]["VALUE"].to_list()
             years = self["YEAR"]["VALUE"].to_list()
@@ -610,7 +610,6 @@ class ResultsPackage(Mapping):
 
         crf_op = capital_recovery_factor(regions, years, discount_rate, 0.5)
         crf_cap = capital_recovery_factor(regions, years, discount_rate, 0.0)
-        LOGGER.debug(crf_op, crf_cap)
 
         undiscounted_operational_costs = annual_fixed_operating_cost.add(
             annual_variable_operating_cost, fill_value=0.0
