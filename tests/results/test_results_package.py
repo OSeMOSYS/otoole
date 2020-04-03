@@ -391,7 +391,7 @@ class TestDiscountedTechnologyEmissionsPenalty:
     ):
 
         results = {
-            "AnnualTechnologyEmissionsByMode": annual_technology_emissions_by_mode,
+            "AnnualTechnologyEmissionByMode": annual_technology_emissions_by_mode,
             "EmissionsPenalty": emissions_penalty,
             "REGION": region,
             "YEAR": year,
