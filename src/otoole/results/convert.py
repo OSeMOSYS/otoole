@@ -2,7 +2,18 @@
 
 """
 import argparse
-from typing import List, Tuple
+import logging
+import os
+from typing import Dict, List, Optional, Tuple
+
+import pandas as pd
+from pandas_datapackage_reader import read_datapackage
+
+from otoole import read_packaged_file
+from otoole.preprocess import read_datafile_to_dict
+from otoole.results.result_package import ResultsPackage
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ConvertLine(object):
@@ -187,6 +198,164 @@ def convert_cplex_file(
                 except ValueError:
                     msg = "Error caused at line {}: {}"
                     raise ValueError(msg.format(linenum, line))
+
+
+def convert_cbc_to_dataframe(data_file: str) -> pd.DataFrame:
+    """Reads a CBC solution file into a pandas DataFrame
+
+    Arguments
+    ---------
+    data_file : str
+    """
+    df = pd.read_csv(
+        data_file,
+        header=None,
+        names=["temp", "VALUE"],
+        delim_whitespace=True,
+        skiprows=1,
+        usecols=[1, 2],
+    )  # type: pd.DataFrame
+    df.columns = ["temp", "Value"]
+    df[["Variable", "Index"]] = df["temp"].str.split("(", expand=True)
+    df = df.drop("temp", axis=1)
+    df["Index"] = df["Index"].str.replace(")", "")
+    return df[["Variable", "Index", "Value"]]
+
+
+def convert_dataframe_to_csv(
+    data: pd.DataFrame, input_data: Optional[Dict[str, pd.DataFrame]] = None
+) -> Dict[str, pd.DataFrame]:
+    """Convert from dataframe to csv
+
+    Converts a pandas DataFrame containing all CBC results to reformatted
+    dictionary of pandas DataFrames in long format ready to write out as
+    csv files
+
+    Arguments
+    ---------
+    data : pandas.DataFrame
+        CBC results stored in a dataframe
+    input_data_path : str, default=None
+        Path to the OSeMOSYS data file containing input data
+
+    Example
+    -------
+    >>> df = pd.DataFrame(data=[
+            ['TotalDiscountedCost', "SIMPLICITY,2015", 187.01576],
+            ['TotalDiscountedCost', "SIMPLICITY,2016", 183.30788]],
+            columns=['Variable', 'Index', 'Value'])
+    >>> convert_dataframe_to_csv(df)
+    {'TotalDiscountedCost':        REGION  YEAR      VALUE
+                                0  SIMPLICITY  2015  187.01576
+                                1  SIMPLICITY  2016  183.30788}
+    """
+    input_config = read_packaged_file("config.yaml", "otoole.preprocess")
+    results_config = read_packaged_file("config.yaml", "otoole.results")
+
+    sets = {x: y for x, y in input_config.items() if y["type"] == "set"}
+
+    results = {}  # type: Dict[str, pd.DataFrame]
+
+    not_found = []
+
+    for name, details in results_config.items():
+        df = data[data["Variable"] == name]
+
+        if not df.empty:
+
+            LOGGER.debug("Extracting results for %s", name)
+            indices = details["indices"]
+
+            df[indices] = df["Index"].str.split(",", expand=True)
+
+            types = {index: sets[index]["dtype"] for index in indices}
+            df = df.astype(types)
+
+            df = df.drop(columns=["Variable", "Index"])
+
+            df = df.rename(columns={"Value": "VALUE"})
+
+            results[name] = df[indices + ["VALUE"]].set_index(indices)
+
+        else:
+            not_found.append(name)
+
+    LOGGER.debug("Unable to find CBC variables for: %s", ", ".join(not_found))
+
+    results_package = ResultsPackage(results, input_data)
+
+    for name in not_found:
+
+        LOGGER.info("Looking for %s", name)
+        details = results_config[name]
+
+        try:
+            df = results_package[name]
+        except KeyError as ex:
+            LOGGER.info("No calculation method available for %s", name)
+            LOGGER.debug("Error calculating %s: %s", name, str(ex))
+            df = pd.DataFrame()
+
+        if not df.empty:
+            results[name] = df
+        else:
+            LOGGER.warning(
+                "Calculation returned empty dataframe for parameter '%s'", name
+            )
+
+    return results
+
+
+def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
+    """Write out CSV files from CBC file
+
+    Arguments
+    ---------
+    results_path : str
+    results : dict
+    """
+    for name, df in results.items():
+        filename = os.path.join(results_path, name + ".csv")
+
+        if not os.path.exists(results_path):
+            LOGGER.info("Creating new results folder at '%s'", results_path)
+            os.makedirs(results_path, exist_ok=True)
+
+        if not df.empty:
+            df.to_csv(filename, index=True)
+        else:
+            LOGGER.warning("Result parameter %s is empty", name)
+
+
+def convert_cbc_to_csv(
+    from_file: str,
+    to_file: str,
+    input_data_path: str = None,
+    input_data_format="datapackage",
+):
+    """
+
+    Arguments
+    ---------
+    from_file: str
+        CBC solution file
+    to_file: str
+        Path to directory in which CSV files will be written
+    input_data_path: str
+        Optional path to input data (required if using short or fast versions
+        of OSeMOSYS)
+    input_data_format : str, default='datapackage
+
+    """
+    if input_data_format == "datapackage" and input_data_path:
+        input_data = read_datapackage(input_data_path)
+    elif input_data_format == "datafile" and input_data_path:
+        input_data = read_datafile_to_dict(input_data_path)
+    else:
+        input_data = None
+    df = convert_cbc_to_dataframe(from_file)
+    csv = convert_dataframe_to_csv(df, input_data)
+    write_csvs(to_file, csv)
 
 
 if __name__ == "__main__":

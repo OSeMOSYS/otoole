@@ -52,6 +52,7 @@ from otoole.preprocess import (
     generate_csv_from_excel,
 )
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
+from otoole.results import convert_cbc_to_csv
 from otoole.results.convert import convert_cplex_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
@@ -75,6 +76,32 @@ def cplex2cbc(args):
         args.end_year,
         args.output_format,
     )
+
+
+def result_matrix(args):
+    """Post-process results from CBC solution file into CSV format
+
+    """
+    msg = "Conversion from {} to {} is not yet implemented".format(
+        args.from_format, args.to_format
+    )
+    if args.from_format == "cbc":
+
+        if args.to_format == "csv":
+            if args.input_datapackage:
+                convert_cbc_to_csv(
+                    args.from_path, args.to_path, args.input_datapackage, "datapackage"
+                )
+            elif args.input_datafile:
+                convert_cbc_to_csv(
+                    args.from_path, args.to_path, args.input_datafile, "datafile"
+                )
+            else:
+                convert_cbc_to_csv(args.from_path, args.to_path)
+        else:
+            raise NotImplementedError(msg)
+    else:
+        raise NotImplementedError(msg)
 
 
 def conversion_matrix(args):
@@ -158,6 +185,32 @@ def get_parser():
     )
 
     subparsers = parser.add_subparsers()
+
+    # Parser for results
+    result_parser = subparsers.add_parser("results", help="Post-process solution files")
+    result_parser.add_argument(
+        "from_format",
+        help="Result data format to convert from",
+        choices=sorted(["cbc"]),
+    )
+    result_parser.add_argument(
+        "to_format", help="Result data format to convert to", choices=sorted(["csv"]),
+    )
+    result_parser.add_argument(
+        "from_path", help="Path to file or folder to convert from"
+    )
+    result_parser.add_argument("to_path", help="Path to file or folder to convert to")
+    result_parser.add_argument(
+        "--input_datapackage",
+        help="Input data package required for OSeMOSYS short or fast results",
+        default=None,
+    )
+    result_parser.add_argument(
+        "--input_datafile",
+        help="Input GNUMathProg datafile required for OSeMOSYS short or fast results",
+        default=None,
+    )
+    result_parser.set_defaults(func=result_matrix)
 
     # Parser for conversion
     convert_parser = subparsers.add_parser(
