@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 0.7
+===========
+- Adds results processing and conversion of results
+- CBC results are transformed into a folder of CSV files
+- Missing intermediate results parameters are automatically generated
+- Adds command ``otoole results cbc csv simplicity.sol ./results --input_datafile simplicity.txt``
+
 Version 0.6
 ===========
 - Fixes bug in writing to datafile where any values that matched the default were
