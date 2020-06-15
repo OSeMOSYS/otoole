@@ -103,7 +103,10 @@ class DataPackageTo(object):
         raise NotImplementedError()
 
 
-class DataPackageToCsv(DataPackageTo):
+class DataPackageToDatafile(DataPackageTo):
+    """Write datapackage to a GMPL datafile
+    """
+
     def _header(self):
         filepath = open(self.datafilepath, "w")
         msg = "# Model file written by *otoole*\n"
@@ -118,7 +121,7 @@ class DataPackageToCsv(DataPackageTo):
     def _write_parameter(
         self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
     ):
-        """Write parameter data to a csv file, omitting data which matches the default value
+        """Write parameter data to a GMPL datafile, omitting data with default value
 
         Arguments
         ---------
@@ -134,7 +137,7 @@ class DataPackageToCsv(DataPackageTo):
         handle.write(";\n")
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO):
-        """
+        """Write set data to a GMPL datafile
 
         Arguments
         ---------
@@ -227,7 +230,7 @@ class DataPackageToExcel(DataPackageTo):
 
 
 def convert_datapackage_to_datafile(path_to_datapackage, path_to_datafile):
-    dp = DataPackageToCsv(path_to_datapackage, path_to_datafile)
+    dp = DataPackageToDatafile(path_to_datapackage, path_to_datafile)
     dp.convert()
 
 
@@ -241,4 +244,4 @@ if __name__ == "__main__":
     path_to_datapackage = sys.argv[1]
     path_to_datafile = sys.argv[2]
 
-    DataPackageToCsv(path_to_datapackage, path_to_datafile)
+    DataPackageToDatafile(path_to_datapackage, path_to_datafile)

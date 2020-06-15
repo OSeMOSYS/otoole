@@ -124,8 +124,16 @@ def _cast_to_int(value):
     return int(float(value))
 
 
-def main(output_folder, narrow_folder):
+def main(output_folder: str, narrow_folder: str):
     """Read in a folder of irregular wide-format files and write as narrow csvs
+
+    Arguments
+    ---------
+    output_folder: str
+        The source folder of wide files
+    narrow_folder: str
+        The destination folder
+
     """
     config = read_packaged_file("config.yaml", "otoole.preprocess")
 

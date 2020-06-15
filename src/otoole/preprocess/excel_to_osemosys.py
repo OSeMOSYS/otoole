@@ -185,11 +185,13 @@ Emissions & Penalties parameters::
 import csv
 import logging
 import os
+from tempfile import TemporaryDirectory
 from typing import Dict, List
 
 import xlrd
 
 from otoole import read_packaged_file
+from otoole.preprocess.longify_data import main as longify
 
 logger = logging.getLogger(__name__)
 
@@ -238,17 +240,20 @@ def generate_csv_from_excel(input_workbook, output_folder):
     """
     work_book = xlrd.open_workbook(os.path.join(input_workbook))
 
-    _csv_from_excel(work_book, output_folder)
+    with TemporaryDirectory() as temp_folder:
+        _csv_from_excel(work_book, temp_folder)
+        longify(temp_folder, output_folder)
+
     work_book.release_resources()  # release the workbook-resources
     del work_book
 
 
-def _csv_from_excel(workbook, output_folder):
+def _csv_from_excel(workbook: xlrd.Book, output_folder: str):
     """Creates csv files from all sheets in a workbook
 
     Arguments
     ---------
-    workbook :
+    workbook : xlrd.Book
     output_folder : str
     """
 

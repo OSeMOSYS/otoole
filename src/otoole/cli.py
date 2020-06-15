@@ -41,7 +41,9 @@ Ask for help on the command line::
 """
 import argparse
 import logging
+import os
 import sys
+from tempfile import TemporaryDirectory
 
 from otoole import __version__, read_packaged_file
 from otoole.preprocess import (
@@ -49,6 +51,7 @@ from otoole.preprocess import (
     convert_datapackage_to_excel,
     convert_file_to_package,
     create_datapackage,
+    csv_to_datapackage,
     generate_csv_from_excel,
 )
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
@@ -157,6 +160,13 @@ def conversion_matrix(args):
     elif args.from_format == "excel":
         if args.to_format == "csv":
             generate_csv_from_excel(args.from_path, args.to_path)
+        elif args.to_format == "datafile":
+
+            with TemporaryDirectory() as temp_folder:
+                generate_csv_from_excel(args.from_path, temp_folder)
+                csv_to_datapackage(temp_folder)
+                from_path = os.path.join(temp_folder, "datapackage.json")
+                convert_datapackage_to_datafile(from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 

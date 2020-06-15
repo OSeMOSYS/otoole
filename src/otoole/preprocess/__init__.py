@@ -1,5 +1,5 @@
 from .excel_to_osemosys import generate_csv_from_excel
-from .create_datapackage import main as create_datapackage
+from .create_datapackage import main as create_datapackage, csv_to_datapackage
 from .narrow_to_datafile import (
     convert_datapackage_to_datafile,
     convert_datapackage_to_excel,
@@ -14,4 +14,5 @@ __all__ = [
     "create_datapackage_from_datafile",
     "convert_datapackage_to_excel",
     "read_datafile_to_dict",
+    "csv_to_datapackage",
 ]
