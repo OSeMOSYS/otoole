@@ -158,8 +158,10 @@ def conversion_matrix(args):
             raise NotImplementedError(msg)
 
     elif args.from_format == "excel":
+
         if args.to_format == "csv":
             generate_csv_from_excel(args.from_path, args.to_path)
+
         elif args.to_format == "datafile":
 
             with TemporaryDirectory() as temp_folder:
@@ -167,6 +169,12 @@ def conversion_matrix(args):
                 csv_to_datapackage(temp_folder)
                 from_path = os.path.join(temp_folder, "datapackage.json")
                 convert_datapackage_to_datafile(from_path, args.to_path)
+
+        elif args.to_format == "datapackage":
+            with TemporaryDirectory() as temp_folder:
+                generate_csv_from_excel(args.from_path, temp_folder)
+                csv_to_datapackage(temp_folder)
+
         else:
             raise NotImplementedError(msg)
 

@@ -228,7 +228,7 @@ def read_config(path_to_user_config: str = None) -> Dict:
 
 
 def generate_csv_from_excel(input_workbook, output_folder):
-    """Generate a folder of CSV files from a spreadsheet
+    """Generate a folder of narrow, well formatted CSV files from a spreadsheet
 
     Arguments
     ---------
