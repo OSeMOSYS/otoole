@@ -9,6 +9,10 @@ Version 0.7
 - Missing intermediate results parameters are automatically generated
 - Adds command ``otoole results cbc csv simplicity.sol ./results --input_datafile simplicity.txt``
 - Removes dependency upon PuLP now that amply is available separately on PyPi
+- Fixed bug with parameter names >31 characters in converting to Excel and fixed round trip
+- Added conversions from Excel to datafile and datapackage to avoid intermediate commands so
+  ``otoole convert excel datapackage <> <>`` and ``otoole convert excel datafile <> <>``
+  are both now legal
 
 Version 0.6
 ===========
