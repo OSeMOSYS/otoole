@@ -34,8 +34,8 @@ format (referred to as a ``datapackage`` to store the data for a model.
 However, it is not required to use the datapackage format,
 and instead *otoole* can be used to, for example,
 convert an Excel workbook into a GNU MathProg datafile ready for processing with GLPK.
-Note, however, that often the datapackage is used as a min-way conversion point for more
-complex format transformations.
+Note, however, that often the datapackage is used as an intermediate data format for more
+complex transformations.
 
 *otoole* currently supports conversion between the following formats:
 
@@ -76,6 +76,10 @@ This creates the Tabular Datapackage in a folder called ``simplicity``.
 Similarly, create an Excel workbook from a datafile::
 
     otoole convert datafile excel simplicity.txt simplicity.xlsx
+
+And then convert it back again::
+
+    otoole convert excel datafile simplicity.xlsx simplicity.txt
 
 Results and Post-processing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +135,7 @@ The ``results`` command creates a folder of CSV result files from a CBC solution
 This is typically required when using the CBC solver with an LP file generated using
 GLPK. For example::
 
-    # Obtain the simplicity datafile
+    # Obtain the simplicity datafile from the Zenodo datapackage archive of the model
     otoole convert datapackage datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip simplicity.txt
     # Create an LP file using glpsol
     glpsol -m osemosys_short.txt -d simplicity.txt --wlp simplicity.lp
@@ -142,7 +146,7 @@ You're now ready to use otoole to generate a folder of CSV files from the CBC so
 
     otoole results cbc csv simplicity.sol ./results --input_datafile simplicity.txt
 
-*otoole* has duplicate Python methods for each of the result calculations performed in the long and short OSeMOSYS
+*otoole* has duplicate Python methods for each of the result calculations performed in the long, short and fast OSeMOSYS
 implementations (which are only used when using GLPK as a solver).
 
 ``otoole viz res``
