@@ -261,9 +261,13 @@ def get_parser():
     # Parser for validation
     valid_parser = subparsers.add_parser("validate", help="Validate an OSeMOSYS model")
     valid_parser.add_argument(
-        "format", help="The format of the OSeMOSYS model to validate"
+        "format",
+        help="The format of the OSeMOSYS model to validate",
+        choices=["datapackage", "sql"],
     )
-    valid_parser.add_argument("filepath", help="Path to the OSeMOSYS model to validate")
+    valid_parser.add_argument(
+        "filepath", help="Path to the OSeMOSYS datapackage.json file to validate"
+    )
     valid_parser.add_argument(
         "--config", help="Path to a user-defined validation-config file"
     )
