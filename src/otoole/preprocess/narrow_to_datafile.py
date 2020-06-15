@@ -9,6 +9,7 @@ from pandas_datapackage_reader import read_datapackage
 from sqlalchemy import create_engine
 
 from otoole import read_packaged_file
+from otoole.preprocess.excel_to_osemosys import CSV_TO_EXCEL
 
 logger = logging.getLogger(__name__)
 
@@ -211,8 +212,12 @@ class DataPackageToExcel(DataPackageTo):
         handle: pd.ExcelWriter,
         default: float,
     ):
+        try:
+            name = CSV_TO_EXCEL[parameter_name]
+        except KeyError:
+            name = parameter_name
         df = self._form_parameter(df, parameter_name, default)
-        df.to_excel(handle, sheet_name=parameter_name, merge_cells=False)
+        df.to_excel(handle, sheet_name=name, merge_cells=False)
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: pd.ExcelWriter):
         df.to_excel(handle, sheet_name=set_name, merge_cells=False, index=False)

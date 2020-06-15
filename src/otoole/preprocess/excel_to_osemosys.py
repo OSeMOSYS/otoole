@@ -194,6 +194,18 @@ from otoole import read_packaged_file
 logger = logging.getLogger(__name__)
 
 
+EXCEL_TO_CSV = {
+    "TotalAnnualMaxCapacityInvestmen": "TotalAnnualMaxCapacityInvestment",
+    "TotalAnnualMinCapacityInvestmen": "TotalAnnualMinCapacityInvestment",
+    "TotalTechnologyAnnualActivityLo": "TotalTechnologyAnnualActivityLowerLimit",
+    "TotalTechnologyAnnualActivityUp": "TotalTechnologyAnnualActivityUpperLimit",
+    "TotalTechnologyModelPeriodActLo": "TotalTechnologyModelPeriodActivityLowerLimit",
+    "TotalTechnologyModelPeriodActUp": "TotalTechnologyModelPeriodActivityUpperLimit",
+}
+
+CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
+
+
 def read_config(path_to_user_config: str = None) -> Dict:
     """Reads the config file holding expected OSeMOSYS set and parameter dimensions
 
@@ -250,6 +262,7 @@ def _csv_from_excel(workbook, output_folder):
 
         name = sheet.name
         mod_name = _modify_names([name])
+        logger.debug(mod_name)
 
         # Open the sheet name in the xlsx file and write it in csv format]
         filepath = os.path.join(output_folder, mod_name[0] + ".csv")
@@ -265,21 +278,16 @@ def _modify_names(sheet_names: List) -> List:
     """I change the name of the sheets in the xlsx file to match with the csv
     actual ones
     """
-    modifiedNames = sheet_names.copy()
-    for name in modifiedNames:
-        if name == "TotalAnnualMaxCapacityInvestmen":
-            name = "TotalAnnualMaxCapacityInvestment"
-        elif name == "TotalAnnualMinCapacityInvestmen":
-            name = "TotalAnnualMinCapacityInvestment"
-        elif name == "TotalTechnologyAnnualActivityLo":
-            name = "TotalTechnologyAnnualActivityLowerLimit"
-        elif name == "TotalTechnologyAnnualActivityUp":
-            name = "TotalTechnologyAnnualActivityUpperLimit"
-        elif name == "TotalTechnologyModelPeriodActLo":
-            name = "TotalTechnologyModelPeriodActivityLowerLimit"
-        elif name == "TotalTechnologyModelPeriodActUp":
-            name = "TotalTechnologyModelPeriodActivityUpperLimit"
-    return modifiedNames
+    modified_names = []
+    for name in sheet_names:
+        try:
+            new_name = EXCEL_TO_CSV[name]
+        except KeyError:
+            new_name = name
+
+        modified_names.append(new_name)
+
+    return modified_names
 
 
 def _cast_to_integer(row):
