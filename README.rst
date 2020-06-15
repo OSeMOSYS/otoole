@@ -46,7 +46,7 @@ The easiest way to install the dependencies is to use miniconda.
 2. Add the **conda-forge** channel ``conda config --add channels conda-forge``
 3. Create a new Python environment
    ``conda create -n myenv python=3.7 networkx datapackage
-   pandas pulp graphviz xlrd``
+   pandas graphviz xlrd``
 4. Activate the new environment ``conda activate myenv``
 5. Use pip to install otoole ``pip install otoole``
 

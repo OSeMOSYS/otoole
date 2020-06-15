@@ -8,6 +8,7 @@ Version 0.7
 - CBC results are transformed into a folder of CSV files
 - Missing intermediate results parameters are automatically generated
 - Adds command ``otoole results cbc csv simplicity.sol ./results --input_datafile simplicity.txt``
+- Removes dependency upon PuLP now that amply is available separately on PyPi
 
 Version 0.6
 ===========

@@ -7,8 +7,8 @@ import sys
 from typing import Dict, List
 
 import pandas as pd
+from amply import Amply
 from flatten_dict import flatten
-from pulp import Amply
 
 from otoole import read_packaged_file
 from otoole.preprocess.longify_data import (
