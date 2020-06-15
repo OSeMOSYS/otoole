@@ -209,18 +209,25 @@ def main(file_format: str, filepath: str, config=None):
         package = read_datapackage(filepath)
     elif file_format == "sql":
         package = read_datapackage(filepath, sql=True)
+    else:
+        package = None
 
     schema = create_schema(config)
 
-    for resource, schemas in schema.items():
-        validate_resource(package, resource, schemas)
+    if package:
 
-    print("\n***Checking graph structure***")
-    isolated_nodes = identify_orphaned_fuels_techs(package)
+        for resource, schemas in schema.items():
+            validate_resource(package, resource, schemas)
 
-    msg = ""
-    for node_type, node_names in isolated_nodes.items():
-        msg += "\n{} '{}' nodes are isolated:\n     {}\n".format(
-            len(node_names), node_type, ", ".join(node_names)
-        )
-    print(msg)
+        print("\n***Checking graph structure***")
+        isolated_nodes = identify_orphaned_fuels_techs(package)
+
+        msg = ""
+        for node_type, node_names in isolated_nodes.items():
+            msg += "\n{} '{}' nodes are isolated:\n     {}\n".format(
+                len(node_names), node_type, ", ".join(node_names)
+            )
+        print(msg)
+
+    else:
+        raise ValueError("Unable to load the datapackage")
