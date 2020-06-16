@@ -176,9 +176,8 @@ def conversion_matrix(args):
                 convert_datapackage_to_datafile(from_path, args.to_path)
 
         elif args.to_format == "datapackage":
-            with TemporaryDirectory() as temp_folder:
-                generate_csv_from_excel(args.from_path, temp_folder)
-                csv_to_datapackage(temp_folder)
+            generate_csv_from_excel(args.from_path, args.to_path)
+            csv_to_datapackage(args.to_path)
 
         else:
             raise NotImplementedError(msg)
