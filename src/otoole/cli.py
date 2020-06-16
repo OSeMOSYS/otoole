@@ -130,6 +130,11 @@ def conversion_matrix(args):
 
         if args.to_format == "datapackage":
             convert_file_to_package(args.from_path, args.to_path)
+        if args.to_format == "excel":
+            with TemporaryDirectory() as temp_folder:
+                convert_file_to_package(args.from_path, temp_folder)
+                from_path = os.path.join(temp_folder, "datapackage.json")
+                convert_datapackage_to_excel(from_path, args.to_path)
         else:
             raise NotImplementedError(msg)
 
