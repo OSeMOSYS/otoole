@@ -1,3 +1,10 @@
+"""Convert a datapackage into another format
+
+Convert a datapackage into either:
+
+1. a GNU MathProg datafile
+2. an Excel spreadsheet
+"""
 import logging
 import sys
 from abc import abstractmethod
@@ -14,8 +21,18 @@ from otoole.preprocess.excel_to_osemosys import CSV_TO_EXCEL
 logger = logging.getLogger(__name__)
 
 
-class DataPackageTo(object):
-    """Convert a data package to another format
+def read_default_values():
+
+    config = read_packaged_file("config.yaml", "otoole.preprocess")
+    default_values = {}
+    for name, contents in config.items():
+        if contents["type"] == "param":
+            default_values[name] = contents["default"]
+    return default_values
+
+
+class DictTo(object):
+    """Convert a dict of Pandas DataFrames package to another format
 
     Arguments
     ---------
@@ -27,30 +44,10 @@ class DataPackageTo(object):
         Flag to set whether the source datapackage is in sqlite format
     """
 
-    def __init__(self, datapackage: str, datafilepath: str, sql: bool = False):
-
-        self.datapackage = datapackage
-        self.datafilepath = datafilepath
-        self.sql = sql
-        self.package = self._get_package()
-        self.default_values = self._get_default_values()
+    def __init__(self, dict_of_dataframes):
+        self.package = dict_of_dataframes
+        self.default_values = read_default_values()
         self.config = read_packaged_file("config.yaml", "otoole.preprocess")
-
-    def _get_package(self):
-
-        if self.sql:
-            engine = create_engine("sqlite:///{}".format(self.datapackage))
-            package = Package(storage="sql", engine=engine)
-        else:
-            package = read_datapackage(self.datapackage)  # typing: datapackage.Package
-
-        return package
-
-    def _get_default_values(self):
-        default_resource = (
-            self.package.pop("default_values").set_index("name").to_dict()
-        )
-        return default_resource["default_value"]
 
     def convert(self):
         """Perform the conversion from datapackage to destination format
@@ -101,6 +98,45 @@ class DataPackageTo(object):
     @abstractmethod
     def _footer(self, handle: TextIO):
         raise NotImplementedError()
+
+
+class DataPackageTo(DictTo):
+    """Convert a data package to another format
+
+    Arguments
+    ---------
+    datapackage: str
+        The path to the datapackage
+    datafilepath: str
+        The path to the destination file or folder
+    sql: bool, default=False
+        Flag to set whether the source datapackage is in sqlite format
+    """
+
+    def __init__(self, datapackage: str, datafilepath: str, sql: bool = False):
+
+        self.datapackage = datapackage
+        self.datafilepath = datafilepath
+        self.sql = sql
+        self.package = self._get_package()
+        self.default_values = self._get_default_values()
+        self.config = read_packaged_file("config.yaml", "otoole.preprocess")
+
+    def _get_package(self):
+
+        if self.sql:
+            engine = create_engine("sqlite:///{}".format(self.datapackage))
+            package = Package(storage="sql", engine=engine)
+        else:
+            package = read_datapackage(self.datapackage)  # typing: datapackage.Package
+
+        return package
+
+    def _get_default_values(self):
+        default_resource = (
+            self.package.pop("default_values").set_index("name").to_dict()
+        )
+        return default_resource["default_value"]
 
 
 class DataPackageToDatafile(DataPackageTo):
