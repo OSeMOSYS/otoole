@@ -5,11 +5,8 @@ from pytest import fixture
 
 import pandas as pd
 
+from otoole.preprocess.datapackage_to import DataPackageToDatafile, DataPackageToExcel
 from otoole.preprocess.excel_to_osemosys import read_config
-from otoole.preprocess.narrow_to_datafile import (
-    DataPackageToDatafile,
-    DataPackageToExcel,
-)
 
 
 class TestDataFrameWritingExcel:

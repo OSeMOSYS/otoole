@@ -1,10 +1,11 @@
 from .excel_to_osemosys import generate_csv_from_excel
 from .create_datapackage import main as create_datapackage, csv_to_datapackage
-from .narrow_to_datafile import (
+from .datapackage_to import (
     convert_datapackage_to_datafile,
     convert_datapackage_to_excel,
 )
 from .datafile_to_datapackage import convert_file_to_package, read_datafile_to_dict
+
 
 __all__ = [
     "generate_csv_from_excel",
