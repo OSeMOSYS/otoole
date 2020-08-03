@@ -1,27 +1,23 @@
 import io
-from unittest.mock import Mock
 
 from pytest import fixture
 
 import pandas as pd
 
-from otoole.preprocess.datapackage_to import DataPackageToDatafile, DataPackageToExcel
+from otoole.input import WriteDatafile, WriteExcel
 from otoole.preprocess.excel_to_osemosys import read_config
 
 
 class TestDataFrameWritingExcel:
     @fixture
-    def setup(self, monkeypatch) -> DataPackageToExcel:
+    def setup(self, monkeypatch) -> WriteExcel:
 
-        dp = DataPackageToExcel
-        monkeypatch.setattr(dp, "_get_package", Mock())  # type: ignore
-        monkeypatch.setattr(dp, "_get_default_values", Mock())  # type: ignore
-
-        return dp("", "")
+        dp = WriteExcel
+        return dp()
 
     def test_form_empty_parameter_with_defaults(self, setup):
 
-        convert = setup  # typing: DataPackageToExcel
+        convert = setup  # typing: WriteExcel
 
         data = []
 
@@ -32,7 +28,7 @@ class TestDataFrameWritingExcel:
 
     def test_form_one_columns(self, setup):
 
-        convert = setup  # typing: DataPackageToExcel
+        convert = setup  # typing: WriteExcel
 
         data = ["A", "B", "C"]
 
@@ -43,7 +39,7 @@ class TestDataFrameWritingExcel:
 
     def test_form_three_columns(self, setup):
 
-        convert = setup  # typing: DataPackageToExcel
+        convert = setup  # typing: WriteExcel
 
         data = [["SIMPLICITY", "COAL", 2015, 41], ["SIMPLICITY", "COAL", 2016, 42]]
 
@@ -63,17 +59,9 @@ class TestDataFrameWritingExcel:
 
 
 class TestDataFrameWritingDatafile:
-    @fixture
-    def setup(self, monkeypatch) -> DataPackageToDatafile:
+    def test_write_empty_parameter_with_defaults(self):
 
-        dp = DataPackageToDatafile
-        monkeypatch.setattr(dp, "_get_package", Mock())  # type: ignore
-        monkeypatch.setattr(dp, "_get_default_values", Mock())  # type: ignore
-        return dp("", "")
-
-    def test_write_empty_parameter_with_defaults(self, setup):
-
-        convert = setup  # typing: DataPackageToCsv
+        convert = WriteDatafile()  # typing: WriteDatafile
 
         data = []
 
@@ -89,14 +77,14 @@ class TestDataFrameWritingDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_as_tabbing_format(self, setup):
+    def test_write_parameter_as_tabbing_format(self):
 
         data = [["SIMPLICITY", "BIOMASS", 0.95969], ["SIMPLICITY", "ETH1", 4.69969]]
 
         df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
 
         stream = io.StringIO()
-        convert = setup
+        convert = WriteDatafile()
         convert._write_parameter(df, "test_parameter", stream, 0)
 
         stream.seek(0)
@@ -111,7 +99,7 @@ class TestDataFrameWritingDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_skip_defaults(self, setup):
+    def test_write_parameter_skip_defaults(self):
 
         data = [
             ["SIMPLICITY", "BIOMASS", 0.95969],
@@ -123,7 +111,7 @@ class TestDataFrameWritingDatafile:
         df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
 
         stream = io.StringIO()
-        convert = setup
+        convert = WriteDatafile()
         convert._write_parameter(df, "test_parameter", stream, -1)
 
         stream.seek(0)
@@ -138,14 +126,14 @@ class TestDataFrameWritingDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_set(self, setup):
+    def test_write_set(self):
 
         data = [["BIOMASS"], ["ETH1"]]
 
         df = pd.DataFrame(data=data, columns=["VALUE"])
 
         stream = io.StringIO()
-        convert = setup
+        convert = WriteDatafile()
         convert._write_set(df, "TECHNOLOGY", stream)
 
         stream.seek(0)

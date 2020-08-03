@@ -46,19 +46,35 @@ import sys
 from tempfile import TemporaryDirectory
 
 from otoole import __version__, read_packaged_file
+from otoole.input import Context, WriteDatafile, WriteExcel
 from otoole.preprocess import (
-    convert_datapackage_to_datafile,
-    convert_datapackage_to_excel,
     convert_file_to_package,
     create_datapackage,
     csv_to_datapackage,
     generate_csv_from_excel,
 )
 from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
+from otoole.read_strategies import ReadDatapackage
 from otoole.results import convert_cbc_to_csv
 from otoole.results.convert import convert_cplex_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
+
+logger = logging.getLogger(__name__)
+
+
+def convert_datapackage_to_datafile(path_to_datapackage, path_to_datafile):
+    read_strategy = ReadDatapackage()
+    write_strategy = WriteDatafile()
+    context = Context(read_strategy, write_strategy)
+    context.convert(path_to_datapackage, path_to_datafile)
+
+
+def convert_datapackage_to_excel(path_to_datapackage, path_to_excel):
+    read_strategy = ReadDatapackage()
+    write_strategy = WriteExcel()
+    context = Context(read_strategy, write_strategy)
+    context.convert(path_to_datapackage, path_to_excel)
 
 
 def validate_model(args):
