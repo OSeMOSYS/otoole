@@ -1,11 +1,7 @@
 import pandas as pd
 from amply import Amply
 
-from otoole.preprocess.datafile_to_datapackage import (
-    convert_amply_data_to_list,
-    convert_amply_to_dataframe,
-    load_parameter_definitions,
-)
+from otoole.read_strategies import ReadDatafile
 
 
 def test_amply():
@@ -66,7 +62,10 @@ param VariableCost default 0.0001 :=
 1 7.5
 2 999999.0;"""
     )
-    actual = convert_amply_to_dataframe(amply, config)
+
+    read = ReadDatafile()
+
+    actual = read._convert_amply_to_dataframe(amply, config)
     expected = pd.DataFrame(
         data=[
             ["SIMPLICITY", "ETHPLANT", 1, 2014, 2.89],
@@ -94,15 +93,16 @@ def test_convert_amply_data_to_list_of_lists():
         ["SIMPLICITY", "GAS_EXTRACTION", 1.0, 2014.0, 7.5],
         ["SIMPLICITY", "GAS_EXTRACTION", 2.0, 2014.0, 999999.0],
     ]
-    actual = convert_amply_data_to_list(data)
+    read = ReadDatafile()
+    actual = read._convert_amply_data_to_list(data)
     assert actual == expected
 
 
 def test_load_parameters():
 
     config = {"TestParameter": {"type": "param", "indices": ["index1", "index2"]}}
-
-    actual = load_parameter_definitions(config)
+    read = ReadDatafile()
+    actual = read._load_parameter_definitions(config)
     expected = "param TestParameter {index1,index2};\n"
     assert actual == expected
 
@@ -111,6 +111,7 @@ def test_load_sets():
 
     config = {"TestSet": {"type": "set"}}
 
-    actual = load_parameter_definitions(config)
+    read = ReadDatafile()
+    actual = read._load_parameter_definitions(config)
     expected = "set TestSet;\n"
     assert actual == expected
