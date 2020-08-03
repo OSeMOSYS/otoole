@@ -4,8 +4,8 @@ from pytest import fixture
 
 import pandas as pd
 
-from otoole.input import WriteDatafile, WriteExcel
 from otoole.preprocess.excel_to_osemosys import read_config
+from otoole.write_strategies import WriteDatafile, WriteExcel
 
 
 class TestDataFrameWritingExcel:
