@@ -26,6 +26,15 @@ class TestDataFrameWritingExcel:
         expected = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
         pd.testing.assert_frame_equal(actual, expected)
 
+    def test_form_empty_two_index_param_with_defaults(self, setup):
+
+        convert = setup  # typing: WriteExcel
+
+        df = pd.DataFrame(data=[], columns=["REGION", "VALUE"])
+        actual = convert._form_parameter(df, "test_parameter", 0)
+        expected = pd.DataFrame(data=[], columns=["REGION", "VALUE"])
+        pd.testing.assert_frame_equal(actual, expected)
+
     def test_form_one_columns(self, setup):
 
         convert = setup  # typing: WriteExcel
