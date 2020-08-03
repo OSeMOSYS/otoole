@@ -1,7 +1,5 @@
 import io
 
-from pytest import fixture
-
 import pandas as pd
 
 from otoole.preprocess.excel_to_osemosys import read_config
@@ -9,15 +7,9 @@ from otoole.write_strategies import WriteDatafile, WriteExcel
 
 
 class TestDataFrameWritingExcel:
-    @fixture
-    def setup(self, monkeypatch) -> WriteExcel:
+    def test_form_empty_parameter_with_defaults(self):
 
-        dp = WriteExcel
-        return dp()
-
-    def test_form_empty_parameter_with_defaults(self, setup):
-
-        convert = setup  # typing: WriteExcel
+        convert = WriteExcel()  # typing: WriteExcel
 
         data = []
 
@@ -26,18 +18,30 @@ class TestDataFrameWritingExcel:
         expected = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_empty_two_index_param_with_defaults(self, setup):
+    def test_form_empty_two_index_param_with_defaults(self):
 
-        convert = setup  # typing: WriteExcel
+        convert = WriteExcel()  # typing: WriteExcel
 
         df = pd.DataFrame(data=[], columns=["REGION", "VALUE"])
         actual = convert._form_parameter(df, "test_parameter", 0)
         expected = pd.DataFrame(data=[], columns=["REGION", "VALUE"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_one_columns(self, setup):
+    def test_form_two_index_param(self):
 
-        convert = setup  # typing: WriteExcel
+        convert = WriteExcel()  # typing: WriteExcel
+
+        df = pd.DataFrame(
+            data=[["SIMPLICITY", 0.10], ["UTOPIA", 0.20]], columns=["REGION", "VALUE"]
+        )
+        actual = convert._form_parameter(df, "test_parameter", 0)
+        index = pd.Index(data=["SIMPLICITY", "UTOPIA"], name="REGION")
+        expected = pd.DataFrame(data=[[0.10], [0.20]], columns=["VALUE"], index=index)
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_form_one_columns(self):
+
+        convert = WriteExcel()  # typing: WriteExcel
 
         data = ["A", "B", "C"]
 
@@ -46,9 +50,9 @@ class TestDataFrameWritingExcel:
         expected = pd.DataFrame(data=["A", "B", "C"], columns=["FUEL"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_three_columns(self, setup):
+    def test_form_three_columns(self):
 
-        convert = setup  # typing: WriteExcel
+        convert = WriteExcel()  # typing: WriteExcel
 
         data = [["SIMPLICITY", "COAL", 2015, 41], ["SIMPLICITY", "COAL", 2016, 42]]
 

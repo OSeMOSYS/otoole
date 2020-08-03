@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, TextIO, Tuple
+from typing import Any, Dict, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -112,8 +112,19 @@ class WriteStrategy(ABC):
     Strategies.
     """
 
+    def __init__(self, filepath: str = None, default_values: Dict = None):
+        if filepath:
+            self.filepath = filepath
+        else:
+            self.filepath = ""
+
+        if default_values:
+            self.default_values = default_values
+        else:
+            self.default_values = {}
+
     @abstractmethod
-    def _header(self) -> TextIO:
+    def _header(self) -> Union[TextIO, Any]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -135,6 +146,9 @@ class WriteStrategy(ABC):
     def write(self, inputs: Dict, filepath: str, default_values: Dict):
         """Perform the conversion from dict of dataframes to destination format
         """
+        self.filepath = filepath
+        self.default_values = default_values
+
         handle = self._header()
         logger.debug(default_values)
 
@@ -154,7 +168,8 @@ class WriteStrategy(ABC):
 
         self._footer(handle)
 
-        handle.close()
+        if handle:
+            handle.close()
 
 
 class ReadStrategy(ABC):

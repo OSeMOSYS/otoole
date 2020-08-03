@@ -9,10 +9,8 @@ import os
 import sys
 
 from datapackage import Package
-from sqlalchemy import create_engine
 
 from otoole import read_packaged_file
-from otoole.preprocess.datafile_to_datapackage import write_default_values
 from otoole.preprocess.longify_data import main as longify
 
 logger = logging.getLogger()
@@ -104,29 +102,6 @@ def main(wide_folder, narrow_folder):
     generate_package(narrow_folder)
     absolute_path = os.path.join(narrow_folder, "datapackage.json")
     validate_contents(absolute_path)
-
-
-def csv_to_datapackage(path_to_csv_folder: str) -> None:
-    """Adds the datapackage.json file to a folder of CSV files
-
-    Arguments
-    ---------
-    path_to_csv_folder : str
-        Path to the folder of csv files
-    """
-    datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
-    filepath = os.path.join(path_to_csv_folder, "datapackage.json")
-    with open(filepath, "w") as destination:
-        destination.writelines(datapackage)
-    write_default_values(path_to_csv_folder)
-
-
-def convert_datapackage_to_sqlite(path_to_datapackage, sqlite):
-    """Load and save table to SQLite
-    """
-    dp = Package(path_to_datapackage)
-    engine = create_engine("sqlite:///{}".format(sqlite))
-    dp.save(storage="sql", engine=engine)
 
 
 if __name__ == "__main__":

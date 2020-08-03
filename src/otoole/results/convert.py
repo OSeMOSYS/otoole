@@ -7,10 +7,9 @@ import os
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-from pandas_datapackage_reader import read_datapackage
 
 from otoole import read_packaged_file
-from otoole.preprocess import read_datafile_to_dict
+from otoole.read_strategies import ReadDatafile, ReadDatapackage
 from otoole.results.result_package import ResultsPackage
 
 LOGGER = logging.getLogger(__name__)
@@ -348,11 +347,12 @@ def convert_cbc_to_csv(
 
     """
     if input_data_format == "datapackage" and input_data_path:
-        input_data = read_datapackage(input_data_path)
+        input_data, _ = ReadDatapackage().read(input_data_path)
     elif input_data_format == "datafile" and input_data_path:
-        input_data = read_datafile_to_dict(input_data_path)
+        input_data, _ = ReadDatafile().read(input_data_path)
     else:
-        input_data = None
+        input_data = {}
+
     df = convert_cbc_to_dataframe(from_file)
     csv = convert_dataframe_to_csv(df, input_data)
     write_csvs(to_file, csv)

@@ -1,8 +1,10 @@
 import logging
-from typing import TextIO
+import os
+from typing import Any, TextIO
 
 import pandas as pd
 
+from otoole import read_packaged_file
 from otoole.input import WriteStrategy
 from otoole.preprocess.excel_to_osemosys import CSV_TO_EXCEL
 
@@ -11,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class WriteExcel(WriteStrategy):
     def _header(self):
-        return pd.ExcelWriter(self.datafilepath, mode="w")
+        return pd.ExcelWriter(self.filepath, mode="w")
 
     def _form_parameter(
         self, df: pd.DataFrame, parameter_name: str, default: float
@@ -39,16 +41,16 @@ class WriteExcel(WriteStrategy):
                 rows = names[0:-2]
                 columns = names[-2]
                 values = names[-1]
-                logger.debug("Rows: {}; columns: {}; values: {}", rows, columns, values)
+                logger.debug("Rows: %s; columns: %s; values: %s", rows, columns, values)
                 logger.debug("dtypes: {}".format(df.dtypes))
                 pivot = pd.pivot_table(
                     df, index=rows, columns=columns, values=values, fill_value=default
                 )
             elif len(names) == 2:
                 logger.debug("Two columns for {}: {}".format(parameter_name, names))
-                values = names[-1]
-                rows = names[0:-2]
-                logger.debug("Rows: {}; values: {}", rows, values)
+                rows = names[0]
+                values = names[1]
+                logger.debug("Rows: %s; values: %s", rows, values)
                 pivot = pd.pivot_table(
                     df, index=rows, values=values, fill_value=default
                 )
@@ -86,7 +88,7 @@ class WriteExcel(WriteStrategy):
 
 class WriteDatafile(WriteStrategy):
     def _header(self):
-        filepath = open(self.datafilepath, "w")
+        filepath = open(self.filepath, "w")
         msg = "# Model file written by *otoole*\n"
         filepath.write(msg)
         return filepath
@@ -130,3 +132,52 @@ class WriteDatafile(WriteStrategy):
     def _footer(self, handle: TextIO):
         handle.write("end;\n")
         handle.close()
+
+
+class WriteDatapackage(WriteStrategy):
+    def _header(self) -> Any:
+        os.makedirs(os.path.join(self.filepath, "data"), exist_ok=True)
+        return None
+
+    def _write_parameter(
+        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+    ) -> pd.DataFrame:
+        """Write parameter data"""
+        self._write_out_dataframe(self.filepath, parameter_name, df)
+
+    def _write_out_dataframe(self, folder, parameter, df):
+        """Writes out a dataframe as a csv into the data subfolder of a datapackage
+
+        Arguments
+        ---------
+        folder : str
+        parameter : str
+        df : pandas.DataFrame
+
+        """
+        filepath = os.path.join(folder, "data", parameter + ".csv")
+        with open(filepath, "w") as csvfile:
+            logger.info(
+                "Writing %s rows into narrow file for %s", df.shape[0], parameter
+            )
+            df.to_csv(csvfile, index=False)
+
+    def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO) -> pd.DataFrame:
+        """Write set data"""
+        self._write_out_dataframe(self.filepath, set_name, df)
+
+    def _write_default_values(self):
+
+        default_values_path = os.path.join(self.filepath, "data", "default_values.csv")
+        with open(default_values_path, "w") as csv_file:
+            csv_file.write("name,default_value\n")
+
+            for name, contents in self.default_values.items():
+                csv_file.write("{},{}\n".format(name, contents))
+
+    def _footer(self, handle: TextIO):
+        datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
+        filepath = os.path.join(self.filepath, "datapackage.json")
+        with open(filepath, "w") as destination:
+            destination.writelines(datapackage)
+        self._write_default_values()

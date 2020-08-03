@@ -41,40 +41,18 @@ Ask for help on the command line::
 """
 import argparse
 import logging
-import os
 import sys
-from tempfile import TemporaryDirectory
 
 from otoole import __version__, read_packaged_file
-from otoole.input import Context, WriteDatafile, WriteExcel
-from otoole.preprocess import (
-    convert_file_to_package,
-    create_datapackage,
-    csv_to_datapackage,
-    generate_csv_from_excel,
-)
-from otoole.preprocess.create_datapackage import convert_datapackage_to_sqlite
-from otoole.read_strategies import ReadDatapackage
+from otoole.input import Context
+from otoole.read_strategies import ReadCsv, ReadDatafile, ReadDatapackage, ReadExcel
 from otoole.results import convert_cbc_to_csv
 from otoole.results.convert import convert_cplex_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
+from otoole.write_strategies import WriteDatafile, WriteDatapackage, WriteExcel
 
 logger = logging.getLogger(__name__)
-
-
-def convert_datapackage_to_datafile(path_to_datapackage, path_to_datafile):
-    read_strategy = ReadDatapackage()
-    write_strategy = WriteDatafile()
-    context = Context(read_strategy, write_strategy)
-    context.convert(path_to_datapackage, path_to_datafile)
-
-
-def convert_datapackage_to_excel(path_to_datapackage, path_to_excel):
-    read_strategy = ReadDatapackage()
-    write_strategy = WriteExcel()
-    context = Context(read_strategy, write_strategy)
-    context.convert(path_to_datapackage, path_to_excel)
 
 
 def validate_model(args):
@@ -142,62 +120,28 @@ def conversion_matrix(args):
         args.from_format, args.to_format
     )
 
+    read_strategy = None
+    write_strategy = None
+
     if args.from_format == "datafile":
-
-        if args.to_format == "datapackage":
-            convert_file_to_package(args.from_path, args.to_path)
-        if args.to_format == "excel":
-            with TemporaryDirectory() as temp_folder:
-                convert_file_to_package(args.from_path, temp_folder)
-                from_path = os.path.join(temp_folder, "datapackage.json")
-                convert_datapackage_to_excel(from_path, args.to_path)
-        else:
-            raise NotImplementedError(msg)
-
+        read_strategy = ReadDatafile()
     elif args.from_format == "datapackage":
-
-        if args.to_format == "sql":
-            convert_datapackage_to_sqlite(args.from_path, args.to_path)
-        elif args.to_format == "datafile":
-            convert_datapackage_to_datafile(args.from_path, args.to_path)
-        elif args.to_format == "excel":
-            convert_datapackage_to_excel(args.from_path, args.to_path)
-        else:
-            raise NotImplementedError(msg)
-
-    elif args.from_format == "sql":
-
-        if args.to_format == "datafile":
-            convert_datapackage_to_datafile(args.from_path, args.to_path, sql=True)
-        else:
-            raise NotImplementedError(msg)
-
+        read_strategy = ReadDatapackage()
     elif args.from_format == "csv":
-        if args.to_format == "datapackage":
-            create_datapackage(args.from_path, args.to_path)
-        else:
-            raise NotImplementedError(msg)
-
+        read_strategy = ReadCsv()
     elif args.from_format == "excel":
+        read_strategy = ReadExcel()
 
-        if args.to_format == "csv":
-            generate_csv_from_excel(args.from_path, args.to_path)
+    if args.to_format == "datapackage":
+        write_strategy = WriteDatapackage()
+    elif args.to_format == "excel":
+        write_strategy = WriteExcel()
+    elif args.to_format == "datafile":
+        write_strategy = WriteDatafile()
 
-        elif args.to_format == "datafile":
-
-            with TemporaryDirectory() as temp_folder:
-                generate_csv_from_excel(args.from_path, temp_folder)
-                csv_to_datapackage(temp_folder)
-                from_path = os.path.join(temp_folder, "datapackage.json")
-                convert_datapackage_to_datafile(from_path, args.to_path)
-
-        elif args.to_format == "datapackage":
-            generate_csv_from_excel(args.from_path, args.to_path)
-            csv_to_datapackage(args.to_path)
-
-        else:
-            raise NotImplementedError(msg)
-
+    if read_strategy and write_strategy:
+        context = Context(read_strategy, write_strategy)
+        context.convert(args.from_path, args.to_path)
     else:
         raise NotImplementedError(msg)
 
