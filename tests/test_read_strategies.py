@@ -4,6 +4,21 @@ from amply import Amply
 from otoole.read_strategies import ReadDatafile
 
 
+class TestConfig:
+    def test_read_config(self):
+
+        read = ReadDatafile()
+
+        actual = read._read_config()
+        expected = {
+            "default": 0,
+            "dtype": "float",
+            "indices": ["REGION", "FUEL", "YEAR"],
+            "type": "param",
+        }
+        assert actual["AccumulatedAnnualDemand"] == expected
+
+
 class TestReadDatafile:
     def test_amply(self):
 

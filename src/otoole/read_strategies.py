@@ -6,16 +6,108 @@ from amply import Amply
 from flatten_dict import flatten
 from pandas_datapackage_reader import read_datapackage
 
-from otoole import read_packaged_file
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 
 logger = logging.getLogger(__name__)
 
 
+EXCEL_TO_CSV = {
+    "TotalAnnualMaxCapacityInvestmen": "TotalAnnualMaxCapacityInvestment",
+    "TotalAnnualMinCapacityInvestmen": "TotalAnnualMinCapacityInvestment",
+    "TotalTechnologyAnnualActivityLo": "TotalTechnologyAnnualActivityLowerLimit",
+    "TotalTechnologyAnnualActivityUp": "TotalTechnologyAnnualActivityUpperLimit",
+    "TotalTechnologyModelPeriodActLo": "TotalTechnologyModelPeriodActivityLowerLimit",
+    "TotalTechnologyModelPeriodActUp": "TotalTechnologyModelPeriodActivityUpperLimit",
+}
+
+CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
+
+
 class ReadExcel(ReadStrategy):
     def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        raise NotImplementedError()
+
+        config = self.config
+        default_values = self._read_default_values(config)
+
+        xl = pd.ExcelFile(filepath)
+
+        input_data = {}
+
+        for name in xl.sheet_names:
+
+            try:
+                mod_name = EXCEL_TO_CSV[name]
+            except KeyError:
+                mod_name = name
+
+            config_details = config[mod_name]
+
+            df = xl.parse(name)
+
+            entity_type = config[mod_name]["type"]
+
+            if entity_type == "param":
+                narrow = self._check_parameter(df, config_details, mod_name)
+                if not narrow.empty:
+                    narrow_checked = check_datatypes(narrow, config, mod_name)
+                else:
+                    narrow_checked = narrow
+            elif entity_type == "set":
+                narrow = self._check_set(df, config_details, mod_name)
+                if not narrow.empty:
+                    narrow_checked = check_set_datatype(narrow, config, mod_name)
+                else:
+                    narrow_checked = narrow
+
+            input_data[mod_name] = narrow_checked
+
+        return input_data, default_values
+
+    def _check_set(self, df, config_details, name):
+
+        logger.info("Checking set %s", name)
+        narrow = df
+
+        return narrow
+
+    def _check_parameter(self, df, config_details, name):
+        actual_headers = df.columns
+        expected_headers = config_details["indices"]
+        logger.debug("Expected headers for %s: %s", name, expected_headers)
+
+        if "REGION" in expected_headers and "REGION" not in actual_headers:
+            logger.info("Added 'REGION' column to %s", name)
+            df["REGION"] = "SIMPLICITY"
+
+        if "MODEOFOPERATION" in actual_headers:
+            df = df.rename(columns={"MODEOFOPERATION": "MODE_OF_OPERATION"})
+
+        if actual_headers[-1] == "VALUE":
+            logger.info(
+                "%s is already in narrow form with headers %s", name, df.columns
+            )
+            narrow = df
+        else:
+            try:
+                narrow = pd.melt(
+                    df,
+                    id_vars=expected_headers[:-1],
+                    var_name=expected_headers[-1],
+                    value_name="VALUE",
+                )
+            except IndexError as ex:
+                logger.debug(df.columns)
+                raise ex
+
+        expected_headers.append("VALUE")
+        for column in expected_headers:
+            if column not in narrow.columns:
+                logger.warning("%s not in header of %s", column, name)
+
+        logger.debug("Final expected headers for %s: %s", name, expected_headers)
+
+        return narrow[expected_headers]
 
 
 class ReadCsv(ReadStrategy):
@@ -34,19 +126,12 @@ class ReadDatapackage(ReadStrategy):
 class ReadDatafile(ReadStrategy):
     def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = read_packaged_file("config.yaml", "otoole.preprocess")  # type: Dict
+        config = self.config
+        default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)
-        default_values = self._read_default_values(config)
 
         return inputs, default_values
-
-    def _read_default_values(self, config):
-        default_values = {}
-        for name, contents in config.items():
-            if contents["type"] == "param":
-                default_values[name] = contents["default"]
-        return default_values
 
     def read_in_datafile(self, path_to_datafile: str, config: Dict) -> Amply:
         """Read in a datafile using the Amply parsing class

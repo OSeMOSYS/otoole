@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, TextIO, Tuple, Union
+from typing import Any, Dict, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -104,7 +104,26 @@ class Context:
         self._write(inputs, output_filepath, default_values)
 
 
-class WriteStrategy(ABC):
+class Strategy(ABC):
+    def __init__(self, user_config: Optional[Dict] = None):
+        if user_config:
+            self.config = user_config
+        else:
+            self.config = self._read_config()
+
+    def _read_config(self):
+        return read_packaged_file("config.yaml", "otoole.preprocess")
+
+    @staticmethod
+    def _read_default_values(config):
+        default_values = {}
+        for name, contents in config.items():
+            if contents["type"] == "param":
+                default_values[name] = contents["default"]
+        return default_values
+
+
+class WriteStrategy(Strategy):
     """
     The WriteStrategy interface declares operations common to all writing formats
 
@@ -112,7 +131,13 @@ class WriteStrategy(ABC):
     Strategies.
     """
 
-    def __init__(self, filepath: str = None, default_values: Dict = None):
+    def __init__(
+        self,
+        filepath: str = None,
+        default_values: Dict = None,
+        user_config: Optional[Dict] = None,
+    ):
+        super().__init__(user_config)
         if filepath:
             self.filepath = filepath
         else:
@@ -172,7 +197,7 @@ class WriteStrategy(ABC):
             handle.close()
 
 
-class ReadStrategy(ABC):
+class ReadStrategy(Strategy):
     """
     The Strategy interface declares operations common to all reading formats.
 

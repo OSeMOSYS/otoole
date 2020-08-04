@@ -50,7 +50,12 @@ from otoole.results import convert_cbc_to_csv
 from otoole.results.convert import convert_cplex_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
-from otoole.write_strategies import WriteDatafile, WriteDatapackage, WriteExcel
+from otoole.write_strategies import (
+    WriteCsv,
+    WriteDatafile,
+    WriteDatapackage,
+    WriteExcel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,13 +111,12 @@ def conversion_matrix(args):
 
     Implemented conversion functions::
 
-        from\to     ex cs dp sq df
-        --------------------------
-        excel       -- yy
-        csv         nn -- yy nn nn
-        datapackage yy -- -- yy yy
-        sql         nn       -- yy
-        datafile    nn -- yy    --
+        from\to     ex cs dp df
+        -----------------------
+        excel       -- yy -- --
+        csv         nn -- yy nn
+        datapackage yy -- -- yy
+        datafile    nn -- yy --
 
     """
 
@@ -138,6 +142,8 @@ def conversion_matrix(args):
         write_strategy = WriteExcel()
     elif args.to_format == "datafile":
         write_strategy = WriteDatafile()
+    elif args.to_format == "csv":
+        write_strategy = WriteCsv()
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
@@ -201,12 +207,12 @@ def get_parser():
     convert_parser.add_argument(
         "from_format",
         help="Input data format to convert from",
-        choices=sorted(["datafile", "datapackage", "sql", "excel", "csv"]),
+        choices=sorted(["datafile", "datapackage", "excel", "csv"]),
     )
     convert_parser.add_argument(
         "to_format",
         help="Input data format to convert to",
-        choices=sorted(["datafile", "datapackage", "sql", "csv", "excel"]),
+        choices=sorted(["datafile", "datapackage", "csv", "excel"]),
     )
     convert_parser.add_argument(
         "from_path", help="Path to file or folder to convert from"

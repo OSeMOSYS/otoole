@@ -2,11 +2,10 @@ import io
 
 import pandas as pd
 
-from otoole.preprocess.excel_to_osemosys import read_config
 from otoole.write_strategies import WriteDatafile, WriteExcel
 
 
-class TestDataFrameWritingExcel:
+class TestWriteExcel:
     def test_form_empty_parameter_with_defaults(self):
 
         convert = WriteExcel()  # typing: WriteExcel
@@ -71,7 +70,7 @@ class TestDataFrameWritingExcel:
         pd.testing.assert_frame_equal(actual, expected)
 
 
-class TestDataFrameWritingDatafile:
+class TestWriteDatafile:
     def test_write_empty_parameter_with_defaults(self):
 
         convert = WriteDatafile()  # typing: WriteDatafile
@@ -155,16 +154,3 @@ class TestDataFrameWritingDatafile:
 
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
-
-
-class TestConfig:
-    def test_read_config(self):
-
-        actual = read_config()
-        expected = {
-            "default": 0,
-            "dtype": "float",
-            "indices": ["REGION", "FUEL", "YEAR"],
-            "type": "param",
-        }
-        assert actual["AccumulatedAnnualDemand"] == expected
