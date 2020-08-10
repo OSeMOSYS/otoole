@@ -1,30 +1,14 @@
 import io
-from unittest.mock import Mock
-
-from pytest import fixture
 
 import pandas as pd
 
-from otoole.preprocess.excel_to_osemosys import read_config
-from otoole.preprocess.narrow_to_datafile import (
-    DataPackageToDatafile,
-    DataPackageToExcel,
-)
+from otoole.write_strategies import WriteDatafile, WriteExcel
 
 
-class TestDataFrameWritingExcel:
-    @fixture
-    def setup(self, monkeypatch) -> DataPackageToExcel:
+class TestWriteExcel:
+    def test_form_empty_parameter_with_defaults(self):
 
-        dp = DataPackageToExcel
-        monkeypatch.setattr(dp, "_get_package", Mock())  # type: ignore
-        monkeypatch.setattr(dp, "_get_default_values", Mock())  # type: ignore
-
-        return dp("", "")
-
-    def test_form_empty_parameter_with_defaults(self, setup):
-
-        convert = setup  # typing: DataPackageToExcel
+        convert = WriteExcel()  # typing: WriteExcel
 
         data = []
 
@@ -33,9 +17,30 @@ class TestDataFrameWritingExcel:
         expected = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_one_columns(self, setup):
+    def test_form_empty_two_index_param_with_defaults(self):
 
-        convert = setup  # typing: DataPackageToExcel
+        convert = WriteExcel()  # typing: WriteExcel
+
+        df = pd.DataFrame(data=[], columns=["REGION", "VALUE"])
+        actual = convert._form_parameter(df, "test_parameter", 0)
+        expected = pd.DataFrame(data=[], columns=["REGION", "VALUE"])
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_form_two_index_param(self):
+
+        convert = WriteExcel()  # typing: WriteExcel
+
+        df = pd.DataFrame(
+            data=[["SIMPLICITY", 0.10], ["UTOPIA", 0.20]], columns=["REGION", "VALUE"]
+        )
+        actual = convert._form_parameter(df, "test_parameter", 0)
+        index = pd.Index(data=["SIMPLICITY", "UTOPIA"], name="REGION")
+        expected = pd.DataFrame(data=[[0.10], [0.20]], columns=["VALUE"], index=index)
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_form_one_columns(self):
+
+        convert = WriteExcel()  # typing: WriteExcel
 
         data = ["A", "B", "C"]
 
@@ -44,9 +49,9 @@ class TestDataFrameWritingExcel:
         expected = pd.DataFrame(data=["A", "B", "C"], columns=["FUEL"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_three_columns(self, setup):
+    def test_form_three_columns(self):
 
-        convert = setup  # typing: DataPackageToExcel
+        convert = WriteExcel()  # typing: WriteExcel
 
         data = [["SIMPLICITY", "COAL", 2015, 41], ["SIMPLICITY", "COAL", 2016, 42]]
 
@@ -65,18 +70,10 @@ class TestDataFrameWritingExcel:
         pd.testing.assert_frame_equal(actual, expected)
 
 
-class TestDataFrameWritingDatafile:
-    @fixture
-    def setup(self, monkeypatch) -> DataPackageToDatafile:
+class TestWriteDatafile:
+    def test_write_empty_parameter_with_defaults(self):
 
-        dp = DataPackageToDatafile
-        monkeypatch.setattr(dp, "_get_package", Mock())  # type: ignore
-        monkeypatch.setattr(dp, "_get_default_values", Mock())  # type: ignore
-        return dp("", "")
-
-    def test_write_empty_parameter_with_defaults(self, setup):
-
-        convert = setup  # typing: DataPackageToCsv
+        convert = WriteDatafile()  # typing: WriteDatafile
 
         data = []
 
@@ -92,14 +89,14 @@ class TestDataFrameWritingDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_as_tabbing_format(self, setup):
+    def test_write_parameter_as_tabbing_format(self):
 
         data = [["SIMPLICITY", "BIOMASS", 0.95969], ["SIMPLICITY", "ETH1", 4.69969]]
 
         df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
 
         stream = io.StringIO()
-        convert = setup
+        convert = WriteDatafile()
         convert._write_parameter(df, "test_parameter", stream, 0)
 
         stream.seek(0)
@@ -114,7 +111,7 @@ class TestDataFrameWritingDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_skip_defaults(self, setup):
+    def test_write_parameter_skip_defaults(self):
 
         data = [
             ["SIMPLICITY", "BIOMASS", 0.95969],
@@ -126,7 +123,7 @@ class TestDataFrameWritingDatafile:
         df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
 
         stream = io.StringIO()
-        convert = setup
+        convert = WriteDatafile()
         convert._write_parameter(df, "test_parameter", stream, -1)
 
         stream.seek(0)
@@ -141,14 +138,14 @@ class TestDataFrameWritingDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_set(self, setup):
+    def test_write_set(self):
 
         data = [["BIOMASS"], ["ETH1"]]
 
         df = pd.DataFrame(data=data, columns=["VALUE"])
 
         stream = io.StringIO()
-        convert = setup
+        convert = WriteDatafile()
         convert._write_set(df, "TECHNOLOGY", stream)
 
         stream.seek(0)
@@ -157,16 +154,3 @@ class TestDataFrameWritingDatafile:
 
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
-
-
-class TestConfig:
-    def test_read_config(self):
-
-        actual = read_config()
-        expected = {
-            "default": 0,
-            "dtype": "float",
-            "indices": ["REGION", "FUEL", "YEAR"],
-            "type": "param",
-        }
-        assert actual["AccumulatedAnnualDemand"] == expected
