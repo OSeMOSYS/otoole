@@ -21,6 +21,13 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
 >>> converter.convert('my_datafile.txt', 'folder_of_csv_files')
 
+Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
+
+>>> reader = ReadDataFile()
+>>> writer = WriteDatapackage()
+>>> converter = Context(read_strategy=reader, write_strategy=writer)
+>>> converter.convert('my_datafile.txt', 'my_datapackage')
+
 """
 from __future__ import annotations
 
