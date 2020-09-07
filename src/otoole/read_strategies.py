@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from amply import Amply
@@ -25,7 +25,27 @@ EXCEL_TO_CSV = {
 CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
 
 
-class ReadTabular(ReadStrategy):
+class ReadMemory(ReadStrategy):
+    """Read a dict of OSeMOSYS parameters from memory
+    """
+
+    def __init__(
+        self, parameters: Dict[str, pd.DataFrame], user_config: Optional[Dict] = None
+    ):
+        super().__init__(user_config)
+        self._parameters = parameters
+
+    def read(
+        self, filepath: str = None,
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+
+        config = self.config
+        default_values = self._read_default_values(config)
+
+        return self._parameters, default_values
+
+
+class _ReadTabular(ReadStrategy):
     def _check_set(self, df, config_details, name):
 
         logger.info("Checking set %s", name)
@@ -72,7 +92,7 @@ class ReadTabular(ReadStrategy):
         return narrow[expected_headers]
 
 
-class ReadExcel(ReadTabular):
+class ReadExcel(_ReadTabular):
     """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames
     """
 
@@ -116,7 +136,7 @@ class ReadExcel(ReadTabular):
         return input_data, default_values
 
 
-class ReadCsv(ReadTabular):
+class ReadCsv(_ReadTabular):
     """Read in a folder of CSV files"""
 
     def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:

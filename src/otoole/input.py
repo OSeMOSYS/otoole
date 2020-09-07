@@ -1,3 +1,34 @@
+"""The ``input`` module allows you to access the conversion routines programmatically
+
+To use the routines, you need to instanciate a ``ReadStrategy`` and a ``WriteStrategy``
+relevant for the format of the input and output data.  You then pass these to a
+``Context``.
+
+Example
+-------
+Convert an in-memory dictionary of pandas DataFrames containing OSeMOSYS parameters
+to an Excel spreadsheet::
+
+>>> reader = ReadMemory(parameters)
+>>> writer = WriteExcel()
+>>> converter = Context(read_strategy=reader, write_strategy=writer)
+>>> converter.convert('.', 'osemosys_to_excel.xlsx')
+
+Convert a GNUMathProg datafile to a folder of CSV files::
+
+>>> reader = ReadDataFile()
+>>> writer = WriteCsv()
+>>> converter = Context(read_strategy=reader, write_strategy=writer)
+>>> converter.convert('my_datafile.txt', 'folder_of_csv_files')
+
+Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
+
+>>> reader = ReadDataFile()
+>>> writer = WriteDatapackage()
+>>> converter = Context(read_strategy=reader, write_strategy=writer)
+>>> converter.convert('my_datafile.txt', 'my_datapackage')
+
+"""
 from __future__ import annotations
 
 import logging
@@ -207,4 +238,4 @@ class ReadStrategy(Strategy):
 
     @abstractmethod
     def read(self, filepath: str) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        pass
+        raise NotImplementedError()

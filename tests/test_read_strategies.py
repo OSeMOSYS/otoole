@@ -1,7 +1,33 @@
 import pandas as pd
 from amply import Amply
 
-from otoole.read_strategies import ReadDatafile
+from otoole.read_strategies import ReadDatafile, ReadMemory
+
+
+class TestReadMemoryStrategy:
+    def test_read_memory(self):
+
+        data = [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            ["SIMPLICITY", "RAWSUG", 2015, 0.51],
+        ]
+        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"])
+        parameters = {"AccumulatedAnnualDemand": df}
+
+        actual, default_values = ReadMemory(parameters).read()
+
+        expected = {
+            "AccumulatedAnnualDemand": pd.DataFrame(
+                data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"]
+            )
+        }
+
+        assert "AccumulatedAnnualDemand" in actual.keys()
+        pd.testing.assert_frame_equal(
+            actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
+        )
 
 
 class TestConfig:
