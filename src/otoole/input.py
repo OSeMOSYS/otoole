@@ -207,4 +207,4 @@ class ReadStrategy(Strategy):
 
     @abstractmethod
     def read(self, filepath: str) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        pass
+        raise NotImplementedError()

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from amply import Amply
@@ -23,6 +23,21 @@ EXCEL_TO_CSV = {
 }
 
 CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
+
+
+class ReadMemory(ReadStrategy):
+    def __init__(self, parameters: Dict[str, Dict], user_config: Optional[Dict] = None):
+        super().__init__(user_config)
+        self._parameters = parameters
+
+    def read(
+        self, filepath: str = None,
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+
+        config = self.config
+        default_values = self._read_default_values(config)
+
+        return self._parameters, default_values
 
 
 class ReadTabular(ReadStrategy):
