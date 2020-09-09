@@ -35,9 +35,14 @@ class ConvertLine(object):
         self.start_year = start_year
         self.end_year = end_year
         self.output_format = output_format
+        self.results_config = read_packaged_file("config.yaml", "otoole.results")
+        self.number = len(self.results_config[self.data[0]]["indices"])
 
     def _do_it(self) -> Tuple:
-        raise NotImplementedError()
+        variable = self.data[0]
+        dimensions = tuple(self.data[1 : (self.number)])
+        values = self.data[(self.number) :]
+        return (variable, dimensions, values)
 
     def convert(self) -> List[str]:
         if self.output_format == "cbc":
@@ -95,43 +100,6 @@ class ConvertLine(object):
         return cbc_data
 
 
-class RegionTimeSliceTechnologyMode(ConvertLine):
-    def _do_it(self) -> Tuple:
-        """Produces output indexed by Region, Timeslice, Tech and Mode
-
-        ``0 VariableName(REGION,SD1D,TECHCODE01,2,2015) 42.69 0\n``
-
-        """
-        variable = self.data[0]
-        region = self.data[1]
-        timeslice = self.data[2]
-        technology = self.data[3]
-        mode = self.data[4]
-        values = self.data[5:]
-
-        dimensions = (region, timeslice, technology, mode)
-
-        return (variable, dimensions, values)
-
-
-class RegionTechnology(ConvertLine):
-    def _do_it(self) -> Tuple:
-        """Produces output indexed by dimensions Region and Technology
-
-        ``0 VariableName(REGION,TECHCODE01,2015) 42.69 0\n``
-
-        """
-        variable = self.data[0]
-        region = self.data[1]
-        technology = self.data[2]
-
-        dimensions = (region, technology)
-
-        values = self.data[3:]
-
-        return (variable, dimensions, values)
-
-
 def process_line(
     line: str, start_year: int, end_year: int, output_format: str
 ) -> List[str]:
@@ -149,23 +117,8 @@ def process_line(
         The file format required - either ``csv`` or ``cbc``
     """
     row_as_list = line.split("\t")
-    variable = row_as_list[0]
-    if variable in [
-        "NewCapacity",
-        "TotalCapacityAnnual",
-        "CapitalInvestment",
-        "AnnualFixedOperatingCost",
-        "AnnualVariableOperatingCost",
-    ]:
-        convertor = RegionTechnology(
-            row_as_list, start_year, end_year, output_format
-        ).convert()
-    elif variable in ["RateOfActivity"]:
-        convertor = RegionTimeSliceTechnologyMode(
-            row_as_list, start_year, end_year, output_format
-        ).convert()
-    else:
-        convertor = []
+
+    convertor = ConvertLine(row_as_list, start_year, end_year, output_format).convert()
 
     return convertor
 
@@ -186,7 +139,6 @@ def convert_cplex_file(
     output_filename : str
         Path for the processed data to be written to
     """
-
     with open(output_filename, "w") as cbc_file:
         with open(cplex_filename, "r") as cplex_file:
             for linenum, line in enumerate(cplex_file):
