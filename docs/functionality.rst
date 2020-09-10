@@ -104,6 +104,32 @@ so as to speed up the model matrix generation and solution times.
 As of PR #40 *otoole* now supports the majority of these calculated results so as to match
 those produced by the long version of the code.
 
+``otoole cplex``
+================
+
+If you're using CPLEX, *otoole* contains a script which converts the CPLEX output to
+something that looks like CBC. You can then use the ``otoole results`` command to
+produce CSVs of the output::
+
+    $ otoole cplex --help
+
+    usage: otoole cplex [-h] [-s START_YEAR] [-e END_YEAR]
+                        cplex_file output_file {csv,cbc}
+
+    positional arguments:
+    cplex_file            The filepath of the OSeMOSYS cplex output file
+    output_file           The filepath of the converted file that will be
+                            written
+    {csv,cbc}
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -s START_YEAR, --start_year START_YEAR
+                            Output only the results from this year onwards
+    -e END_YEAR, --end_year END_YEAR
+                            Output only the results upto and including this year
+
+
 ``otoole results``
 ==================
 

@@ -7,9 +7,9 @@ from pytest import mark
 import pandas as pd
 
 from otoole.results.convert import (
+    ConvertLine,
     convert_cbc_to_dataframe,
     convert_dataframe_to_csv,
-    process_line,
 )
 
 
@@ -207,7 +207,8 @@ class TestCplexToCsv:
     @mark.parametrize("cplex_input,expected", test_data)
     def test_convert_from_cplex_to_cbc(self, cplex_input, expected):
 
-        actual = process_line(cplex_input, 2015, 2070, "csv")
+        row_as_list = cplex_input.split("\t")
+        actual = ConvertLine(row_as_list, 2015, 2070, "csv").convert()
         assert actual == expected
 
 
@@ -246,5 +247,6 @@ class TestCplexToCbc:
     @mark.parametrize("cplex_input,expected", test_data)
     def test_convert_from_cplex_to_cbc(self, cplex_input, expected):
 
-        actual = process_line(cplex_input, 2015, 2070, "cbc")
+        row_as_list = cplex_input.split("\t")
+        actual = ConvertLine(row_as_list, 2015, 2070, "cbc").convert()
         assert actual == expected

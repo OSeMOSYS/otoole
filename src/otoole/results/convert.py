@@ -100,29 +100,6 @@ class ConvertLine(object):
         return cbc_data
 
 
-def process_line(
-    line: str, start_year: int, end_year: int, output_format: str
-) -> List[str]:
-    """Processes an individual line in a CPLEX file
-
-    A different ConvertLine implementation is chosen depending upon the
-    variable name
-
-    Arguments
-    ---------
-    line: str
-    start_year: int
-    end_year: int
-    output_format: str
-        The file format required - either ``csv`` or ``cbc``
-    """
-    row_as_list = line.split("\t")
-
-    convertor = ConvertLine(row_as_list, start_year, end_year, output_format).convert()
-
-    return convertor
-
-
 def convert_cplex_file(
     cplex_filename: str,
     output_filename: str,
@@ -143,9 +120,12 @@ def convert_cplex_file(
         with open(cplex_filename, "r") as cplex_file:
             for linenum, line in enumerate(cplex_file):
                 try:
-                    convertor = process_line(line, start_year, end_year, output_format)
+                    row_as_list = line.split("\t")
+                    convertor = ConvertLine(
+                        row_as_list, start_year, end_year, output_format
+                    )
                     if convertor:
-                        cbc_file.writelines(convertor)
+                        cbc_file.writelines(convertor.convert())
                 except ValueError:
                     msg = "Error caused at line {}: {}"
                     raise ValueError(msg.format(linenum, line))
