@@ -65,7 +65,7 @@ NewCapacity:
     default: 0
     calculated: False
 NewStorageCapacity:
-    indices: [REGION, s in STORAGE, YEAR]
+    indices: [REGION, STORAGE, YEAR]
     type: param
     dtype: float
     default: 0
@@ -125,7 +125,7 @@ SalvageValue:
     default: 0
     calculated: False
 SalvageValueStorage:
-    indices: [REGION, s in STORAGE, YEAR]
+    indices: [REGION, STORAGE, YEAR]
     type: param
     dtype: float
     default: 0
