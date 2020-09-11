@@ -72,6 +72,9 @@ help function::
 
     otoole --help
 
+Documentation
+=============
+A more detailed documentation of otoole can be found here: https://otoole.readthedocs.io/en/stable/index.html
 
 Contributing
 ============
