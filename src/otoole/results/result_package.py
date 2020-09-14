@@ -190,7 +190,7 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("AnnualEmissions", str(ex)))
 
-        mid = emission_activity_ratio.mul(yearsplit, fill_value=0.0)
+        mid = emission_activity_ratio.mul(yearsplit)
         data = mid.mul(rate_of_activity, fill_value=0.0)
 
         if not data.empty:

@@ -21,7 +21,7 @@ class TestReadMemoryStrategy:
         expected = {
             "AccumulatedAnnualDemand": pd.DataFrame(
                 data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"]
-            )
+            ).set_index(["REGION", "FUEL", "YEAR"])
         }
 
         assert "AccumulatedAnnualDemand" in actual.keys()
@@ -118,7 +118,7 @@ class TestReadDatafile:
             ],
             columns=["REGION", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR", "VALUE"],
         )
-
+        print(actual, expected)
         pd.testing.assert_frame_equal(actual["VariableCost"], expected)
 
     def test_convert_amply_data_to_list_of_lists(self):

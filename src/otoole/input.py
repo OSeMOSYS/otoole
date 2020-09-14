@@ -236,6 +236,16 @@ class ReadStrategy(Strategy):
     Strategies.
     """
 
+    def _check_index(self, input_data: Dict):
+        """Checks and applied that an index is applied to the parameter DataFrame
+        """
+        for name, df in input_data.items():
+            details = self.config[name]
+            try:
+                df.set_index(details["indices"], inplace=True)
+            except KeyError:
+                logger.debug("Parameter %s is indexed", name)
+
     @abstractmethod
     def read(self, filepath: str) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         raise NotImplementedError()

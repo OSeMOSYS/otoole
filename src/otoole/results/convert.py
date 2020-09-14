@@ -206,7 +206,10 @@ def convert_dataframe_to_csv(
 
             df = df.rename(columns={"Value": "VALUE"})
 
-            results[name] = df[indices + ["VALUE"]].set_index(indices)
+            columns = indices + ["VALUE"]
+
+            df = df[columns]
+            results[name] = df.set_index(details["indices"])
 
         else:
             not_found.append(name)
