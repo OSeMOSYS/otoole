@@ -282,7 +282,6 @@ class TestCalculateAnnualEmissions:
             data=[["SIMPLICITY", "CO2", 2014, 1.0]],
             columns=["REGION", "EMISSION", "YEAR", "VALUE"],
         ).set_index(["REGION", "EMISSION", "YEAR"])
-
         assert_frame_equal(actual, expected)
 
 

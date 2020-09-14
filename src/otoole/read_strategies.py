@@ -41,7 +41,7 @@ class ReadMemory(ReadStrategy):
 
         config = self.config
         default_values = self._read_default_values(config)
-
+        self._check_index(self._parameters)
         return self._parameters, default_values
 
 
@@ -133,6 +133,8 @@ class ReadExcel(_ReadTabular):
 
             input_data[mod_name] = narrow_checked
 
+        self._check_index(input_data)
+
         return input_data, default_values
 
 
@@ -176,6 +178,8 @@ class ReadCsv(_ReadTabular):
 
             input_data[parameter] = narrow_checked
 
+        self._check_index(input_data)
+
         return input_data, default_values
 
 
@@ -184,6 +188,7 @@ class ReadDatapackage(ReadStrategy):
         inputs = read_datapackage(filepath)
         default_resource = inputs.pop("default_values").set_index("name").to_dict()
         default_values = default_resource["default_value"]
+        self._check_index(inputs)
         return inputs, default_values
 
 
@@ -194,7 +199,7 @@ class ReadDatafile(ReadStrategy):
         default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)
-
+        self._check_index(inputs)
         return inputs, default_values
 
     def read_in_datafile(self, path_to_datafile: str, config: Dict) -> Amply:
@@ -258,7 +263,7 @@ class ReadDatafile(ReadStrategy):
         for name in datafile_parser.symbols.keys():
             logger.debug("Extracting data for %s", name)
             if config[name]["type"] == "param":
-                indices = config[name]["indices"]
+                indices = config[name]["indices"].copy()
                 indices_dtypes = [config[index]["dtype"] for index in indices]
                 indices.append("VALUE")
                 indices_dtypes.append("float")
