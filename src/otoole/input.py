@@ -9,6 +9,8 @@ Example
 Convert an in-memory dictionary of pandas DataFrames containing OSeMOSYS parameters
 to an Excel spreadsheet::
 
+>>> from otoole.read_strategies import ReadMemory
+>>> from otoole.write_strategies import WriteExcel
 >>> reader = ReadMemory(parameters)
 >>> writer = WriteExcel()
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
@@ -16,6 +18,8 @@ to an Excel spreadsheet::
 
 Convert a GNUMathProg datafile to a folder of CSV files::
 
+>>> from otoole.read_strategies import ReadDataFile
+>>> from otoole.write_strategies import WriteCsv
 >>> reader = ReadDataFile()
 >>> writer = WriteCsv()
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
@@ -23,6 +27,8 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 
 Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
 
+>>> from otoole.read_strategies import ReadDataFile
+>>> from otoole.write_strategies import WriteDatapackage
 >>> reader = ReadDataFile()
 >>> writer = WriteDatapackage()
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
