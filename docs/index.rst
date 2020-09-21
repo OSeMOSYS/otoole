@@ -13,11 +13,13 @@ Check the version installed::
 
 Download an OSeMOSYS datapackage and convert it to a modelfile::
 
-    otoole convert datapackage datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip simplicity.txt
+    wget https://zenodo.org/record/3707794/files/OSeMOSYS/simplicity-v0.2.1.zip
+    unzip simplicity-v0.2.1.zip -d simplicity
+    otoole convert datapackage datafile simplicity/OSeMOSYS-simplicity-11a3a26/datapackage.json ./simplicity.txt
 
 Visualise the Reference Energy System::
 
-    otoole viz res https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip res.png && open res.png
+    otoole viz res https://zenodo.org/record/3707794/files/OSeMOSYS/simplicity-v0.2.1.zip res.png && open res.png
 
 Alternatively, convert an OSeMOSYS datafile to a datapackage::
 
@@ -27,7 +29,7 @@ Validate the names of technologies and fuels against the standard
 naming convention and identify isolated fuels, emissions and
 technologies::
 
-    otoole validate datapackage https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip
+    otoole validate datapackage https://zenodo.org/record/3707794/files/OSeMOSYS/simplicity-v0.2.1.zip
 
 
 Contents
