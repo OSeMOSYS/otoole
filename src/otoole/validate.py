@@ -37,7 +37,7 @@ from typing import Dict, List, Sequence
 
 import networkx.algorithms.isolate as isolate
 
-from otoole import read_datapackage, read_packaged_file
+from otoole.utils import read_datapackage, read_packaged_file
 from otoole.visualise.res import create_graph
 
 logger = logging.getLogger(__name__)

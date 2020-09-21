@@ -4,9 +4,9 @@ from typing import Any, TextIO
 
 import pandas as pd
 
-from otoole import read_packaged_file
 from otoole.input import WriteStrategy
 from otoole.read_strategies import CSV_TO_EXCEL
+from otoole.utils import read_packaged_file
 
 logger = logging.getLogger(__name__)
 

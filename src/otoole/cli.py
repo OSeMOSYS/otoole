@@ -43,11 +43,12 @@ import argparse
 import logging
 import sys
 
-from otoole import __version__, read_packaged_file
+from otoole import __version__
 from otoole.input import Context
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadDatapackage, ReadExcel
 from otoole.results import convert_cbc_to_csv
 from otoole.results.convert import convert_cplex_file
+from otoole.utils import read_packaged_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
 from otoole.write_strategies import (

@@ -8,9 +8,9 @@ from typing import Dict, List, Optional, Set, TextIO, Tuple, Union
 
 import pandas as pd
 
-from otoole import read_packaged_file
 from otoole.read_strategies import ReadDatafile, ReadDatapackage
 from otoole.results.result_package import ResultsPackage
+from otoole.utils import read_packaged_file
 
 LOGGER = logging.getLogger(__name__)
 

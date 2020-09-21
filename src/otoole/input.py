@@ -46,7 +46,7 @@ from typing import Any, Dict, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
-from otoole import read_packaged_file
+from otoole.utils import read_packaged_file
 
 logger = logging.getLogger(__name__)
 
