@@ -25,7 +25,7 @@ def check_set_datatype(
     datatype = config_details[set_name]["dtype"]
     logger.debug("Columns for set %s are: %s", set_name, narrow.columns)
     if narrow.iloc[:, 0].dtype != datatype:
-        logger.warning("dtype does not match %s for set %s", datatype, set_name)
+        logger.info("dtype does not match %s for set %s", datatype, set_name)
     return narrow
 
 
@@ -54,7 +54,7 @@ def check_datatypes(
             datatype = config_details[column]["dtype"]
             dtypes[column] = datatype
         if narrow[column].dtype != datatype:
-            logger.warning(
+            logger.info(
                 "dtype of column %s does not match %s for parameter %s",
                 column,
                 datatype,
