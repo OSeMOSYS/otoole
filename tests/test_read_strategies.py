@@ -13,32 +13,47 @@ from otoole.results.results import ReadCbc
 
 class TestReadCbc:
 
-    test_data = [
-        (
-            dedent(
-                """Optimal - objective value 4483.96932237
-                             1 TotalDiscountedCost(SIMPLICITY,2015)                                                   187.01576                       0
-                             2 TotalDiscountedCost(SIMPLICITY,2016)                                                   183.30788                       0
-                             3 TotalDiscountedCost(SIMPLICITY,2017)                                                   181.05465                       0
-                             4 TotalDiscountedCost(SIMPLICITY,2018)                                                   218.08923                       0
-                             5 TotalDiscountedCost(SIMPLICITY,2019)                                                   193.85792                       0
-                             6 TotalDiscountedCost(SIMPLICITY,2020)                                                   233.79202                       0
+    total_cost_cbc = dedent(
+        """Optimal - objective value 4483.96932237
+                             1 TotalDiscountedCost(SIMPLICITY,2015){0}187.01576{1}0
+                             2 TotalDiscountedCost(SIMPLICITY,2016){0}183.30788{1}0
+                             3 TotalDiscountedCost(SIMPLICITY,2017){0}181.05465{1}0
+                             4 TotalDiscountedCost(SIMPLICITY,2018){0}218.08923{1}0
+                             5 TotalDiscountedCost(SIMPLICITY,2019){0}193.85792{1}0
+                             6 TotalDiscountedCost(SIMPLICITY,2020){0}233.79202{1}0
 
-                         """
-            ),
-            pd.DataFrame(
-                data=[
-                    ["TotalDiscountedCost", "SIMPLICITY,2015", 187.01576],
-                    ["TotalDiscountedCost", "SIMPLICITY,2016", 183.30788],
-                    ["TotalDiscountedCost", "SIMPLICITY,2017", 181.05465],
-                    ["TotalDiscountedCost", "SIMPLICITY,2018", 218.08923],
-                    ["TotalDiscountedCost", "SIMPLICITY,2019", 193.85792],
-                    ["TotalDiscountedCost", "SIMPLICITY,2020", 233.79202],
-                ],
-                columns=["Variable", "Index", "Value"],
-            ),
+                         """.format(
+            " " * 51, " " * 23
         )
-    ]
+    )
+
+    total_cost_cbc_mid = pd.DataFrame(
+        data=[
+            ["TotalDiscountedCost", "SIMPLICITY,2015", 187.01576],
+            ["TotalDiscountedCost", "SIMPLICITY,2016", 183.30788],
+            ["TotalDiscountedCost", "SIMPLICITY,2017", 181.05465],
+            ["TotalDiscountedCost", "SIMPLICITY,2018", 218.08923],
+            ["TotalDiscountedCost", "SIMPLICITY,2019", 193.85792],
+            ["TotalDiscountedCost", "SIMPLICITY,2020", 233.79202],
+        ],
+        columns=["Variable", "Index", "Value"],
+    )
+
+    total_cost_otoole_df = {
+        "TotalDiscountedCost": pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2015, 187.01576],
+                ["SIMPLICITY", 2016, 183.30788],
+                ["SIMPLICITY", 2017, 181.05465],
+                ["SIMPLICITY", 2018, 218.08923],
+                ["SIMPLICITY", 2019, 193.85792],
+                ["SIMPLICITY", 2020, 233.79202],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+    }
+
+    test_data = [(total_cost_cbc, total_cost_cbc_mid)]
 
     @mark.parametrize("cbc_input,expected", test_data, ids=["TotalDiscountedCost"])
     def test_read_cbc_to_dataframe(self, cbc_input, expected):
@@ -49,35 +64,7 @@ class TestReadCbc:
 
     test_data_2 = [
         # First case
-        (
-            pd.DataFrame(
-                data=[
-                    ["TotalDiscountedCost", "SIMPLICITY,2015", 187.01576],
-                    ["TotalDiscountedCost", "SIMPLICITY,2016", 183.30788],
-                    ["TotalDiscountedCost", "SIMPLICITY,2017", 181.05465],
-                    ["TotalDiscountedCost", "SIMPLICITY,2018", 218.08923],
-                    ["TotalDiscountedCost", "SIMPLICITY,2019", 193.85792],
-                    ["TotalDiscountedCost", "SIMPLICITY,2020", 233.79202],
-                ],
-                columns=["Variable", "Index", "Value"],
-            ),
-            {},
-            (
-                {
-                    "TotalDiscountedCost": pd.DataFrame(
-                        data=[
-                            ["SIMPLICITY", 2015, 187.01576],
-                            ["SIMPLICITY", 2016, 183.30788],
-                            ["SIMPLICITY", 2017, 181.05465],
-                            ["SIMPLICITY", 2018, 218.08923],
-                            ["SIMPLICITY", 2019, 193.85792],
-                            ["SIMPLICITY", 2020, 233.79202],
-                        ],
-                        columns=["REGION", "YEAR", "VALUE"],
-                    ).set_index(["REGION", "YEAR"])
-                }
-            ),
-        ),
+        (total_cost_cbc_mid, {}, total_cost_otoole_df),
         # Second case
         (
             pd.DataFrame(
@@ -113,6 +100,20 @@ class TestReadCbc:
         assert isinstance(actual, dict)
         for name, df in actual.items():
             pd.testing.assert_frame_equal(df, expected[name])
+
+    test_data_3 = [(total_cost_cbc, {}, total_cost_otoole_df)]  # type: List
+
+    @mark.parametrize(
+        "cbc_solution,input_data,expected", test_data_3, ids=["TotalDiscountedCost"],
+    )
+    def test_convert_cbc_to_csv_long_read(self, cbc_solution, input_data, expected):
+        cbc_reader = ReadCbc()
+        with StringIO(cbc_solution) as file_buffer:
+            actual = cbc_reader.read(file_buffer, kwargs={"input_data": input_data})[0][
+                "TotalDiscountedCost"
+            ]
+        assert isinstance(actual, pd.DataFrame)
+        pd.testing.assert_frame_equal(actual, expected["TotalDiscountedCost"])
 
     def test_convert_cbc_to_csv_short(self):
         cbc_results = pd.DataFrame(
@@ -168,6 +169,16 @@ class TestReadCbc:
         actual = cbc_reader._convert_dataframe_to_csv(cbc_results, input_data)
         assert isinstance(actual, dict)
         pd.testing.assert_frame_equal(actual["AnnualEmissions"], expected)
+
+    def test_solution_to_dataframe(self):
+        input_file = self.total_cost_cbc
+        reader = ReadCbc()
+        with StringIO(input_file) as file_buffer:
+            actual = reader.read(file_buffer)
+        expected = self.total_cost_otoole_df
+        pd.testing.assert_frame_equal(
+            actual[0]["TotalDiscountedCost"], expected["TotalDiscountedCost"]
+        )
 
 
 class TestReadMemoryStrategy:
@@ -328,7 +339,7 @@ class TestReadDatafile:
         that user should use a custom configuration).
         """
         read = ReadDatafile()
-        config = read.config
+        config = read.input_config
         amply_datafile = amply = Amply(
             """set REGION;
             set TECHNOLOGY;

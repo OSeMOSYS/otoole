@@ -5,14 +5,10 @@ import pandas as pd
 from otoole.results.convert import ConvertLine
 
 from otoole.results.convert import (
-    ConvertLine,
-    check_duplicate_index,
-    convert_cbc_to_dataframe,
-    convert_cbc_to_df,
-    convert_dataframe_to_csv,
-    identify_duplicate,
-    rename_duplicate_column,
-)
+    ConvertLine)
+
+from otoole.results.results import ReadCbc, rename_duplicate_column, check_duplicate_index, identify_duplicate
+
 
 class TestCbcToOtooleDataFrame:
 
@@ -41,7 +37,7 @@ class TestCbcToOtooleDataFrame:
     @mark.parametrize("cbc_input,expected", test_data)
     def test_read_cbc_to_otoole_dataframe(self, cbc_input, expected):
         with StringIO(cbc_input) as file_buffer:
-            actual = convert_cbc_to_df(file_buffer, {})["Trade"]
+            actual = ReadCbc().read(file_buffer, kwargs={'input_data': {}})[0]["Trade"]
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_read_cbc_dataframe_to_otoole_dataframe(self):
@@ -56,7 +52,7 @@ class TestCbcToOtooleDataFrame:
             ],
             columns=["Variable", "Index", "Value"],
         )
-        actual = convert_dataframe_to_csv(prelim_data, {})["Trade"]
+        actual = ReadCbc()._convert_dataframe_to_csv(prelim_data, {})["Trade"]
         pd.testing.assert_frame_equal(actual, self.otoole_data)
 
     test_data_2 = [

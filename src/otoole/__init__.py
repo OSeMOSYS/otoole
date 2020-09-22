@@ -15,6 +15,7 @@ from otoole.write_strategies import (
     WriteDatapackage,
     WriteExcel,
 )
+from otoole.results.results import ReadCbc
 
 try:
     # Change here if project is renamed and does not equal the package name
@@ -28,6 +29,7 @@ finally:
 
 __all__ = [
     "Context",
+    "ReadCbc",
     "ReadCsv",
     "ReadDatafile",
     "ReadDatapackage",

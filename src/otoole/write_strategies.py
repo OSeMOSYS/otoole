@@ -135,6 +135,16 @@ class WriteDatafile(WriteStrategy):
 
 
 class WriteCsv(WriteStrategy):
+    """Write parameters to comma-separated value files
+
+    Arguments
+    ---------
+    filepath: str, default=None
+        The path to write a folder of csv files
+    default_values: dict, default=None
+    user_config: dict, default=None
+    """
+
     def _header(self) -> Any:
         os.makedirs(os.path.join(self.filepath), exist_ok=True)
         return None
