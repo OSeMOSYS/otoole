@@ -155,3 +155,23 @@ class TestReadDatafile:
         actual = read._load_parameter_definitions(config)
         expected = "set TestSet;\n"
         assert actual == expected
+
+    def test_catch_error_no_parameter(self, caplog):
+        """Fix for https://github.com/OSeMOSYS/otoole/issues/70 where parameter in
+        datafile but not in config causes error.  Instead, throw warning (and advise
+        that user should use a custom configuration).
+        """
+        read = ReadDatafile()
+        config = read.config
+        amply_datafile = amply = Amply(
+            """set REGION;
+            set TECHNOLOGY;
+            set MODE_OF_OPERATION;
+            set YEAR;"""
+        )
+        amply.load_string("""param ResultsPath := 'test_path';""")
+        read._convert_amply_to_dataframe(amply_datafile, config)
+        assert (
+            "Parameter ResultsPath could not be found in the configuration."
+            in caplog.text
+        )

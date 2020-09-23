@@ -258,38 +258,55 @@ class ReadDatafile(ReadStrategy):
         dict of pandas.DataFrame
         """
 
-        dict_of_dataframes = {}
+        dict_of_dataframes = {}  # type: Dict[str, pd.DataFrame]
 
         for name in datafile_parser.symbols.keys():
             logger.debug("Extracting data for %s", name)
-            if config[name]["type"] == "param":
-                indices = config[name]["indices"].copy()
-                indices_dtypes = [config[index]["dtype"] for index in indices]
-                indices.append("VALUE")
-                indices_dtypes.append("float")
-
-                raw_data = datafile_parser[name].data
-                data = self._convert_amply_data_to_list(raw_data)
-                df = pd.DataFrame(data=data, columns=indices)
-                try:
-                    dict_of_dataframes[name] = check_datatypes(df, config, name)
-                except ValueError as ex:
-                    msg = "Validation error when checking datatype of {}: {}".format(
-                        name, str(ex)
-                    )
-                    raise ValueError(msg)
-            elif config[name]["type"] == "set":
-                data = datafile_parser[name].data
-                logger.debug(data)
-
-                indices = ["VALUE"]
-                df = pd.DataFrame(
-                    data=data, columns=indices, dtype=config[name]["dtype"]
+            if name in config and config[name]["type"] == "param":
+                dict_of_dataframes[name] = self.extract_param(
+                    config, name, datafile_parser, dict_of_dataframes
                 )
-                dict_of_dataframes[name] = check_set_datatype(df, config, name)
-            logger.debug("\n%s\n", dict_of_dataframes[name])
+            elif name in config and config[name]["type"] == "set":
+                dict_of_dataframes[name] = self.extract_set(
+                    datafile_parser, name, config, dict_of_dataframes
+                )
+                logger.debug("\n%s\n", dict_of_dataframes[name])
+            else:
+                logger.warning(
+                    "Parameter {} could not be found in the configuration.".format(name)
+                )
 
         return dict_of_dataframes
+
+    def extract_set(
+        self, datafile_parser, name, config, dict_of_dataframes
+    ) -> pd.DataFrame:
+        data = datafile_parser[name].data
+        logger.debug(data)
+
+        indices = ["VALUE"]
+        df = pd.DataFrame(data=data, columns=indices, dtype=config[name]["dtype"])
+
+        return check_set_datatype(df, config, name)
+
+    def extract_param(
+        self, config, name, datafile_parser, dict_of_dataframes
+    ) -> pd.DataFrame:
+        indices = config[name]["indices"].copy()
+        indices_dtypes = [config[index]["dtype"] for index in indices]
+        indices.append("VALUE")
+        indices_dtypes.append("float")
+
+        raw_data = datafile_parser[name].data
+        data = self._convert_amply_data_to_list(raw_data)
+        df = pd.DataFrame(data=data, columns=indices)
+        try:
+            return check_datatypes(df, config, name)
+        except ValueError as ex:
+            msg = "Validation error when checking datatype of {}: {}".format(
+                name, str(ex)
+            )
+            raise ValueError(msg)
 
     def _convert_amply_data_to_list(self, amply_data: Dict) -> List[List]:
         """Flattens a dictionary into a list of lists
