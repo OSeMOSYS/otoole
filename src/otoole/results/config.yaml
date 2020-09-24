@@ -161,7 +161,7 @@ TotalTechnologyModelPeriodActivity:
     default: 0
     calculated: True
 Trade:
-    indices: [REGION, rr in REGION, TIMESLICE, FUEL, YEAR]
+    indices: [REGION, REGION, TIMESLICE, FUEL, YEAR]
     type: param
     dtype: float
     default: 0
