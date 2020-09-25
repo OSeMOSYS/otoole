@@ -4,7 +4,7 @@
 import argparse
 import logging
 import os
-from typing import Dict, List, Optional, TextIO, Tuple, Union
+from typing import Dict, List, Optional, Set, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -209,8 +209,16 @@ def convert_dataframe_to_csv(
             columns = indices + ["VALUE"]
 
             df = df[columns]
-            results[name] = df.set_index(details["indices"])
 
+            index = details["indices"].copy()
+            # catches pandas error when there are duplicate column indices
+            if check_duplicate_index(index):
+                index = rename_duplicate_column(index)
+                LOGGER.debug("Original column names: %s", columns)
+                renamed_columns = rename_duplicate_column(columns)
+                LOGGER.debug("New column names: %s", renamed_columns)
+                df.columns = renamed_columns
+            results[name] = df.set_index(index)
         else:
             not_found.append(name)
 
@@ -238,6 +246,28 @@ def convert_dataframe_to_csv(
             )
 
     return results
+
+
+def check_duplicate_index(index: List) -> bool:
+    return len(set(index)) != len(index)
+
+
+def identify_duplicate(index: List) -> Union[int, bool]:
+    elements = set()  # type: Set
+    for counter, elem in enumerate(index):
+        if elem in elements:
+            return counter
+        else:
+            elements.add(elem)
+    return False
+
+
+def rename_duplicate_column(index: List) -> List:
+    column = index.copy()
+    location = identify_duplicate(column)
+    if location:
+        column[location] = "_" + column[location]
+    return column
 
 
 def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
