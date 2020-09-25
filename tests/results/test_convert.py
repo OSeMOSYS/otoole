@@ -9,8 +9,49 @@ import pandas as pd
 from otoole.results.convert import (
     ConvertLine,
     convert_cbc_to_dataframe,
+    convert_cbc_to_df,
     convert_dataframe_to_csv,
 )
+
+
+class TestCbcToOtooleDataFrame:
+
+    test_data = [
+        (
+            dedent(
+                """0 Trade(Globe,Globe,IP,L_AGR,2015) -0.0 0
+0 Trade(Globe,Globe,IP,L_AGR,2016) -0.0 0
+0 Trade(Globe,Globe,IP,L_AGR,2017) -0.0 0
+0 Trade(Globe,Globe,IP,L_AGR,2018) -0.0 0
+0 Trade(Globe,Globe,IP,L_AGR,2019) -0.0 0
+0 Trade(Globe,Globe,IP,L_AGR,2020) -0.0 0
+            """
+            ),
+            pd.DataFrame(
+                data=[
+                    ["Globe", "Globe", "IP", "L_AGR", 2016, -0.0],
+                    ["Globe", "Globe", "IP", "L_AGR", 2017, -0.0],
+                    ["Globe", "Globe", "IP", "L_AGR", 2018, -0.0],
+                    ["Globe", "Globe", "IP", "L_AGR", 2019, -0.0],
+                    ["Globe", "Globe", "IP", "L_AGR", 2020, -0.0],
+                ],
+                columns=[
+                    "REGION",
+                    "REGION",
+                    "TIMESLICE",
+                    "TECHNOLOGY",
+                    "YEAR",
+                    "VALUE",
+                ],
+            ),
+        )
+    ]
+
+    @mark.parametrize("cbc_input,expected", test_data)
+    def test_read_cbc_to_otoole_dataframe(self, cbc_input, expected):
+        with StringIO(cbc_input) as file_buffer:
+            actual = convert_cbc_to_df(file_buffer, {})
+        pd.testing.assert_frame_equal(actual, expected)
 
 
 class TestCbcSoltoDataFrame:
