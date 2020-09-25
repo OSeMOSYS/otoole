@@ -4,7 +4,7 @@
 import argparse
 import logging
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -131,7 +131,7 @@ def convert_cplex_file(
                     raise ValueError(msg.format(linenum, line))
 
 
-def convert_cbc_to_dataframe(data_file: str) -> pd.DataFrame:
+def convert_cbc_to_dataframe(data_file: Union[str, TextIO]) -> pd.DataFrame:
     """Reads a CBC solution file into a pandas DataFrame
 
     Arguments
@@ -261,6 +261,12 @@ def write_csvs(results_path: str, results: Dict[str, pd.DataFrame]):
             LOGGER.warning("Result parameter %s is empty", name)
 
 
+def convert_cbc_to_df(file_buffer: Union[str, TextIO], input_data: Dict):
+    df = convert_cbc_to_dataframe(file_buffer)
+    csv = convert_dataframe_to_csv(df, input_data)
+    return csv
+
+
 def convert_cbc_to_csv(
     from_file: str,
     to_file: str,
@@ -288,8 +294,8 @@ def convert_cbc_to_csv(
     else:
         input_data = {}
 
-    df = convert_cbc_to_dataframe(from_file)
-    csv = convert_dataframe_to_csv(df, input_data)
+    csv = convert_cbc_to_df(from_file, input_data)
+
     write_csvs(to_file, csv)
 
 
