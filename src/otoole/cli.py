@@ -45,6 +45,7 @@ import sys
 
 from otoole import (
     ReadCbc,
+    ReadCplex,
     ReadCsv,
     ReadDatafile,
     ReadDatapackage,
@@ -56,7 +57,6 @@ from otoole import (
     __version__,
 )
 from otoole.input import Context
-from otoole.results.convert import convert_cplex_file
 from otoole.utils import read_packaged_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
@@ -75,7 +75,7 @@ def validate_model(args):
 
 
 def cplex2cbc(args):
-    convert_cplex_file(
+    ReadCplex()._convert_cplex_file(
         args.cplex_file,
         args.output_file,
         args.start_year,

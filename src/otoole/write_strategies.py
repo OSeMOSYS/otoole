@@ -215,6 +215,6 @@ class WriteDatapackage(WriteCsv):
         with open(default_values_path, "w") as csv_file:
             csv_file.write("name,default_value\n")
 
-            for name, contents in self.config.items():
+            for name, contents in self.input_config.items():
                 if contents["type"] == "param":
                     csv_file.write("{},{}\n".format(name, contents["default"]))

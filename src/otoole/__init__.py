@@ -15,7 +15,7 @@ from otoole.write_strategies import (
     WriteDatapackage,
     WriteExcel,
 )
-from otoole.results.results import ReadCbc
+from otoole.results.results import ReadCbc, ReadCplex
 
 try:
     # Change here if project is renamed and does not equal the package name
@@ -31,6 +31,7 @@ __all__ = [
     "Context",
     "ReadCbc",
     "ReadCsv",
+    "ReadCplex",
     "ReadDatafile",
     "ReadDatapackage",
     "ReadExcel",

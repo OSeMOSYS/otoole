@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -96,45 +96,46 @@ class ConvertLine(object):
         return cbc_data
 
 
-# class ReadCplex(ReadStrategy):
-#     """
-#     """
+class ReadCplex(ReadStrategy):
+    """
+    """
 
-#     def read(self, filepath: str) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def read(
+        self, filepath: str, **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-#         with TemporaryFile("w") as output_file:
-#             self._convert_cplex_file(filepath, output_file.name)
+        pass
 
-#     def _convert_cplex_file(
-#         self,
-#         cplex_filename: str,
-#         output_filename: str,
-#         start_year=2015,
-#         end_year=2070,
-#         output_format="cbc",
-#     ):
-#         """Converts a CPLEX solution file into that of the CBC solution file
+    def _convert_cplex_file(
+        self,
+        cplex_filename: str,
+        output_filename: str,
+        start_year=2015,
+        end_year=2070,
+        output_format="cbc",
+    ):
+        """Converts a CPLEX solution file into that of the CBC solution file
 
-#         Arguments
-#         ---------
-#         cplex_filename : str
-#             Path to the transformed CPLEX solution file
-#         output_filename : str
-#             Path for the processed data to be written to
-#         """
-#         with open(output_filename, "w") as cbc_file:
-#             with open(cplex_filename, "r") as cplex_file:
-#                 for linenum, line in enumerate(cplex_file):
-#                     try:
-#                         row_as_list = line.split("\t")
-#                         convertor = ConvertLine(
-#                             row_as_list, start_year, end_year, output_format
-#                         )
-#                         if convertor:
-#                             cbc_file.writelines(convertor.convert())
-#                     except ValueError:
-#                         msg = "Error caused at line {}: {}"
-#                         raise ValueError(msg.format(linenum, line))
+        Arguments
+        ---------
+        cplex_filename : str
+            Path to the transformed CPLEX solution file
+        output_filename : str
+            Path for the processed data to be written to
+        """
+        with open(output_filename, "w") as cbc_file:
+            with open(cplex_filename, "r") as cplex_file:
+                for linenum, line in enumerate(cplex_file):
+                    try:
+                        row_as_list = line.split("\t")
+                        convertor = ConvertLine(
+                            row_as_list, start_year, end_year, output_format
+                        )
+                        if convertor:
+                            cbc_file.writelines(convertor.convert())
+                    except ValueError:
+                        msg = "Error caused at line {}: {}"
+                        raise ValueError(msg.format(linenum, line))
 
 
 class ReadCbc(ReadStrategy):
