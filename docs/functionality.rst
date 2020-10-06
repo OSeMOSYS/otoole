@@ -147,6 +147,8 @@ You're now ready to use otoole to generate a folder of CSV files from the CBC so
 *otoole* has duplicate Python methods for each of the result calculations performed in the long, short and fast OSeMOSYS
 implementations (which are only used when using GLPK as a solver).
 
+If using CPLEX, note that you need to first sort the CPLEX file which you can do from the command line e.g. ``sort cplex.sol``.
+
 ``otoole viz res``
 ==================
 
