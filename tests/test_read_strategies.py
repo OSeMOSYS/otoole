@@ -426,7 +426,6 @@ class TestReadDatafile:
             ],
             columns=["REGION", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR", "VALUE"],
         )
-        print(actual, expected)
         pd.testing.assert_frame_equal(actual["VariableCost"], expected)
 
     def test_convert_amply_data_to_list_of_lists(self):

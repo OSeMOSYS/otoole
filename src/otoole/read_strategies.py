@@ -224,7 +224,6 @@ class ReadDatafile(ReadStrategy):
         """
         parameter_definitions = self._load_parameter_definitions(config)
         datafile_parser = Amply(parameter_definitions)
-        logger.debug(datafile_parser)
 
         with open(path_to_datafile, "r") as datafile:
             datafile_parser.load_file(datafile)
@@ -252,7 +251,6 @@ class ReadDatafile(ReadStrategy):
             elif attributes["type"] == "set":
                 elements += "set {};\n".format(name)
 
-        logger.debug(elements)
         return elements
 
     def _convert_amply_to_dataframe(
@@ -282,7 +280,6 @@ class ReadDatafile(ReadStrategy):
                 dict_of_dataframes[name] = self.extract_set(
                     datafile_parser, name, config, dict_of_dataframes
                 )
-                logger.debug("\n%s\n", dict_of_dataframes[name])
             else:
                 logger.warning(
                     "Parameter {} could not be found in the configuration.".format(name)
@@ -294,7 +291,6 @@ class ReadDatafile(ReadStrategy):
         self, datafile_parser, name, config, dict_of_dataframes
     ) -> pd.DataFrame:
         data = datafile_parser[name].data
-        logger.debug(data)
 
         indices = ["VALUE"]
         df = pd.DataFrame(data=data, columns=indices, dtype=config[name]["dtype"])
