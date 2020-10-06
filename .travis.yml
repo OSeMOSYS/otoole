@@ -8,6 +8,7 @@ jobs:
   include:
   - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="false"
   - env: DISTRIB="conda" PYTHON_VERSION="3.8" COVERAGE="true"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.9" COVERAGE="false"
   allow_failures:
   - env: DISTRIB="conda" PYTHON_VERSION="3.9" COVERAGE="false"
 install:
