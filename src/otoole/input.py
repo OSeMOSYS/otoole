@@ -297,6 +297,6 @@ class ReadStrategy(Strategy):
 
     @abstractmethod
     def read(
-        self, filepath: str, **kwargs
+        self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         raise NotImplementedError()

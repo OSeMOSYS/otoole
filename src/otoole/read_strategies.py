@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 from amply import Amply
@@ -36,7 +36,7 @@ class ReadMemory(ReadStrategy):
         self._parameters = parameters
 
     def read(
-        self, filepath: str = None, **kwargs
+        self, filepath: Union[str, TextIO] = None, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
         config = self.input_config
@@ -46,14 +46,14 @@ class ReadMemory(ReadStrategy):
 
 
 class _ReadTabular(ReadStrategy):
-    def _check_set(self, df, config_details, name):
+    def _check_set(self, df: pd.DataFrame, config_details: Dict, name: str):
 
         logger.info("Checking set %s", name)
         narrow = df
 
         return narrow
 
-    def _check_parameter(self, df, config_details, name):
+    def _check_parameter(self, df: pd.DataFrame, config_details: Dict, name: str):
         actual_headers = df.columns
         expected_headers = config_details["indices"]
         logger.debug("Expected headers for %s: %s", name, expected_headers)
@@ -97,7 +97,7 @@ class ReadExcel(_ReadTabular):
     """
 
     def read(
-        self, filepath, **kwargs
+        self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
         config = self.input_config

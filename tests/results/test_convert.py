@@ -1,13 +1,16 @@
-from pytest import mark
 from io import StringIO
 from textwrap import dedent
+
+from pytest import mark
+
 import pandas as pd
-from otoole.results.convert import ConvertLine
 
-from otoole.results.convert import (
-    ConvertLine)
-
-from otoole.results.results import ReadCbc, rename_duplicate_column, check_duplicate_index, identify_duplicate
+from otoole.results.results import (
+    ReadCbc,
+    check_duplicate_index,
+    identify_duplicate,
+    rename_duplicate_column,
+)
 
 
 class TestCbcToOtooleDataFrame:
@@ -37,7 +40,7 @@ class TestCbcToOtooleDataFrame:
     @mark.parametrize("cbc_input,expected", test_data)
     def test_read_cbc_to_otoole_dataframe(self, cbc_input, expected):
         with StringIO(cbc_input) as file_buffer:
-            actual = ReadCbc().read(file_buffer, kwargs={'input_data': {}})[0]["Trade"]
+            actual = ReadCbc().read(file_buffer, kwargs={"input_data": {}})[0]["Trade"]
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_read_cbc_dataframe_to_otoole_dataframe(self):
@@ -79,84 +82,4 @@ class TestCbcToOtooleDataFrame:
         data = ["REGION", "REGION", "TIMESLICE", "FUEL", "YEAR"]
         actual = rename_duplicate_column(data)
         expected = ["REGION", "_REGION", "TIMESLICE", "FUEL", "YEAR"]
-        assert actual == expected
-
-
-class TestCplexToCsv:
-
-    test_data = [
-        (
-            "AnnualFixedOperatingCost	REGION	AOBACKSTOP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0		",
-            [],
-        ),
-        (
-            "AnnualFixedOperatingCost	REGION	CDBACKSTOP	0.0	0.0	137958.8400384134	305945.38410619126	626159.9611543404	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0",
-            [
-                'AnnualFixedOperatingCost,"REGION,CDBACKSTOP,2017",137958.8400384134\n',
-                'AnnualFixedOperatingCost,"REGION,CDBACKSTOP,2018",305945.3841061913\n',
-                'AnnualFixedOperatingCost,"REGION,CDBACKSTOP,2019",626159.9611543404\n',
-            ],
-        ),
-        (
-            """RateOfActivity	REGION	S1D1	CGLFRCFURX	1	0.0	0.0	0.0	0.0	0.0	0.3284446367303371	0.3451714779880536	0.3366163200621617	0.3394945166233896	0.3137488154250392	0.28605725055560716	0.2572505015401749	0.06757558148965725	0.0558936625751148	0.04330608461292407	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0""",
-            [
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2020",0.3284446367303371\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2021",0.3451714779880536\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2022",0.3366163200621617\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2023",0.3394945166233896\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2024",0.3137488154250392\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2025",0.28605725055560716\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2026",0.2572505015401749\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2027",0.06757558148965725\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2028",0.0558936625751148\n',
-                'RateOfActivity,"REGION,S1D1,CGLFRCFURX,1,2029",0.04330608461292407\n',
-            ],
-        ),
-    ]
-
-    @mark.parametrize("cplex_input,expected", test_data)
-    def test_convert_from_cplex_to_cbc(self, cplex_input, expected):
-
-        row_as_list = cplex_input.split("\t")
-        actual = ConvertLine(row_as_list, 2015, 2070, "csv").convert()
-        assert actual == expected
-
-
-class TestCplexToCbc:
-
-    test_data = [
-        (
-            "AnnualFixedOperatingCost	REGION	AOBACKSTOP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0		",
-            [],
-        ),
-        (
-            "AnnualFixedOperatingCost	REGION	CDBACKSTOP	0.0	0.0	137958.8400384134	305945.38410619126	626159.9611543404	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0",
-            [
-                "0 AnnualFixedOperatingCost(REGION,CDBACKSTOP,2017) 137958.8400384134 0\n",
-                "0 AnnualFixedOperatingCost(REGION,CDBACKSTOP,2018) 305945.3841061913 0\n",
-                "0 AnnualFixedOperatingCost(REGION,CDBACKSTOP,2019) 626159.9611543404 0\n",
-            ],
-        ),
-        (
-            """RateOfActivity	REGION	S1D1	CGLFRCFURX	1	0.0	0.0	0.0	0.0	0.0	0.3284446367303371	0.3451714779880536	0.3366163200621617	0.3394945166233896	0.3137488154250392	0.28605725055560716	0.2572505015401749	0.06757558148965725	0.0558936625751148	0.04330608461292407	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0""",
-            [
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2020) 0.3284446367303371 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2021) 0.3451714779880536 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2022) 0.3366163200621617 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2023) 0.3394945166233896 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2024) 0.3137488154250392 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2025) 0.28605725055560716 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2026) 0.2572505015401749 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2027) 0.06757558148965725 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2028) 0.0558936625751148 0\n",
-                "0 RateOfActivity(REGION,S1D1,CGLFRCFURX,1,2029) 0.04330608461292407 0\n",
-            ],
-        ),
-    ]
-
-    @mark.parametrize("cplex_input,expected", test_data)
-    def test_convert_from_cplex_to_cbc(self, cplex_input, expected):
-
-        row_as_list = cplex_input.split("\t")
-        actual = ConvertLine(row_as_list, 2015, 2070, "cbc").convert()
         assert actual == expected

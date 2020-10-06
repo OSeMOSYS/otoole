@@ -97,8 +97,8 @@ def result_matrix(args):
 
     if args.from_format == "cbc":
         read_strategy = ReadCbc()
-    # elif args.from_format == "cplex":
-    #     read_strategy = ReadCplex()
+    elif args.from_format == "cplex":
+        read_strategy = ReadCplex()
 
     if args.to_format == "csv":
         write_strategy = WriteCsv()
@@ -112,7 +112,7 @@ def result_matrix(args):
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
-        context.convert(args.from_path, args.to_path, kwargs={"input_data": input_data})
+        context.convert(args.from_path, args.to_path, input_data=input_data)
     else:
         raise NotImplementedError(msg)
 
@@ -190,7 +190,7 @@ def get_parser():
     result_parser.add_argument(
         "from_format",
         help="Result data format to convert from",
-        choices=sorted(["cbc"]),
+        choices=sorted(["cbc", "cplex"]),
     )
     result_parser.add_argument(
         "to_format", help="Result data format to convert to", choices=sorted(["csv"]),

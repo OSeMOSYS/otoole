@@ -4,96 +4,10 @@ from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
 import pandas as pd
 
 from otoole.input import ReadStrategy
+from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.result_package import ResultsPackage
-from otoole.utils import read_packaged_file
 
-# from tempfile import TemporaryFile
 LOGGER = logging.getLogger(__name__)
-
-
-class ConvertLine(object):
-    """Abstract class which defines the interface to the family of convertors
-
-    Inherit this class and implement the ``_do_it()`` method to produce the
-    data to be written out into a new format
-
-    Example
-    -------
-    >>> cplex_line = "AnnualCost	REGION	CDBACKSTOP	1.0	0.0	137958.8400384134"
-    >>> convertor = RegionTechnology()
-    >>> convertor.convert()
-    VariableName(REGION,TECHCODE01,2015)       42.69         0\\n
-    VariableName(REGION,TECHCODE01,2017)       137958.84         0\\n
-    """
-
-    def __init__(self, data: List, start_year: int, end_year: int, output_format="cbc"):
-        self.data = data
-        self.start_year = start_year
-        self.end_year = end_year
-        self.output_format = output_format
-        self.results_config = read_packaged_file("config.yaml", "otoole.results")
-        self.number = len(self.results_config[self.data[0]]["indices"])
-
-    def _do_it(self) -> Tuple:
-        variable = self.data[0]
-        dimensions = tuple(self.data[1 : (self.number)])
-        values = self.data[(self.number) :]
-        return (variable, dimensions, values)
-
-    def convert(self) -> List[str]:
-        if self.output_format == "cbc":
-            convert = self.convert_cbc()
-        elif self.output_format == "csv":
-            convert = self.convert_csv()
-        return convert
-
-    def convert_csv(self) -> List[str]:
-        """Format the data for writing to a csv file
-        """
-        data = []
-        variable, dimensions, values = self._do_it()
-
-        for index, value in enumerate(values):
-
-            year = self.start_year + index
-            if (value not in ["0.0", "0", ""]) and (year <= self.end_year):
-
-                try:
-                    value = float(value)
-                except ValueError:
-                    value = 0
-
-                full_dims = ",".join(dimensions + (str(year),))
-
-                formatted_data = '{0},"{1}",{2}\n'.format(variable, full_dims, value)
-
-                data.append(formatted_data)
-
-        return data
-
-    def convert_cbc(self) -> List[str]:
-        """Format the data for writing to a CBC file
-        """
-        cbc_data = []
-        variable, dimensions, values = self._do_it()
-
-        for index, value in enumerate(values):
-
-            year = self.start_year + index
-            if (value not in ["0.0", "0", ""]) and (year <= self.end_year):
-
-                try:
-                    value = float(value)
-                except ValueError:
-                    value = 0
-
-                full_dims = ",".join(dimensions + (str(year),))
-
-                formatted_data = "0 {0}({1}) {2} 0\n".format(variable, full_dims, value)
-
-                cbc_data.append(formatted_data)
-
-        return cbc_data
 
 
 class ReadCplex(ReadStrategy):
@@ -101,41 +15,68 @@ class ReadCplex(ReadStrategy):
     """
 
     def read(
-        self, filepath: str, **kwargs
+        self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+        data = {}  # type: Dict
 
-        pass
+        if "input_data" in kwargs:
+            input_data = kwargs["input_data"]
+            years = input_data["YEAR"].values  # type: List
+            start_year = int(years[0])
+            end_year = int(years[-1])
+        else:
+            raise RuntimeError("To process CPLEX results please provide the input file")
 
-    def _convert_cplex_file(
-        self,
-        cplex_filename: str,
-        output_filename: str,
-        start_year=2015,
-        end_year=2070,
-        output_format="cbc",
-    ):
-        """Converts a CPLEX solution file into that of the CBC solution file
+        for linenum, line in enumerate(filepath):
+            try:
+                row_as_list = line.split("\t")
+                name, df = self.convert_df(row_as_list, start_year, end_year,)
 
-        Arguments
-        ---------
-        cplex_filename : str
-            Path to the transformed CPLEX solution file
-        output_filename : str
-            Path for the processed data to be written to
+                if name in data:
+                    data[name] = data[name].append(df)
+                else:
+                    data[name] = [df]
+
+            except ValueError as ex:
+                msg = "Error caused at line {}: {}. {}"
+                raise ValueError(msg.format(linenum, line, ex))
+
+        results = {}
+
+        for name, contents in data.items():
+            results[name] = pd.concat(contents)
+
+        return results, self._read_default_values(self.results_config)
+
+    def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
+        """Extracts useful information from a line of a results file
         """
-        with open(output_filename, "w") as cbc_file:
-            with open(cplex_filename, "r") as cplex_file:
-                for linenum, line in enumerate(cplex_file):
-                    try:
-                        row_as_list = line.split("\t")
-                        convertor = ConvertLine(
-                            row_as_list, start_year, end_year, output_format
-                        )
-                        if convertor:
-                            cbc_file.writelines(convertor.convert())
-                    except ValueError:
-                        msg = "Error caused at line {}: {}"
-                        raise ValueError(msg.format(linenum, line))
+        variable = data[0]
+        number = len(self.results_config[variable]["indices"])
+        dimensions = tuple(data[1:(number)])
+        values = data[(number):]
+        return (variable, dimensions, values)
+
+    def convert_df(
+        self, row_as_list: List, start_year: int, end_year: int
+    ) -> Tuple[str, pd.DataFrame]:
+        """Read the cplex line into a pandas DataFrame
+
+        """
+        variable, dimensions, values = self.extract_variable_dimensions_values(
+            row_as_list
+        )
+        index = self.results_config[variable]["indices"]
+        columns = index[:-1] + list(range(start_year, end_year + 1, 1))
+        df = pd.DataFrame(data=[list(dimensions) + values], columns=columns).set_index(
+            index[:-1]
+        )
+        df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
+        df = df.reset_index()
+        df = check_datatypes(df, {**self.input_config, **self.results_config}, variable)
+        df = df.set_index(index)
+        df = df[(df != 0).any(axis=1)]
+        return (variable, df)
 
 
 class ReadCbc(ReadStrategy):
