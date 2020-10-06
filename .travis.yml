@@ -5,7 +5,8 @@ virtualenv:
 matrix:
   fast_finish: true
   include:
-  - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="true"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="false"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.8" COVERAGE="true"
 install:
 - source tests/travis_install.sh
 before_script:
@@ -13,7 +14,8 @@ before_script:
 - git config --global user.name "Will Usher"
 script:
 - pip install -r requirements.txt
-- python setup.py test
+- python setup.py develop
+- pytest
 - |
   if [[ "$COVERAGE" == "true" ]]; then
     pre-commit install
