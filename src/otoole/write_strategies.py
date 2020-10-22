@@ -88,7 +88,7 @@ class WriteExcel(WriteStrategy):
 
 class WriteDatafile(WriteStrategy):
     def _header(self):
-        filepath = open(self.filepath, "w")
+        filepath = open(self.filepath, "w", newline="")
         msg = "# Model file written by *otoole*\n"
         filepath.write(msg)
         return filepath
@@ -156,7 +156,7 @@ class WriteCsv(WriteStrategy):
 
         """
         filepath = os.path.join(folder, parameter + ".csv")
-        with open(filepath, "w") as csvfile:
+        with open(filepath, "w", newline="") as csvfile:
             logger.info(
                 "Writing %s rows into narrow file for %s", df.shape[0], parameter
             )
@@ -186,7 +186,7 @@ class WriteDatapackage(WriteCsv):
 
         """
         filepath = os.path.join(folder, "data", parameter + ".csv")
-        with open(filepath, "w") as csvfile:
+        with open(filepath, "w", newline="") as csvfile:
             logger.info(
                 "Writing %s rows into narrow file for %s", df.shape[0], parameter
             )
@@ -195,14 +195,14 @@ class WriteDatapackage(WriteCsv):
     def _footer(self, handle: TextIO):
         datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
         filepath = os.path.join(self.filepath, "datapackage.json")
-        with open(filepath, "w") as destination:
+        with open(filepath, "w", newline="") as destination:
             destination.writelines(datapackage)
         self._write_default_values()
 
     def _write_default_values(self):
 
         default_values_path = os.path.join(self.filepath, "data", "default_values.csv")
-        with open(default_values_path, "w") as csv_file:
+        with open(default_values_path, "w", newline="") as csv_file:
             csv_file.write("name,default_value\n")
 
             for name, contents in self.config.items():
