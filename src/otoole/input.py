@@ -285,15 +285,42 @@ class ReadStrategy(Strategy):
     Strategies.
     """
 
-    def _check_index(self, input_data: Dict):
-        """Checks and applied that an index is applied to the parameter DataFrame
+    def _check_index(self, input_data: Dict) -> None:
+        """Checks index and datatypes are applied to the parameter DataFrame
+
+        Also removes empty lines
+
+        Arguments
+        ---------
+        input_data : dict
+            Dictionary and pandas DataFrames containing the OSeMOSYS parameters
         """
         for name, df in input_data.items():
+            
             details = self.input_config[name]
-            try:
+
+            dtypes = {}
+
+            if details["type"] == "param":
+                try:
+                    df.set_index(details["indices"], inplace=True)
+                except KeyError:
+                    pass
+                for column in details["indices"] + ["VALUE"]:
+                    if column == "VALUE":
+                        datatype = details["dtype"]
+                        dtypes["VALUE"] = datatype
+                    else:
+                        datatype = self.config[column]["dtype"]
+                        dtypes[column] = datatype
+
+                # Drop empty rows
+                df.dropna(axis=0, inplace=True, how="all")
+                df.reset_index(inplace=True)
+                df.astype(dtypes, copy=False)
                 df.set_index(details["indices"], inplace=True)
-            except KeyError:
-                logger.debug("Parameter %s is indexed", name)
+            else:
+                df.astype(details["dtype"], copy=False)
 
     @abstractmethod
     def read(
