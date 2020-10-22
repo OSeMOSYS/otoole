@@ -250,6 +250,19 @@ class ReadStrategy(Strategy):
         """
         for name, df in input_data.items():
             details = self.config[name]
+
+            dtypes = {}
+
+            for column in details["indices"] + ["VALUE"]:
+                if column == "VALUE":
+                    datatype = details["dtype"]
+                    dtypes["VALUE"] = datatype
+                else:
+                    datatype = self.config[column]["dtype"]
+                    dtypes[column] = datatype
+
+            df.astype(dtypes, copy=False)
+
             try:
                 df.set_index(details["indices"], inplace=True)
             except KeyError:

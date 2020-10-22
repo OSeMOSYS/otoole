@@ -62,14 +62,10 @@ def check_datatypes(
             )
             if datatype == "int":
                 try:
-                    narrow[column] = narrow[column].apply(_cast_to_int)
+                    narrow[column] = narrow[column].apply(lambda x: int(x))
                 except ValueError as ex:
                     msg = "Unable to apply datatype for column {}: {}".format(
                         column, str(ex)
                     )
                     raise ValueError(msg)
     return narrow.astype(dtypes)
-
-
-def _cast_to_int(value):
-    return int(float(value))
