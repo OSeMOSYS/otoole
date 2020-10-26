@@ -302,17 +302,16 @@ class ReadStrategy(Strategy):
             dtypes = {}
 
             if details["type"] == "param":
+                logger.debug("Identified {} as a parameter".format(name))
                 try:
                     df.set_index(details["indices"], inplace=True)
                 except KeyError:
                     pass
                 for column in details["indices"] + ["VALUE"]:
                     if column == "VALUE":
-                        datatype = details["dtype"]
-                        dtypes["VALUE"] = datatype
+                        dtypes["VALUE"] = details["dtype"]
                     else:
-                        datatype = self.config[column]["dtype"]
-                        dtypes[column] = datatype
+                        dtypes[column] = self.config[column]["dtype"]
 
                 # Drop empty rows
                 df.dropna(axis=0, inplace=True, how="all")
