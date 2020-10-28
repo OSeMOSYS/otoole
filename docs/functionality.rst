@@ -81,6 +81,19 @@ And then convert it back again::
 
     otoole convert excel datafile simplicity.xlsx simplicity.txt
 
+To create a folder of CSV files from an Excel workbook::
+
+    otoole convert excel csv simplicity.xlsx simplicity
+
+To convert back again, run the following command::
+
+    otoole convert csv excel simplicity simplicity.xlsx
+
+In each of the examples, you provide the path to the file or folder, depending on the context.
+For a datapackage, you need to provide the path to the ``datapackage.json`` file::
+
+    otoole convert datapackage datafile simplicity/datapackage.json simplicity.txt
+
 Results and Post-processing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
