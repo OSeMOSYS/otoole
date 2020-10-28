@@ -94,6 +94,15 @@ For a datapackage, you need to provide the path to the ``datapackage.json`` file
 
     otoole convert datapackage datafile simplicity/datapackage.json simplicity.txt
 
+The Excel workbook is created in a specific format. Each tab in the workbook corresponds to one set or parameter.
+Parameters with a ``YEAR`` index are pivotted, so that the elements in set ``YEAR`` create columns in a table, with
+the first columns holding the remaining indices. For example the ``AccumulatedAnnualDemand`` parameter in the simplicity
+example model looks like this in the workbook::
+
+    REGION,FUEL,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040
+    SIMPLICITY,ETH,1,1.03,1.061,1.093,1.126,1.159,1.194,1.23,1.267,1.305,1.344,1.384,1.426,1.469,1.513,1.558,1.605,1.653,1.702,1.754,1.806,1.86,1.916,1.974,2.033,2.094,2.157
+    SIMPLICITY,RAWSUG,0.5,0.51,0.519,0.529,0.538,0.548,0.558,0.567,0.577,0.587,0.596,0.606,0.615,0.625,0.635,0.644,0.654,0.663,0.673,0.683,0.692,0.702,0.712,0.721,0.731,0.74,0.75
+
 Results and Post-processing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
