@@ -217,7 +217,7 @@ class WriteStrategy(Strategy):
         handle = self._header()
         logger.debug(default_values)
 
-        for name, df in inputs.items():
+        for name, df in sorted(inputs.items()):
             logger.debug(name)
 
             df = df.reset_index()
