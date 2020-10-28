@@ -9,9 +9,9 @@ Example
 Convert an in-memory dictionary of pandas DataFrames containing OSeMOSYS parameters
 to an Excel spreadsheet::
 
->>> from otoole.read_strategies import ReadMemory
->>> from otoole.write_strategies import WriteExcel
->>> from otoole.input import Context
+>>> from otoole import ReadMemory
+>>> from otoole import WriteExcel
+>>> from otoole import Context
 >>> reader = ReadMemory(parameters)
 >>> writer = WriteExcel()
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
@@ -19,9 +19,9 @@ to an Excel spreadsheet::
 
 Convert a GNUMathProg datafile to a folder of CSV files::
 
->>> from otoole.read_strategies import ReadDataFile
->>> from otoole.write_strategies import WriteCsv
->>> from otoole.input import Context
+>>> from otoole import ReadDataFile
+>>> from otoole import WriteCsv
+>>> from otoole import Context
 >>> reader = ReadDataFile()
 >>> writer = WriteCsv()
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
@@ -29,9 +29,9 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 
 Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
 
->>> from otoole.read_strategies import ReadDataFile
->>> from otoole.write_strategies import WriteDatapackage
->>> from otoole.input import Context
+>>> from otoole import ReadDataFile
+>>> from otoole import WriteDatapackage
+>>> from otoole import Context
 >>> reader = ReadDataFile()
 >>> writer = WriteDatapackage()
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
@@ -46,7 +46,7 @@ from typing import Any, Dict, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
-from otoole import read_packaged_file
+from otoole.utils import read_packaged_file
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +121,12 @@ class Context:
         """
         self._read_strategy = strategy
 
-    def _read(self, filepath: str) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def _read(
+        self, filepath: str, **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         """Delegate reading to the strategy, depending upon the format
         """
-        return self._read_strategy.read(filepath)
+        return self._read_strategy.read(filepath, **kwargs)
 
     def _write(self, inputs: Dict, filepath: str, default_values: Dict) -> None:
         """
@@ -132,7 +134,7 @@ class Context:
         """
         self._write_strategy.write(inputs, filepath, default_values)
 
-    def convert(self, input_filepath: str, output_filepath: str):
+    def convert(self, input_filepath: str, output_filepath: str, **kwargs: Dict):
         """Converts from file ``input_filepath`` to file ``output_filepath``
 
         Arguments
@@ -140,19 +142,50 @@ class Context:
         input_filepath: str
         output_filepath: str
         """
-        inputs, default_values = self._read(input_filepath)
+        inputs, default_values = self._read(input_filepath, **kwargs)
         self._write(inputs, output_filepath, default_values)
 
 
 class Strategy(ABC):
-    def __init__(self, user_config: Optional[Dict] = None):
-        if user_config:
-            self.config = user_config
-        else:
-            self.config = self._read_config()
+    """
 
-    def _read_config(self):
+    Arguments
+    ---------
+    input_config : dict, default=None
+        A user configuration for the input parameters and sets
+    results_config : dict, default=None
+        A user configuration for the results parameters
+
+    """
+
+    def __init__(
+        self, user_config: Optional[Dict] = None, results_config: Optional[Dict] = None
+    ):
+        self._input_config = {}
+        self._results_config = {}
+
+        if user_config:
+            self._input_config = user_config
+        else:
+            self._input_config = self._read_config()
+        if results_config:
+            self._results_config = results_config
+        else:
+            self._results_config = self._read_results_config()
+
+    def _read_config(self) -> Dict[str, Dict]:
         return read_packaged_file("config.yaml", "otoole.preprocess")
+
+    def _read_results_config(self) -> Dict[str, Dict]:
+        return read_packaged_file("config.yaml", "otoole.results")
+
+    @property
+    def input_config(self):
+        return self._input_config
+
+    @property
+    def results_config(self):
+        return self._results_config
 
     @staticmethod
     def _read_default_values(config):
@@ -169,15 +202,22 @@ class WriteStrategy(Strategy):
 
     The Context uses this interface to call the algorithm defined by Concrete
     Strategies.
+
+    Arguments
+    ---------
+    filepath: str, default=None
+    default_values: dict, default=None
+    user_config: dict, default=None
+
     """
 
     def __init__(
         self,
-        filepath: str = None,
-        default_values: Dict = None,
+        filepath: Optional[str] = None,
+        default_values: Optional[Dict] = None,
         user_config: Optional[Dict] = None,
     ):
-        super().__init__(user_config)
+        super().__init__(user_config=user_config)
         if filepath:
             self.filepath = filepath
         else:
@@ -249,12 +289,14 @@ class ReadStrategy(Strategy):
         """Checks and applied that an index is applied to the parameter DataFrame
         """
         for name, df in input_data.items():
-            details = self.config[name]
+            details = self.input_config[name]
             try:
                 df.set_index(details["indices"], inplace=True)
             except KeyError:
                 logger.debug("Parameter %s is indexed", name)
 
     @abstractmethod
-    def read(self, filepath: str) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def read(
+        self, filepath: Union[str, TextIO], **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         raise NotImplementedError()

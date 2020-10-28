@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 from amply import Amply
@@ -36,24 +36,24 @@ class ReadMemory(ReadStrategy):
         self._parameters = parameters
 
     def read(
-        self, filepath: str = None,
+        self, filepath: Union[str, TextIO] = None, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.config
+        config = self.input_config
         default_values = self._read_default_values(config)
         self._check_index(self._parameters)
         return self._parameters, default_values
 
 
 class _ReadTabular(ReadStrategy):
-    def _check_set(self, df, config_details, name):
+    def _check_set(self, df: pd.DataFrame, config_details: Dict, name: str):
 
         logger.info("Checking set %s", name)
         narrow = df
 
         return narrow
 
-    def _check_parameter(self, df, config_details, name):
+    def _check_parameter(self, df: pd.DataFrame, config_details: Dict, name: str):
         actual_headers = df.columns
         expected_headers = config_details["indices"]
         logger.debug("Expected headers for %s: %s", name, expected_headers)
@@ -96,9 +96,11 @@ class ReadExcel(_ReadTabular):
     """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames
     """
 
-    def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def read(
+        self, filepath: Union[str, TextIO], **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.config
+        config = self.input_config
         default_values = self._read_default_values(config)
 
         xl = pd.ExcelFile(filepath)
@@ -141,15 +143,17 @@ class ReadExcel(_ReadTabular):
 class ReadCsv(_ReadTabular):
     """Read in a folder of CSV files"""
 
-    def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def read(
+        self, filepath, **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
         input_data = {}
 
-        default_values = self._read_default_values(self.config)
+        default_values = self._read_default_values(self.input_config)
 
-        for parameter, details in self.config.items():
+        for parameter, details in self.input_config.items():
             logger.info("Looking for %s", parameter)
-            config_details = self.config[parameter]
+            config_details = self.input_config[parameter]
 
             csv_path = os.path.join(filepath, parameter + ".csv")
 
@@ -161,18 +165,22 @@ class ReadCsv(_ReadTabular):
                 default_columns = expected_columns + ["VALUE"]
                 df = pd.DataFrame(columns=default_columns)
 
-            entity_type = self.config[parameter]["type"]
+            entity_type = self.input_config[parameter]["type"]
 
             if entity_type == "param":
                 narrow = self._check_parameter(df, config_details, parameter)
                 if not narrow.empty:
-                    narrow_checked = check_datatypes(narrow, self.config, parameter)
+                    narrow_checked = check_datatypes(
+                        narrow, self.input_config, parameter
+                    )
                 else:
                     narrow_checked = narrow
             elif entity_type == "set":
                 narrow = self._check_set(df, config_details, parameter)
                 if not narrow.empty:
-                    narrow_checked = check_set_datatype(narrow, self.config, parameter)
+                    narrow_checked = check_set_datatype(
+                        narrow, self.input_config, parameter
+                    )
                 else:
                     narrow_checked = narrow
 
@@ -184,7 +192,9 @@ class ReadCsv(_ReadTabular):
 
 
 class ReadDatapackage(ReadStrategy):
-    def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def read(
+        self, filepath, **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         inputs = read_datapackage(filepath)
         default_resource = inputs.pop("default_values").set_index("name").to_dict()
         default_values = default_resource["default_value"]
@@ -193,9 +203,11 @@ class ReadDatapackage(ReadStrategy):
 
 
 class ReadDatafile(ReadStrategy):
-    def read(self, filepath) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+    def read(
+        self, filepath, **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.config
+        config = self.input_config
         default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)
@@ -212,7 +224,6 @@ class ReadDatafile(ReadStrategy):
         """
         parameter_definitions = self._load_parameter_definitions(config)
         datafile_parser = Amply(parameter_definitions)
-        logger.debug(datafile_parser)
 
         with open(path_to_datafile, "r") as datafile:
             datafile_parser.load_file(datafile)
@@ -240,7 +251,6 @@ class ReadDatafile(ReadStrategy):
             elif attributes["type"] == "set":
                 elements += "set {};\n".format(name)
 
-        logger.debug(elements)
         return elements
 
     def _convert_amply_to_dataframe(
@@ -270,7 +280,6 @@ class ReadDatafile(ReadStrategy):
                 dict_of_dataframes[name] = self.extract_set(
                     datafile_parser, name, config, dict_of_dataframes
                 )
-                logger.debug("\n%s\n", dict_of_dataframes[name])
             else:
                 logger.warning(
                     "Parameter {} could not be found in the configuration.".format(name)
@@ -282,7 +291,6 @@ class ReadDatafile(ReadStrategy):
         self, datafile_parser, name, config, dict_of_dataframes
     ) -> pd.DataFrame:
         data = datafile_parser[name].data
-        logger.debug(data)
 
         indices = ["VALUE"]
         df = pd.DataFrame(data=data, columns=indices, dtype=config[name]["dtype"])

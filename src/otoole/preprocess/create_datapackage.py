@@ -6,12 +6,10 @@
 
 import logging
 import os
-import sys
 
 from datapackage import Package
 
-from otoole import read_packaged_file
-from otoole.preprocess.longify_data import main as longify
+from otoole.utils import read_packaged_file
 
 logger = logging.getLogger()
 
@@ -95,18 +93,3 @@ def validate_contents(path_to_package):
                 logger.info("%s is valid", resource.name)
         except KeyError as ex:
             logger.warning("Validation error in %s: %s", resource.name, str(ex))
-
-
-def main(wide_folder, narrow_folder):
-    longify(wide_folder, narrow_folder)
-    generate_package(narrow_folder)
-    absolute_path = os.path.join(narrow_folder, "datapackage.json")
-    validate_contents(absolute_path)
-
-
-if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.DEBUG)
-    wide_folder = sys.argv[1]
-    narrow_folder = sys.argv[2]
-    main(wide_folder, narrow_folder)

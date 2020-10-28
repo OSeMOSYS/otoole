@@ -4,9 +4,9 @@ from typing import Any, TextIO
 
 import pandas as pd
 
-from otoole import read_packaged_file
 from otoole.input import WriteStrategy
 from otoole.read_strategies import CSV_TO_EXCEL
+from otoole.utils import read_packaged_file
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +135,16 @@ class WriteDatafile(WriteStrategy):
 
 
 class WriteCsv(WriteStrategy):
+    """Write parameters to comma-separated value files
+
+    Arguments
+    ---------
+    filepath: str, default=None
+        The path to write a folder of csv files
+    default_values: dict, default=None
+    user_config: dict, default=None
+    """
+
     def _header(self) -> Any:
         os.makedirs(os.path.join(self.filepath), exist_ok=True)
         return None
@@ -205,6 +215,6 @@ class WriteDatapackage(WriteCsv):
         with open(default_values_path, "w", newline="") as csv_file:
             csv_file.write("name,default_value\n")
 
-            for name, contents in self.config.items():
+            for name, contents in self.input_config.items():
                 if contents["type"] == "param":
                     csv_file.write("{},{}\n".format(name, contents["default"]))

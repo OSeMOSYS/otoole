@@ -61,6 +61,7 @@ def check_datatypes(
                 parameter,
             )
             if datatype == "int":
+                dtypes[column] = "int64"
                 try:
                     narrow[column] = narrow[column].apply(_cast_to_int)
                 except ValueError as ex:

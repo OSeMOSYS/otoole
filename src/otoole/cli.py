@@ -43,19 +43,23 @@ import argparse
 import logging
 import sys
 
-from otoole import __version__, read_packaged_file
-from otoole.input import Context
-from otoole.read_strategies import ReadCsv, ReadDatafile, ReadDatapackage, ReadExcel
-from otoole.results import convert_cbc_to_csv
-from otoole.results.convert import convert_cplex_file
-from otoole.validate import main as validate
-from otoole.visualise import create_res
-from otoole.write_strategies import (
+from otoole import (
+    ReadCbc,
+    ReadCplex,
+    ReadCsv,
+    ReadDatafile,
+    ReadDatapackage,
+    ReadExcel,
     WriteCsv,
     WriteDatafile,
     WriteDatapackage,
     WriteExcel,
+    __version__,
 )
+from otoole.input import Context
+from otoole.utils import read_packaged_file
+from otoole.validate import main as validate
+from otoole.visualise import create_res
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +75,7 @@ def validate_model(args):
 
 
 def cplex2cbc(args):
-    convert_cplex_file(
+    ReadCplex()._convert_cplex_file(
         args.cplex_file,
         args.output_file,
         args.start_year,
@@ -87,21 +91,28 @@ def result_matrix(args):
     msg = "Conversion from {} to {} is not yet implemented".format(
         args.from_format, args.to_format
     )
-    if args.from_format == "cbc":
 
-        if args.to_format == "csv":
-            if args.input_datapackage:
-                convert_cbc_to_csv(
-                    args.from_path, args.to_path, args.input_datapackage, "datapackage"
-                )
-            elif args.input_datafile:
-                convert_cbc_to_csv(
-                    args.from_path, args.to_path, args.input_datafile, "datafile"
-                )
-            else:
-                convert_cbc_to_csv(args.from_path, args.to_path)
-        else:
-            raise NotImplementedError(msg)
+    read_strategy = None
+    write_strategy = None
+
+    if args.from_format == "cbc":
+        read_strategy = ReadCbc()
+    elif args.from_format == "cplex":
+        read_strategy = ReadCplex()
+
+    if args.to_format == "csv":
+        write_strategy = WriteCsv()
+
+    if args.input_datapackage:
+        input_data, _ = ReadDatapackage().read(args.input_datapackage)
+    elif args.input_datafile:
+        input_data, _ = ReadDatafile().read(args.input_datafile)
+    else:
+        input_data = {}
+
+    if read_strategy and write_strategy:
+        context = Context(read_strategy, write_strategy)
+        context.convert(args.from_path, args.to_path, input_data=input_data)
     else:
         raise NotImplementedError(msg)
 
@@ -179,7 +190,7 @@ def get_parser():
     result_parser.add_argument(
         "from_format",
         help="Result data format to convert from",
-        choices=sorted(["cbc"]),
+        choices=sorted(["cbc", "cplex"]),
     )
     result_parser.add_argument(
         "to_format", help="Result data format to convert to", choices=sorted(["csv"]),
