@@ -2,6 +2,16 @@
 Changelog
 =========
 
+Version 0.8
+===========
+- Behind-the-scenes reorganisation of code to use `ReadStrategies` and `WriteStrategies`
+  pattern. This enables much cleaner structuring of the code and more reusability of
+  modular blocks.
+- Updates to documentation with clearer explaination of how to perform conversions
+- Otoole now requires Python 3.7 or later
+- Harmonisation of results and pre-processing using the strategies mentioned above
+- Bugfixes for #61, #63, #65, #70
+
 Version 0.7
 ===========
 - Adds results processing and conversion of results
