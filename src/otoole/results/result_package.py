@@ -350,16 +350,21 @@ class ResultsPackage(Mapping):
 
             EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y] *
             YearSplit[l,y] * EmissionsPenalty[r,e,y] /
-            ((1+DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5))
+            ((1+DiscountRate[r, t]) ^ (y - min{yy in YEAR} min(yy) + 0.5))
 
         """
         try:
             annual_technology_emission_by_mode = self["AnnualTechnologyEmissionByMode"]
             emission_penalty = self["EmissionsPenalty"]
             regions = self["REGION"]["VALUE"].to_list()
+            technologies = list(
+                annual_technology_emission_by_mode.reset_index()["TECHNOLOGY"].unique()
+            )
             years = self["YEAR"]["VALUE"].to_list()
             discount_rate = self["DiscountRate"]
-            crf = capital_recovery_factor(regions, years, discount_rate, adj=0.5)
+            crf = capital_recovery_factor(
+                regions, technologies, years, discount_rate, adj=0.5
+            )
         except KeyError as ex:
             raise KeyError(self._msg("DiscountedTechnologyEmissionsPenalty", str(ex)))
 
@@ -725,7 +730,11 @@ class ResultsPackage(Mapping):
 
 
 def capital_recovery_factor(
-    regions: List, years: List, discount_rate: pd.DataFrame, adj: float = 0.0
+    regions: List,
+    technologies: List,
+    years: List,
+    discount_rate: pd.DataFrame,
+    adj: float = 0.0,
 ) -> pd.DataFrame:
     """Calculates the capital recovery factor
 
@@ -737,10 +746,14 @@ def capital_recovery_factor(
     adj: float, default=0.0
         Adjust to beginning of the year (default), mid year (0.5) or end year (1.0)
     """
-    index = pd.MultiIndex.from_product([regions, years], names=["REGION", "YEAR"])
+    index = pd.MultiIndex.from_product(
+        [regions, technologies, years], names=["REGION", "TECHNOLOGY", "YEAR"]
+    )
     crf = discount_rate.reindex(index)
     crf = crf.reset_index(level="YEAR")
     crf["NUM"] = crf["YEAR"] - crf["YEAR"].min()
     crf["Rate"] = 1 + discount_rate
     crf["VALUE"] = crf["Rate"].pow(crf["NUM"] + adj)
-    return crf.reset_index()[["REGION", "YEAR", "VALUE"]].set_index(["REGION", "YEAR"])
+    return crf.reset_index()[["REGION", "TECHNOLOGY", "YEAR", "VALUE"]].set_index(
+        ["REGION", "TECHNOLOGY", "YEAR"]
+    )
