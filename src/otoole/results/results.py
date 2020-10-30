@@ -173,7 +173,7 @@ class ReadCbc(ReadStrategy):
 
         not_found = []
 
-        for name, details in results_config.items():
+        for name, details in sorted(results_config.items()):
             df = data[data["Variable"] == name]
 
             if not df.empty:

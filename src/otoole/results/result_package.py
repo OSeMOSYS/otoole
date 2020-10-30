@@ -362,6 +362,7 @@ class ResultsPackage(Mapping):
             )
             years = self["YEAR"]["VALUE"].to_list()
             discount_rate = self["DiscountRate"]
+
             crf = capital_recovery_factor(
                 regions, technologies, years, discount_rate, adj=0.5
             )
@@ -580,17 +581,17 @@ class ResultsPackage(Mapping):
                     + sum{m in MODE_OF_OPERATION, l in TIMESLICE}
                         RateOfActivity[r,l,t,m,y] * YearSplit[l,y]
                         * VariableCost[r,t,m,y])
-                / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)+0.5))
+                / ((1+DiscountRate[r,t])^(y-min{yy in YEAR} min(yy)+0.5))
                 + CapitalCost[r,t,y] * NewCapacity[r,t,y]
-                / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
+                / ((1+DiscountRate[r,t])^(y-min{yy in YEAR} min(yy)))
                 + DiscountedTechnologyEmissionsPenalty[r,t,y]
                 - DiscountedSalvageValue[r,t,y]
             )    )
             + sum{r in REGION, s in STORAGE, y in YEAR}
                 (CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
-                / ((1+DiscountRate[r])^(y-min{yy in YEAR} min(yy)))
+                / ((1+DiscountRate[r,t])^(y-min{yy in YEAR} min(yy)))
                     - SalvageValueStorage[r,s,y]
-                    / ((1+DiscountRate[r])^(max{yy in YEAR}
+                    / ((1+DiscountRate[r,t])^(max{yy in YEAR}
                         max(yy)-min{yy in YEAR} min(yy)+1))
                 )~VALUE;
         """
@@ -606,6 +607,15 @@ class ResultsPackage(Mapping):
             annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
             capital_investment = self["CapitalInvestment"]
 
+            technologies = self.get_unique_values_from_index(
+                [
+                    annual_fixed_operating_cost,
+                    annual_variable_operating_cost,
+                    capital_investment,
+                ],
+                "TECHNOLOGY",
+            )
+
             discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
             discounted_salvage_value = self["DiscountedSalvageValue"]
 
@@ -613,8 +623,12 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
-        crf_op = capital_recovery_factor(regions, years, discount_rate, 0.5)
-        crf_cap = capital_recovery_factor(regions, years, discount_rate, 0.0)
+        crf_op = capital_recovery_factor(
+            regions, technologies, years, discount_rate, 0.5
+        )
+        crf_cap = capital_recovery_factor(
+            regions, technologies, years, discount_rate, 0.0
+        )
 
         undiscounted_operational_costs = annual_fixed_operating_cost.add(
             annual_variable_operating_cost, fill_value=0.0
@@ -654,6 +668,18 @@ class ResultsPackage(Mapping):
             data = data.groupby(by=["REGION", "YEAR"]).sum()
 
         return data[(data != 0).all(1)].dropna()
+
+    def get_unique_values_from_index(self, dataframes: List, name: str) -> List:
+        """Utility function to extract list of unique values
+
+        Extract unique values from the same index of the passed dataframes
+        """
+        elements = []  # type: List
+        for df in dataframes:
+            df = df.reset_index()
+            if name in df.columns:
+                elements += list(df[name].unique())
+        return list(set(elements))
 
     def total_technology_annual_activity(self) -> pd.DataFrame:
         """TotalTechnologyAnnualActivity
@@ -746,14 +772,19 @@ def capital_recovery_factor(
     adj: float, default=0.0
         Adjust to beginning of the year (default), mid year (0.5) or end year (1.0)
     """
-    index = pd.MultiIndex.from_product(
-        [regions, technologies, years], names=["REGION", "TECHNOLOGY", "YEAR"]
-    )
-    crf = discount_rate.reindex(index)
-    crf = crf.reset_index(level="YEAR")
-    crf["NUM"] = crf["YEAR"] - crf["YEAR"].min()
-    crf["Rate"] = 1 + discount_rate
-    crf["VALUE"] = crf["Rate"].pow(crf["NUM"] + adj)
-    return crf.reset_index()[["REGION", "TECHNOLOGY", "YEAR", "VALUE"]].set_index(
-        ["REGION", "TECHNOLOGY", "YEAR"]
-    )
+    if regions and technologies and years:
+        index = pd.MultiIndex.from_product(
+            [regions, technologies, years], names=["REGION", "TECHNOLOGY", "YEAR"]
+        )
+        crf = discount_rate.reindex(index)
+        crf = crf.reset_index(level="YEAR")
+        crf["NUM"] = crf["YEAR"] - crf["YEAR"].min()
+        crf["Rate"] = 1 + discount_rate
+        crf["VALUE"] = crf["Rate"].pow(crf["NUM"] + adj)
+        return crf.reset_index()[["REGION", "TECHNOLOGY", "YEAR", "VALUE"]].set_index(
+            ["REGION", "TECHNOLOGY", "YEAR"]
+        )
+    else:
+        return pd.DataFrame(
+            [], columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])

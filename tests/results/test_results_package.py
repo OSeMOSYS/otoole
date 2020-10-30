@@ -647,6 +647,16 @@ class TestCapitalRecoveryFactor:
 
         assert_frame_equal(actual, expected)
 
+    def test_crf_null(self, discount_rate):
+
+        actual = capital_recovery_factor([], [], [], discount_rate)
+
+        expected = pd.DataFrame(
+            data=[], columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
 
 class TestResultsPackage:
     def test_results_package_init(self):
