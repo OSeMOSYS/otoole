@@ -60,18 +60,22 @@ class Inputs(object):
     """
 
     def __init__(self, config: str = None):
-        self.config = read_packaged_file("config.yaml", "otoole.preprocess")
+        self.input_config = read_packaged_file("config.yaml", "otoole.preprocess")
         self._default_values = self._read_default_values()
 
     def _read_default_values(self):
         default_values = {}
-        for name, contents in self.config.items():
+        for name, contents in self.input_config.items():
             if contents["type"] == "param":
                 default_values[name] = contents["default"]
         return default_values
 
     def default_values(self):
         return self._default_values
+
+    @property
+    def config(self):
+        return self.input_config
 
 
 class Context:
@@ -298,7 +302,7 @@ class ReadStrategy(Strategy):
             Dictionary and pandas DataFrames containing the OSeMOSYS parameters
         """
         for name, df in input_data.items():
-            
+
             details = self.input_config[name]
 
             dtypes = {}
@@ -314,7 +318,7 @@ class ReadStrategy(Strategy):
                     if column == "VALUE":
                         dtypes["VALUE"] = details["dtype"]
                     else:
-                        dtypes[column] = self.config[column]["dtype"]
+                        dtypes[column] = self.input_config[column]["dtype"]
 
                 logger.debug("Column dtypes identified: {}".format(dtypes))
 
