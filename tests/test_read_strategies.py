@@ -417,7 +417,7 @@ class TestCleanOnRead:
             .set_index(["REGION", "FUEL", "YEAR"])
         }
 
-        assert "AccumulatedAnnualDemand" in parameters.keys()
+        assert "AccumulatedAnnualDemand" in actual.keys()
         pd.testing.assert_frame_equal(
             actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
         )
@@ -434,7 +434,7 @@ class TestCleanOnRead:
         parameters = {"AccumulatedAnnualDemand": df}
 
         reader = ReadMemory(parameters)
-        reader._check_index(parameters)
+        actual, _ = reader.read()
 
         expected = {
             "AccumulatedAnnualDemand": pd.DataFrame(
@@ -448,9 +448,9 @@ class TestCleanOnRead:
             .set_index(["REGION", "FUEL", "YEAR"])
         }
 
-        assert "AccumulatedAnnualDemand" in parameters.keys()
+        assert "AccumulatedAnnualDemand" in actual.keys()
         pd.testing.assert_frame_equal(
-            parameters["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
+            actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
         )
 
 
