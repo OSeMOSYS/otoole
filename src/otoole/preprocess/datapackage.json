@@ -384,7 +384,7 @@
                         "format": "default"
                     },
                     {
-                        "name": "TECHNOLOGY",
+                        "name": "STORAGE",
                         "type": "string",
                         "format": "default"
                     },
@@ -404,16 +404,16 @@
                         }
                     },
                     {
-                        "fields": "TECHNOLOGY",
+                        "fields": "STORAGE",
                         "reference": {
-                            "resource": "TECHNOLOGY",
+                            "resource": "STORAGE",
                             "fields": "VALUE"
                         }
                     }
                 ],
                 "primaryKey": [
                     "REGION",
-                    "TECHNOLOGY"
+                    "STORAGE"
                 ]
             }
         },
