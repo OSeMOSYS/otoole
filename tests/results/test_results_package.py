@@ -629,20 +629,31 @@ class TestCapitalRecoveryFactor:
     def test_crf(self, discount_rate):
 
         regions = ["SIMPLICITY"]
+        technologies = ["GAS_EXTRACTION"]
         years = [2010, 2011, 2012, 2013, 2014, 2015]
-        actual = capital_recovery_factor(regions, years, discount_rate)
+        actual = capital_recovery_factor(regions, technologies, years, discount_rate)
 
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", 2010, 1.0],
-                ["SIMPLICITY", 2011, 1.05],
-                ["SIMPLICITY", 2012, 1.1025],
-                ["SIMPLICITY", 2013, 1.1576250000000001],
-                ["SIMPLICITY", 2014, 1.2155062500000002],
-                ["SIMPLICITY", 2015, 1.2762815625000004],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2010, 1.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2011, 1.05],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2012, 1.1025],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2013, 1.1576250000000001],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.2155062500000002],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1.2762815625000004],
             ],
-            columns=["REGION", "YEAR", "VALUE"],
-        ).set_index(["REGION", "YEAR"])
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_crf_null(self, discount_rate):
+
+        actual = capital_recovery_factor([], [], [], discount_rate)
+
+        expected = pd.DataFrame(
+            data=[], columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
 

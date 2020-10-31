@@ -31,8 +31,9 @@ def annual_technology_emissions_by_mode():
 @fixture
 def discount_rate():
     df = pd.DataFrame(
-        data=[["SIMPLICITY", 0.05]], columns=["REGION", "VALUE"]
-    ).set_index("REGION")
+        data=[["SIMPLICITY", "GAS_EXTRACTION", 0.05]],
+        columns=["REGION", "TECHNOLOGY", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY"])
 
     return df
 

@@ -336,6 +336,11 @@
                         "format": "default"
                     },
                     {
+                        "name": "TECHNOLOGY",
+                        "type": "string",
+                        "format": "default"
+                    },
+                    {
                         "name": "VALUE",
                         "type": "number",
                         "format": "default"
@@ -349,10 +354,66 @@
                             "resource": "REGION",
                             "fields": "VALUE"
                         }
+                    },
+                    {
+                        "fields": "TECHNOLOGY",
+                        "reference": {
+                            "resource": "TECHNOLOGY",
+                            "fields": "VALUE"
+                        }
                     }
                 ],
                 "primaryKey": [
-                    "REGION"
+                    "REGION",
+                    "TECHNOLOGY"
+                ]
+            }
+        },
+        {
+            "path": "data/DiscountRateStorage.csv",
+            "profile": "tabular-data-resource",
+            "name": "DiscountRateStorage",
+            "format": "csv",
+            "mediatype": "text/csv",
+            "encoding": "utf-8",
+            "schema": {
+                "fields": [
+                    {
+                        "name": "REGION",
+                        "type": "string",
+                        "format": "default"
+                    },
+                    {
+                        "name": "STORAGE",
+                        "type": "string",
+                        "format": "default"
+                    },
+                    {
+                        "name": "VALUE",
+                        "type": "number",
+                        "format": "default"
+                    }
+                ],
+                "missingValues": [""],
+                "foreignKeys": [
+                    {
+                        "fields": "REGION",
+                        "reference": {
+                            "resource": "REGION",
+                            "fields": "VALUE"
+                        }
+                    },
+                    {
+                        "fields": "STORAGE",
+                        "reference": {
+                            "resource": "STORAGE",
+                            "fields": "VALUE"
+                        }
+                    }
+                ],
+                "primaryKey": [
+                    "REGION",
+                    "STORAGE"
                 ]
             }
         },

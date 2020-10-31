@@ -387,6 +387,85 @@ class TestReadCbc:
         )
 
 
+class TestCleanOnRead:
+    """Tests that a datapackage is cleaned and indexed upon reading
+    """
+
+    def test_index_dtypes_available(self):
+        reader = ReadMemory({})
+        config = reader._input_config
+        assert "index_dtypes" in config["AccumulatedAnnualDemand"].keys()
+        actual = config["AccumulatedAnnualDemand"]["index_dtypes"]
+        assert actual == {
+            "REGION": "str",
+            "FUEL": "str",
+            "YEAR": "int",
+            "VALUE": "float",
+        }
+
+    def test_remove_empty_lines(self):
+
+        data = [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            [],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            [],
+        ]
+        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"])
+        parameters = {"AccumulatedAnnualDemand": df}
+
+        reader = ReadMemory(parameters)
+        actual, _ = reader.read()
+
+        expected = {
+            "AccumulatedAnnualDemand": pd.DataFrame(
+                data=[
+                    ["SIMPLICITY", "ETH", 2014, 1.0],
+                    ["SIMPLICITY", "ETH", 2015, 1.03],
+                ],
+                columns=["REGION", "FUEL", "YEAR", "VALUE"],
+            )
+            .astype({"REGION": str, "FUEL": str, "YEAR": int, "VALUE": float})
+            .set_index(["REGION", "FUEL", "YEAR"])
+        }
+
+        assert "AccumulatedAnnualDemand" in actual.keys()
+        pd.testing.assert_frame_equal(
+            actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
+        )
+
+    def test_change_types(self):
+
+        data = [
+            ["SIMPLICITY", "ETH", 2014.0, 1],
+            ["SIMPLICITY", "ETH", 2015.0, 1],
+        ]
+        df = pd.DataFrame(
+            data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"]
+        ).astype({"REGION": str, "FUEL": str, "YEAR": float, "VALUE": int})
+        parameters = {"AccumulatedAnnualDemand": df}
+
+        reader = ReadMemory(parameters)
+        actual, _ = reader.read()
+
+        expected = {
+            "AccumulatedAnnualDemand": pd.DataFrame(
+                data=[
+                    ["SIMPLICITY", "ETH", 2014, 1.0],
+                    ["SIMPLICITY", "ETH", 2015, 1.0],
+                ],
+                columns=["REGION", "FUEL", "YEAR", "VALUE"],
+            )
+            .astype({"REGION": str, "FUEL": str, "YEAR": int, "VALUE": float})
+            .set_index(["REGION", "FUEL", "YEAR"])
+        }
+
+        assert "AccumulatedAnnualDemand" in actual.keys()
+        pd.testing.assert_frame_equal(
+            actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
+        )
+
+
 class TestReadMemoryStrategy:
     def test_read_memory(self):
 

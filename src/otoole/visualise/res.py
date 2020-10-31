@@ -213,7 +213,6 @@ def create_res(path_to_datapackage: str, path_to_resfile: str):
     path_to_resfile : str
         The path to the image file to be created
     """
-    logger.debug(path_to_resfile, path_to_resfile)
     package = load_datapackage(path_to_datapackage)
 
     graph = create_graph(package)

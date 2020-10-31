@@ -51,29 +51,6 @@ from otoole.utils import read_packaged_file
 logger = logging.getLogger(__name__)
 
 
-class Inputs(object):
-    """Represents the set of inputs associated with an OSeMOSYS model
-
-    Arguments
-    ---------
-    config : str, default=None
-    """
-
-    def __init__(self, config: str = None):
-        self.config = read_packaged_file("config.yaml", "otoole.preprocess")
-        self._default_values = self._read_default_values()
-
-    def _read_default_values(self):
-        default_values = {}
-        for name, contents in self.config.items():
-            if contents["type"] == "param":
-                default_values[name] = contents["default"]
-        return default_values
-
-    def default_values(self):
-        return self._default_values
-
-
 class Context:
     """
     The Context defines the interface of interest to clients.
@@ -172,6 +149,19 @@ class Strategy(ABC):
             self._results_config = results_config
         else:
             self._results_config = self._read_results_config()
+        self._input_config = self._add_dtypes(self._input_config)
+
+    def _add_dtypes(self, config: Dict):
+        for name, details in config.items():
+            if details["type"] == "param":
+                dtypes = {}
+                for column in details["indices"] + ["VALUE"]:
+                    if column == "VALUE":
+                        dtypes["VALUE"] = details["dtype"]
+                    else:
+                        dtypes[column] = config[column]["dtype"]
+                details["index_dtypes"] = dtypes
+        return config
 
     def _read_config(self) -> Dict[str, Dict]:
         return read_packaged_file("config.yaml", "otoole.preprocess")
@@ -285,15 +275,46 @@ class ReadStrategy(Strategy):
     Strategies.
     """
 
-    def _check_index(self, input_data: Dict):
-        """Checks and applied that an index is applied to the parameter DataFrame
+    def _check_index(
+        self, input_data: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
+        """Checks index and datatypes are applied to the parameter DataFrame
+
+        Also removes empty lines
+
+        Arguments
+        ---------
+        input_data : dict
+            Dictionary and pandas DataFrames containing the OSeMOSYS parameters
         """
         for name, df in input_data.items():
+
             details = self.input_config[name]
-            try:
-                df.set_index(details["indices"], inplace=True)
-            except KeyError:
-                logger.debug("Parameter %s is indexed", name)
+
+            dtypes = {}  # type: Dict[str, str]
+
+            if details["type"] == "param":
+                logger.debug("Identified {} as a parameter".format(name))
+                try:
+                    df.set_index(details["indices"], inplace=True)
+                except KeyError:
+                    logger.debug("Unable to set index on {}".format(name))
+                    pass
+
+                logger.debug("Column dtypes identified: {}".format(dtypes))
+
+                # Drop empty rows
+                df = (
+                    df.dropna(axis=0, how="all")
+                    .reset_index()
+                    .astype(details["index_dtypes"])
+                    .set_index(details["indices"])
+                )
+            else:
+                logger.debug("Identified {} as a set".format(name))
+                df = df.astype(details["dtype"])
+            input_data[name] = df
+        return input_data
 
     @abstractmethod
     def read(
