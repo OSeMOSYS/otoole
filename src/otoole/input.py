@@ -149,6 +149,19 @@ class Strategy(ABC):
             self._results_config = results_config
         else:
             self._results_config = self._read_results_config()
+        self._input_config = self._add_dtypes(self._input_config)
+
+    def _add_dtypes(self, config: Dict):
+        for name, details in config.items():
+            if details["type"] == "param":
+                dtypes = {}
+                for column in details["indices"] + ["VALUE"]:
+                    if column == "VALUE":
+                        dtypes["VALUE"] = details["dtype"]
+                    else:
+                        dtypes[column] = config[column]["dtype"]
+                details["index_dtypes"] = dtypes
+        return config
 
     def _read_config(self) -> Dict[str, Dict]:
         return read_packaged_file("config.yaml", "otoole.preprocess")
@@ -278,7 +291,7 @@ class ReadStrategy(Strategy):
 
             details = self.input_config[name]
 
-            dtypes = {}
+            dtypes = {}  # type: Dict[str, str]
 
             if details["type"] == "param":
                 logger.debug("Identified {} as a parameter".format(name))
@@ -287,11 +300,6 @@ class ReadStrategy(Strategy):
                 except KeyError:
                     logger.debug("Unable to set index on {}".format(name))
                     pass
-                for column in details["indices"] + ["VALUE"]:
-                    if column == "VALUE":
-                        dtypes["VALUE"] = details["dtype"]
-                    else:
-                        dtypes[column] = self.input_config[column]["dtype"]
 
                 logger.debug("Column dtypes identified: {}".format(dtypes))
 
@@ -299,7 +307,7 @@ class ReadStrategy(Strategy):
                 df = (
                     df.dropna(axis=0, how="all")
                     .reset_index()
-                    .astype(dtypes)
+                    .astype(details["index_dtypes"])
                     .set_index(details["indices"])
                 )
             else:

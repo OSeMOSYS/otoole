@@ -391,6 +391,18 @@ class TestCleanOnRead:
     """Tests that a datapackage is cleaned and indexed upon reading
     """
 
+    def test_index_dtypes_available(self):
+        reader = ReadMemory({})
+        config = reader._input_config
+        assert "index_dtypes" in config["AccumulatedAnnualDemand"].keys()
+        actual = config["AccumulatedAnnualDemand"]["index_dtypes"]
+        assert actual == {
+            "REGION": "str",
+            "FUEL": "str",
+            "YEAR": "int",
+            "VALUE": "float",
+        }
+
     def test_remove_empty_lines(self):
 
         data = [
