@@ -403,7 +403,7 @@ class TestCleanOnRead:
         parameters = {"AccumulatedAnnualDemand": df}
 
         reader = ReadMemory(parameters)
-        reader._check_index(parameters)
+        actual, _ = reader.read()
 
         expected = {
             "AccumulatedAnnualDemand": pd.DataFrame(
@@ -419,7 +419,7 @@ class TestCleanOnRead:
 
         assert "AccumulatedAnnualDemand" in parameters.keys()
         pd.testing.assert_frame_equal(
-            parameters["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
+            actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
         )
 
     def test_change_types(self):

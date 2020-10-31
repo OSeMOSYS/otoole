@@ -285,7 +285,9 @@ class ReadStrategy(Strategy):
     Strategies.
     """
 
-    def _check_index(self, input_data: Dict) -> None:
+    def _check_index(
+        self, input_data: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
         """Checks index and datatypes are applied to the parameter DataFrame
 
         Also removes empty lines
@@ -306,6 +308,7 @@ class ReadStrategy(Strategy):
                 try:
                     df.set_index(details["indices"], inplace=True)
                 except KeyError:
+                    logger.debug("Unable to set index on {}".format(name))
                     pass
                 for column in details["indices"] + ["VALUE"]:
                     if column == "VALUE":
@@ -313,13 +316,20 @@ class ReadStrategy(Strategy):
                     else:
                         dtypes[column] = self.config[column]["dtype"]
 
+                logger.debug("Column dtypes identified: {}".format(dtypes))
+
                 # Drop empty rows
-                df.dropna(axis=0, inplace=True, how="all")
-                df.reset_index(inplace=True)
-                df.astype(dtypes, copy=False)
-                df.set_index(details["indices"], inplace=True)
+                df = (
+                    df.dropna(axis=0, how="all")
+                    .reset_index()
+                    .astype(dtypes)
+                    .set_index(details["indices"])
+                )
             else:
-                df.astype(details["dtype"], copy=False)
+                logger.debug("Identified {} as a set".format(name))
+                df = df.astype(details["dtype"])
+            input_data[name] = df
+        return input_data
 
     @abstractmethod
     def read(
