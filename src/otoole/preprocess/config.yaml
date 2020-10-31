@@ -80,7 +80,12 @@ DepreciationMethod:
     dtype: float
     default: 1
 DiscountRate:
-    indices: [REGION]
+    indices: [REGION,TECHNOLOGY]
+    type: param
+    dtype: float
+    default: 0.05
+DiscountRateStorage:
+    indices: [REGION,STORAGE]
     type: param
     dtype: float
     default: 0.05
