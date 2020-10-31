@@ -51,33 +51,6 @@ from otoole.utils import read_packaged_file
 logger = logging.getLogger(__name__)
 
 
-class Inputs(object):
-    """Represents the set of inputs associated with an OSeMOSYS model
-
-    Arguments
-    ---------
-    config : str, default=None
-    """
-
-    def __init__(self, config: str = None):
-        self.input_config = read_packaged_file("config.yaml", "otoole.preprocess")
-        self._default_values = self._read_default_values()
-
-    def _read_default_values(self):
-        default_values = {}
-        for name, contents in self.input_config.items():
-            if contents["type"] == "param":
-                default_values[name] = contents["default"]
-        return default_values
-
-    def default_values(self):
-        return self._default_values
-
-    @property
-    def config(self):
-        return self.input_config
-
-
 class Context:
     """
     The Context defines the interface of interest to clients.
