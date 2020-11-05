@@ -130,6 +130,11 @@ class ReadCbc(ReadStrategy):
             names=["Variable", "indexvalue"],
             skiprows=1,
         )  # type: pd.DataFrame
+        if df["Variable"].astype(str).str.contains(r"^(\*\*)").any():
+            LOGGER.warning(
+                "CBC Solution File contains decision variables out of bounds. "
+                + "You have an infeasible solution"
+            )
         df["Variable"] = (
             df["Variable"]
             .astype(str)
