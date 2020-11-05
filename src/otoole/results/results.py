@@ -126,16 +126,20 @@ class ReadCbc(ReadStrategy):
         df = pd.read_csv(
             file_path,
             header=None,
-            names=["temp", "VALUE"],
-            delim_whitespace=True,
+            sep="(",
+            names=["Variable", "indexvalue"],
             skiprows=1,
-            usecols=[1, 2],
         )  # type: pd.DataFrame
-        df.columns = ["temp", "Value"]
-        df[["Variable", "Index"]] = df["temp"].str.split("(", expand=True)
-        df = df.drop("temp", axis=1)
+        df["Variable"] = (
+            df["Variable"]
+            .astype(str)
+            .str.replace(r"^(\*\*)", "")
+            .str.split(expand=True)[1]
+        )
+        df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
         df["Index"] = df["Index"].str.replace(")", "")
-        return df[["Variable", "Index", "Value"]]
+        df = df.drop(columns=["indexvalue"])
+        return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
     def _convert_dataframe_to_csv(
         self, data: pd.DataFrame, input_data: Optional[Dict[str, pd.DataFrame]] = None
