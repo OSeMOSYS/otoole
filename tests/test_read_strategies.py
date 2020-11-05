@@ -419,7 +419,6 @@ class TestReadCbc:
             ],
             columns=["Variable", "Index", "Value"],
         )
-        print(actual)
         pd.testing.assert_frame_equal(actual, expected)
 
 
