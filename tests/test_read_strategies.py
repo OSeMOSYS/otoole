@@ -386,6 +386,41 @@ class TestReadCbc:
             actual[0]["TotalDiscountedCost"], expected["TotalDiscountedCost"]
         )
 
+    cbc_infeasible = dedent(
+        """header
+381191 RateOfActivity(GLOBAL,S4D24,INRNGIM00,1,2041)                           0             0
+381191 RateOfActivity(GLOBAL,S4D24,INRNGIM00,1,2042)                           -7.7011981e-07             0.024001857
+381192 RateOfActivity(GLOBAL,S1D1,INRNGIM00,1,2043)                            -3.6128354e-06             0.022858911
+381199 RateOfActivity(GLOBAL,S1D8,INRNGIM00,1,2043)                            -3.1111316e-06             0.022858911
+381200 RateOfActivity(GLOBAL,S1D9,INRNGIM00,1,2043)                            -8.2325306e-07             0.022858911
+381201 RateOfActivity(GLOBAL,S1D10,INRNGIM00,1,2043)                           -3.1112991e-06             0.022858911
+**  381218 RateOfActivity(GLOBAL,S2D3,INRNGIM00,1,2043)                            -1.6357402e-06             0.022858911
+**  381221 RateOfActivity(GLOBAL,S2D6,INRNGIM00,1,2043)                            -3.1111969e-06             0.022858911
+**  381229 RateOfActivity(GLOBAL,S2D14,INRNGIM00,1,2043)                           -1.3925924e-07             0.010964295
+"""
+    )
+
+    def test_manage_infeasible_variables(self):
+        input_file = self.cbc_infeasible
+        reader = ReadCbc()
+        with StringIO(input_file) as file_buffer:
+            actual = reader._convert_cbc_to_dataframe(file_buffer)
+        expected = pd.DataFrame(
+            [
+                ["RateOfActivity", "GLOBAL,S4D24,INRNGIM00,1,2041", 0],
+                ["RateOfActivity", "GLOBAL,S4D24,INRNGIM00,1,2042", -7.7011981e-07],
+                ["RateOfActivity", "GLOBAL,S1D1,INRNGIM00,1,2043", -3.6128354e-06],
+                ["RateOfActivity", "GLOBAL,S1D8,INRNGIM00,1,2043", -3.1111316e-06],
+                ["RateOfActivity", "GLOBAL,S1D9,INRNGIM00,1,2043", -8.2325306e-07],
+                ["RateOfActivity", "GLOBAL,S1D10,INRNGIM00,1,2043", -3.1112991e-06],
+                ["RateOfActivity", "GLOBAL,S2D3,INRNGIM00,1,2043", -1.6357402e-06],
+                ["RateOfActivity", "GLOBAL,S2D6,INRNGIM00,1,2043", -3.1111969e-06],
+                ["RateOfActivity", "GLOBAL,S2D14,INRNGIM00,1,2043", -1.3925924e-07],
+            ],
+            columns=["Variable", "Index", "Value"],
+        )
+        pd.testing.assert_frame_equal(actual, expected)
+
 
 class TestCleanOnRead:
     """Tests that a datapackage is cleaned and indexed upon reading
