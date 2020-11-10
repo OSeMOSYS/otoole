@@ -154,6 +154,7 @@ class TestReadGurobi:
     gurobi_data = dedent(
         """# Solution for model cost
 # Objective value = 4.4973196701520455e+03
+TotalDiscountedCost(SIMPLICITY,2013) 0
 TotalDiscountedCost(SIMPLICITY,2014) 1.9360385416218188e+02
 TotalDiscountedCost(SIMPLICITY,2015) 1.8772386050936669e+02
 TotalDiscountedCost(SIMPLICITY,2016) 1.8399762956864294e+02

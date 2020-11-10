@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.9
+==========
+- Adds support for processing Gurobi solution files
+- Better handling of datatypes when converting datapackages
+- Fixing bugs on Windows where empty lines were written out during conversion to datapackage
+
 Version 0.8
 ===========
 - Behind-the-scenes reorganisation of code to use `ReadStrategies` and `WriteStrategies`

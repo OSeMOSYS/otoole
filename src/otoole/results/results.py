@@ -225,6 +225,7 @@ class ReadGurobi(ReadResults):
         df[["Variable", "Index"]] = df["Variable"].str.split("(", expand=True)
         df["Index"] = df["Index"].str.replace(")", "")
         LOGGER.debug(df)
+        df = df[(df["Value"] != 0)].reset_index()
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
