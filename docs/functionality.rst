@@ -113,11 +113,11 @@ CBC is an alternative open-source solver which offers better performance than GL
 much larger models. However, CBC has no way of knowing how to write out the CSV files you were used
 to dealing with when using GLPK.  *otoole* to the rescue!
 
-*otoole* currently supports using CBC with all three versions of GNU MathProg OSeMOSYS
-- the long, short and fast versions.
+*otoole* currently supports using CBC, CPLEX or Gurobi with all three versions of
+GNU MathProg OSeMOSYS - the long, short and fast versions.
 
 The long version includes all results as variables within the formulation,
-so the ``otoole results`` command parses the CBC solution file,
+so the ``otoole results`` command parses the solution file,
 extracts the required variables, and produces a folder of CSV files containing the results
 in an identical format to if you had used GLPK.
 
@@ -130,7 +130,8 @@ those produced by the long version of the code.
 ==================
 
 
-The ``results`` command creates a folder of CSV result files from a CBC, CLP or CPLEX solution file::
+The ``results`` command creates a folder of CSV result files from a CBC, CLP, Gurobi or CPLEX
+solution file::
 
     $ otoole results --help
     usage: otoole results [-h] [--input_datapackage INPUT_DATAPACKAGE]
@@ -138,7 +139,7 @@ The ``results`` command creates a folder of CSV result files from a CBC, CLP or 
                         {cbc,cplex} {csv} from_path to_path
 
     positional arguments:
-    {cbc,cplex}           Result data format to convert from
+    {cbc,cplex,gurobi}    Result data format to convert from
     {csv}                 Result data format to convert to
     from_path             Path to file or folder to convert from
     to_path               Path to file or folder to convert to

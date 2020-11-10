@@ -50,6 +50,7 @@ from otoole import (
     ReadDatafile,
     ReadDatapackage,
     ReadExcel,
+    ReadGurobi,
     WriteCsv,
     WriteDatafile,
     WriteDatapackage,
@@ -99,6 +100,8 @@ def result_matrix(args):
         read_strategy = ReadCbc()
     elif args.from_format == "cplex":
         read_strategy = ReadCplex()
+    elif args.from_format == "gurobi":
+        read_strategy = ReadGurobi()
 
     if args.to_format == "csv":
         write_strategy = WriteCsv()
@@ -190,7 +193,7 @@ def get_parser():
     result_parser.add_argument(
         "from_format",
         help="Result data format to convert from",
-        choices=sorted(["cbc", "cplex"]),
+        choices=sorted(["cbc", "cplex", "gurobi"]),
     )
     result_parser.add_argument(
         "to_format", help="Result data format to convert to", choices=sorted(["csv"]),
@@ -230,32 +233,6 @@ def get_parser():
     )
     convert_parser.add_argument("to_path", help="Path to file or folder to convert to")
     convert_parser.set_defaults(func=conversion_matrix)
-
-    # Parser for the CPLEX related commands
-    cplex_parser = subparsers.add_parser("cplex", help="Process a CPLEX solution file")
-
-    cplex_parser.add_argument(
-        "cplex_file", help="The filepath of the OSeMOSYS cplex output file"
-    )
-    cplex_parser.add_argument(
-        "output_file", help="The filepath of the converted file that will be written"
-    )
-    cplex_parser.add_argument(
-        "-s",
-        "--start_year",
-        type=int,
-        default=2015,
-        help="Output only the results from this year onwards",
-    )
-    cplex_parser.add_argument(
-        "-e",
-        "--end_year",
-        type=int,
-        default=2070,
-        help="Output only the results upto and including this year",
-    )
-    cplex_parser.add_argument("output_format", choices=["csv", "cbc"], default="cbc")
-    cplex_parser.set_defaults(func=cplex2cbc)
 
     # Parser for validation
     valid_parser = subparsers.add_parser("validate", help="Validate an OSeMOSYS model")

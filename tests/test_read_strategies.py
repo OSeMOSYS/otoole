@@ -11,6 +11,7 @@ from otoole import ReadDatafile, ReadMemory
 from otoole.results.results import (
     ReadCbc,
     ReadCplex,
+    ReadGurobi,
     check_duplicate_index,
     identify_duplicate,
     rename_duplicate_column,
@@ -148,6 +149,92 @@ class TestReadCplex:
         pd.testing.assert_frame_equal(actual[1], expected[1])
 
 
+class TestReadGurobi:
+
+    gurobi_data = dedent(
+        """# Solution for model cost
+# Objective value = 4.4973196701520455e+03
+TotalDiscountedCost(SIMPLICITY,2013) 0
+TotalDiscountedCost(SIMPLICITY,2014) 1.9360385416218188e+02
+TotalDiscountedCost(SIMPLICITY,2015) 1.8772386050936669e+02
+TotalDiscountedCost(SIMPLICITY,2016) 1.8399762956864294e+02
+TotalDiscountedCost(SIMPLICITY,2017) 1.8172752298186381e+02
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2014) 1.59376124775045
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2015) 1.60167966406719
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2016) 1.6369526094781
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
+"""
+    )
+
+    def test_convert_to_dataframe(self):
+        input_file = self.gurobi_data
+        reader = ReadGurobi()
+        with StringIO(input_file) as file_buffer:
+            actual = reader._convert_to_dataframe(file_buffer)
+        print(actual)
+        expected = pd.DataFrame(
+            [
+                ["TotalDiscountedCost", "SIMPLICITY,2014", 1.9360385416218188e02],
+                ["TotalDiscountedCost", "SIMPLICITY,2015", 1.8772386050936669e02],
+                ["TotalDiscountedCost", "SIMPLICITY,2016", 1.8399762956864294e02],
+                ["TotalDiscountedCost", "SIMPLICITY,2017", 1.8172752298186381e02],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2014", 1.59376124775045],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2015", 1.60167966406719],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2016", 1.6369526094781],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2017", 1.68590281943611],
+            ],
+            columns=["Variable", "Index", "Value"],
+        ).astype({"Variable": str, "Index": str, "Value": float})
+
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_solution_to_dataframe(self):
+        input_file = self.gurobi_data
+        reader = ReadGurobi()
+        with StringIO(input_file) as file_buffer:
+            actual = reader.read(file_buffer)
+        print(actual)
+        expected = (
+            pd.DataFrame(
+                [
+                    ["SIMPLICITY", 2014, 1.9360385416218188e02],
+                    ["SIMPLICITY", 2015, 1.8772386050936669e02],
+                    ["SIMPLICITY", 2016, 1.8399762956864294e02],
+                    ["SIMPLICITY", 2017, 1.8172752298186381e02],
+                ],
+                columns=["REGION", "YEAR", "VALUE"],
+            )
+            .astype({"YEAR": int, "VALUE": float})
+            .set_index(["REGION", "YEAR"])
+        )
+
+        pd.testing.assert_frame_equal(actual[0]["TotalDiscountedCost"], expected)
+
+        expected = (
+            pd.DataFrame(
+                [
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2014, 1.59376124775045],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2015, 1.60167966406719],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2016, 1.6369526094781],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2017, 1.68590281943611],
+                ],
+                columns=[
+                    "REGION",
+                    "TIMESLICE",
+                    "TECHNOLOGY",
+                    "MODE_OF_OPERATION",
+                    "YEAR",
+                    "VALUE",
+                ],
+            )
+            .astype({"YEAR": int, "VALUE": float, "MODE_OF_OPERATION": int})
+            .set_index(
+                ["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"]
+            )
+        )
+        pd.testing.assert_frame_equal(actual[0]["RateOfActivity"], expected)
+
+
 class TestReadCbc:
 
     cbc_data = dedent(
@@ -265,7 +352,7 @@ class TestReadCbc:
     def test_read_cbc_to_dataframe(self, cbc_input, expected):
         cbc_reader = ReadCbc()
         with StringIO(cbc_input) as file_buffer:
-            actual = cbc_reader._convert_cbc_to_dataframe(file_buffer)
+            actual = cbc_reader._convert_to_dataframe(file_buffer)
         pd.testing.assert_frame_equal(actual, expected)
 
     test_data_2 = [
@@ -404,7 +491,7 @@ class TestReadCbc:
         input_file = self.cbc_infeasible
         reader = ReadCbc()
         with StringIO(input_file) as file_buffer:
-            actual = reader._convert_cbc_to_dataframe(file_buffer)
+            actual = reader._convert_to_dataframe(file_buffer)
         expected = pd.DataFrame(
             [
                 ["RateOfActivity", "GLOBAL,S4D24,INRNGIM00,1,2041", 0],
