@@ -158,10 +158,10 @@ TotalDiscountedCost(SIMPLICITY,2014) 1.9360385416218188e+02
 TotalDiscountedCost(SIMPLICITY,2015) 1.8772386050936669e+02
 TotalDiscountedCost(SIMPLICITY,2016) 1.8399762956864294e+02
 TotalDiscountedCost(SIMPLICITY,2017) 1.8172752298186381e+02
-RateOfDemand(SIMPLICITY,ID,FEL1,2014) 1.59376124775045
-RateOfDemand(SIMPLICITY,ID,FEL1,2015) 1.60167966406719
-RateOfDemand(SIMPLICITY,ID,FEL1,2016) 1.6369526094781
-RateOfDemand(SIMPLICITY,ID,FEL1,2017) 1.68590281943611
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2014) 1.59376124775045
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2015) 1.60167966406719
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2016) 1.6369526094781
+RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
 """
     )
 
@@ -177,6 +177,10 @@ RateOfDemand(SIMPLICITY,ID,FEL1,2017) 1.68590281943611
                 ["TotalDiscountedCost", "SIMPLICITY,2015", 1.8772386050936669e02],
                 ["TotalDiscountedCost", "SIMPLICITY,2016", 1.8399762956864294e02],
                 ["TotalDiscountedCost", "SIMPLICITY,2017", 1.8172752298186381e02],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2014", 1.59376124775045],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2015", 1.60167966406719],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2016", 1.6369526094781],
+                ["RateOfActivity", "SIMPLICITY,ID,FEL1,1,2017", 1.68590281943611],
             ],
             columns=["Variable", "Index", "Value"],
         ).astype({"Variable": str, "Index": str, "Value": float})
@@ -208,17 +212,26 @@ RateOfDemand(SIMPLICITY,ID,FEL1,2017) 1.68590281943611
         expected = (
             pd.DataFrame(
                 [
-                    ["SIMPLICITY", "ID", "FEL1", 2014, 1.59376124775045],
-                    ["SIMPLICITY", "ID", "FEL1", 2015, 1.60167966406719],
-                    ["SIMPLICITY", "ID", "FEL1", 2016, 1.6369526094781],
-                    ["SIMPLICITY", "ID", "FEL1", 2017, 1.68590281943611],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2014, 1.59376124775045],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2015, 1.60167966406719],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2016, 1.6369526094781],
+                    ["SIMPLICITY", "ID", "FEL1", 1, 2017, 1.68590281943611],
                 ],
-                columns=["REGION", "TIMESLICE", "FUEL", "YEAR", "VALUE"],
+                columns=[
+                    "REGION",
+                    "TIMESLICE",
+                    "TECHNOLOGY",
+                    "MODE_OF_OPERATION",
+                    "YEAR",
+                    "VALUE",
+                ],
             )
-            .astype({"YEAR": int, "VALUE": float})
-            .set_index(["REGION", "TIMESLICE", "FUEL", "YEAR"])
+            .astype({"YEAR": int, "VALUE": float, "MODE_OF_OPERATION": int})
+            .set_index(
+                ["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"]
+            )
         )
-        pd.testing.assert_frame_equal(actual[0]["RateOfDemand"], expected)
+        pd.testing.assert_frame_equal(actual[0]["RateOfActivity"], expected)
 
 
 class TestReadCbc:

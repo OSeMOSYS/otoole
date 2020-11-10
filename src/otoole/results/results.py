@@ -113,7 +113,7 @@ class ReadResults(ReadStrategy):
             else:
                 not_found.append(name)
 
-        LOGGER.debug("Unable to find CBC variables for: %s", ", ".join(not_found))
+        LOGGER.debug("Unable to find result variables for: %s", ", ".join(not_found))
 
         results_package = ResultsPackage(results, input_data)
 
@@ -220,26 +220,11 @@ class ReadGurobi(ReadResults):
         file_path : str
         """
         df = pd.read_csv(
-            file_path,
-            header=None,
-            sep="(",
-            names=["Variable", "indexvalue"],
-            skiprows=1,
+            file_path, header=None, sep=" ", names=["Variable", "Value"], skiprows=2,
         )  # type: pd.DataFrame
-        if df["Variable"].astype(str).str.contains(r"^\*\*").any():
-            LOGGER.warning(
-                "CBC Solution File contains decision variables out of bounds. "
-                + "You have an infeasible solution"
-            )
-        df["Variable"] = (
-            df["Variable"]
-            .astype(str)
-            .str.replace(r"^\*\*", "")
-            .str.split(expand=True)[1]
-        )
-        df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
+        df[["Variable", "Index"]] = df["Variable"].str.split("(", expand=True)
         df["Index"] = df["Index"].str.replace(")", "")
-        df = df.drop(columns=["indexvalue"])
+        LOGGER.debug(df)
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
