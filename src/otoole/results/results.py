@@ -1,4 +1,5 @@
 import logging
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
 
 import pandas as pd
@@ -10,84 +11,7 @@ from otoole.results.result_package import ResultsPackage
 LOGGER = logging.getLogger(__name__)
 
 
-class ReadCplex(ReadStrategy):
-    """
-    """
-
-    def read(
-        self, filepath: Union[str, TextIO], **kwargs
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        data = {}  # type: Dict
-
-        if "input_data" in kwargs:
-            input_data = kwargs["input_data"]
-            years = input_data["YEAR"].values  # type: List
-            start_year = int(years[0])
-            end_year = int(years[-1])
-        else:
-            raise RuntimeError("To process CPLEX results please provide the input file")
-
-        for linenum, line in enumerate(filepath):
-            try:
-                row_as_list = line.split("\t")
-                name, df = self.convert_df(row_as_list, start_year, end_year,)
-
-                if name in data:
-                    data[name] = data[name].append(df)
-                else:
-                    data[name] = [df]
-
-            except ValueError as ex:
-                msg = "Error caused at line {}: {}. {}"
-                raise ValueError(msg.format(linenum, line, ex))
-
-        results = {}
-
-        for name, contents in data.items():
-            results[name] = pd.concat(contents)
-
-        return results, self._read_default_values(self.results_config)
-
-    def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
-        """Extracts useful information from a line of a results file
-        """
-        variable = data[0]
-        number = len(self.results_config[variable]["indices"])
-        dimensions = tuple(data[1:(number)])
-        values = data[(number):]
-        return (variable, dimensions, values)
-
-    def convert_df(
-        self, row_as_list: List, start_year: int, end_year: int
-    ) -> Tuple[str, pd.DataFrame]:
-        """Read the cplex line into a pandas DataFrame
-
-        """
-        variable, dimensions, values = self.extract_variable_dimensions_values(
-            row_as_list
-        )
-        index = self.results_config[variable]["indices"]
-        columns = index[:-1] + list(range(start_year, end_year + 1, 1))
-        df = pd.DataFrame(data=[list(dimensions) + values], columns=columns).set_index(
-            index[:-1]
-        )
-        df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
-        df = df.reset_index()
-        df = check_datatypes(df, {**self.input_config, **self.results_config}, variable)
-        df = df.set_index(index)
-        df = df[(df != 0).any(axis=1)]
-        return (variable, df)
-
-
-class ReadCbc(ReadStrategy):
-    """Read a CBC solution file into memory
-
-    Arguments
-    ---------
-    user_config
-    results_config
-    """
-
+class ReadResults(ReadStrategy):
     def read(
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
@@ -111,40 +35,14 @@ class ReadCbc(ReadStrategy):
         else:
             input_data = None
 
-        cbc = self._convert_cbc_to_dataframe(filepath)
+        cbc = self._convert_to_dataframe(filepath)
         results = self._convert_dataframe_to_csv(cbc, input_data)
         default_values = self._read_default_values(self.results_config)
         return results, default_values
 
-    def _convert_cbc_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
-        """Reads a CBC solution file into a pandas DataFrame
-
-        Arguments
-        ---------
-        file_path : str
-        """
-        df = pd.read_csv(
-            file_path,
-            header=None,
-            sep="(",
-            names=["Variable", "indexvalue"],
-            skiprows=1,
-        )  # type: pd.DataFrame
-        if df["Variable"].astype(str).str.contains(r"^\*\*").any():
-            LOGGER.warning(
-                "CBC Solution File contains decision variables out of bounds. "
-                + "You have an infeasible solution"
-            )
-        df["Variable"] = (
-            df["Variable"]
-            .astype(str)
-            .str.replace(r"^\*\*", "")
-            .str.split(expand=True)[1]
-        )
-        df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
-        df["Index"] = df["Index"].str.replace(")", "")
-        df = df.drop(columns=["indexvalue"])
-        return df[["Variable", "Index", "Value"]].astype({"Value": float})
+    @abstractmethod
+    def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        raise NotImplementedError()
 
     def _convert_dataframe_to_csv(
         self, data: pd.DataFrame, input_data: Optional[Dict[str, pd.DataFrame]] = None
@@ -239,6 +137,150 @@ class ReadCbc(ReadStrategy):
                 )
 
         return results
+
+
+class ReadCplex(ReadStrategy):
+    """
+    """
+
+    def read(
+        self, filepath: Union[str, TextIO], **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+        data = {}  # type: Dict
+
+        if "input_data" in kwargs:
+            input_data = kwargs["input_data"]
+            years = input_data["YEAR"].values  # type: List
+            start_year = int(years[0])
+            end_year = int(years[-1])
+        else:
+            raise RuntimeError("To process CPLEX results please provide the input file")
+
+        for linenum, line in enumerate(filepath):
+            try:
+                row_as_list = line.split("\t")
+                name, df = self.convert_df(row_as_list, start_year, end_year,)
+
+                if name in data:
+                    data[name] = data[name].append(df)
+                else:
+                    data[name] = [df]
+
+            except ValueError as ex:
+                msg = "Error caused at line {}: {}. {}"
+                raise ValueError(msg.format(linenum, line, ex))
+
+        results = {}
+
+        for name, contents in data.items():
+            results[name] = pd.concat(contents)
+
+        return results, self._read_default_values(self.results_config)
+
+    def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
+        """Extracts useful information from a line of a results file
+        """
+        variable = data[0]
+        number = len(self.results_config[variable]["indices"])
+        dimensions = tuple(data[1:(number)])
+        values = data[(number):]
+        return (variable, dimensions, values)
+
+    def convert_df(
+        self, row_as_list: List, start_year: int, end_year: int
+    ) -> Tuple[str, pd.DataFrame]:
+        """Read the cplex line into a pandas DataFrame
+
+        """
+        variable, dimensions, values = self.extract_variable_dimensions_values(
+            row_as_list
+        )
+        index = self.results_config[variable]["indices"]
+        columns = index[:-1] + list(range(start_year, end_year + 1, 1))
+        df = pd.DataFrame(data=[list(dimensions) + values], columns=columns).set_index(
+            index[:-1]
+        )
+        df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
+        df = df.reset_index()
+        df = check_datatypes(df, {**self.input_config, **self.results_config}, variable)
+        df = df.set_index(index)
+        df = df[(df != 0).any(axis=1)]
+        return (variable, df)
+
+
+class ReadGurobi(ReadResults):
+    """Read a Gurobi solution file into memory
+    """
+
+    def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        """Reads a Gurobi solution file into a pandas DataFrame
+
+        Arguments
+        ---------
+        file_path : str
+        """
+        df = pd.read_csv(
+            file_path,
+            header=None,
+            sep="(",
+            names=["Variable", "indexvalue"],
+            skiprows=1,
+        )  # type: pd.DataFrame
+        if df["Variable"].astype(str).str.contains(r"^\*\*").any():
+            LOGGER.warning(
+                "CBC Solution File contains decision variables out of bounds. "
+                + "You have an infeasible solution"
+            )
+        df["Variable"] = (
+            df["Variable"]
+            .astype(str)
+            .str.replace(r"^\*\*", "")
+            .str.split(expand=True)[1]
+        )
+        df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
+        df["Index"] = df["Index"].str.replace(")", "")
+        df = df.drop(columns=["indexvalue"])
+        return df[["Variable", "Index", "Value"]].astype({"Value": float})
+
+
+class ReadCbc(ReadResults):
+    """Read a CBC solution file into memory
+
+    Arguments
+    ---------
+    user_config
+    results_config
+    """
+
+    def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        """Reads a CBC solution file into a pandas DataFrame
+
+        Arguments
+        ---------
+        file_path : str
+        """
+        df = pd.read_csv(
+            file_path,
+            header=None,
+            sep="(",
+            names=["Variable", "indexvalue"],
+            skiprows=1,
+        )  # type: pd.DataFrame
+        if df["Variable"].astype(str).str.contains(r"^\*\*").any():
+            LOGGER.warning(
+                "CBC Solution File contains decision variables out of bounds. "
+                + "You have an infeasible solution"
+            )
+        df["Variable"] = (
+            df["Variable"]
+            .astype(str)
+            .str.replace(r"^\*\*", "")
+            .str.split(expand=True)[1]
+        )
+        df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
+        df["Index"] = df["Index"].str.replace(")", "")
+        df = df.drop(columns=["indexvalue"])
+        return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
 def check_duplicate_index(index: List) -> bool:
