@@ -1,11 +1,29 @@
-sudo: false
 language: python
+os: linux
+dist: xenial
 virtualenv:
   system_site_packages: false
-matrix:
+jobs:
   fast_finish: true
   include:
-  - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="true"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.7" COVERAGE="false"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.8" COVERAGE="true"
+  - env: DISTRIB="conda" PYTHON_VERSION="3.9" COVERAGE="false"
+  - stage: deploy
+    script: skip
+    deploy:
+      edge: true
+      provider: pypi
+      username: willu47
+      password:
+        secure: b+jIvSEU2My0Bpgsv0/tZqbmZsrLPEOkLymxu5uCOWFfaLk8ALSW+R+J3xRJkB02UYOqYuf5E0tXMeAEzM5weCLgJ42kB+AeXrdDXU2n7Fkm61SimTz50wzpv3WenhRMW0A9CqFJHS7kQY7gGcRGcBbDnqg9yssnay8visCNYNGCskiKAwvJjv7mrill2/pJVpautqbvtZRJ3+AeV9UEJSvP88TvHH8lC5p/MnzhebO4IZ8C6MymIUXaKqfQAtpM2Co+ftlMEcHktRx4jUmd1SGQci8A86sITTsUDwQzWJrbR8RiqaUfasCl3gtdL3QQty1lkvoHEzDRVV9512q2qRsjEvbP0p3cFjjXrzZXA8URGrhFyh2Kdm/kvPw6J3yi0OgHtnnoRHRAQuYhGnJ4CGYDtoTSyBMmx7rPzyG1pYcFvUH8MxGOSo0wcfUKAmmWAhxHNmVvTvlBbdlm1A+Z1s0dVU1ePVEmUKacXVaq72f3nUjHAfa6tteVE6MOig6ljXcpuZRnnCJZlT9WEFtMGgMfNJBeWSVO0XXXR+tn1bJw5kDMO6quqKHAGCIWI2uZCBdroCMCrmXjc7upAmy3NhnbuHAudTRRXTPCoWssyu5hOkMfnobJBXDM+7KIwhWbFHQnuP2la7S1r9FrAnN2Rn/B0n1stGLX7UGqUgsuDac=
+      on:
+        tags: true
+        all_branches: true
+      cleanup: false
+  allow_failures:
+  - env: DISTRIB="conda" PYTHON_VERSION="3.9" COVERAGE="false"
+
 install:
 - source tests/travis_install.sh
 before_script:
@@ -13,7 +31,8 @@ before_script:
 - git config --global user.name "Will Usher"
 script:
 - pip install -r requirements.txt
-- python setup.py test
+- python setup.py develop
+- pytest
 - |
   if [[ "$COVERAGE" == "true" ]]; then
     pre-commit install
@@ -29,13 +48,3 @@ cache:
   - "$HOME/miniconda"
 notifications:
   email: false
-deploy:
-  edge: true
-  provider: pypi
-  user: willu47
-  password:
-    secure: b+jIvSEU2My0Bpgsv0/tZqbmZsrLPEOkLymxu5uCOWFfaLk8ALSW+R+J3xRJkB02UYOqYuf5E0tXMeAEzM5weCLgJ42kB+AeXrdDXU2n7Fkm61SimTz50wzpv3WenhRMW0A9CqFJHS7kQY7gGcRGcBbDnqg9yssnay8visCNYNGCskiKAwvJjv7mrill2/pJVpautqbvtZRJ3+AeV9UEJSvP88TvHH8lC5p/MnzhebO4IZ8C6MymIUXaKqfQAtpM2Co+ftlMEcHktRx4jUmd1SGQci8A86sITTsUDwQzWJrbR8RiqaUfasCl3gtdL3QQty1lkvoHEzDRVV9512q2qRsjEvbP0p3cFjjXrzZXA8URGrhFyh2Kdm/kvPw6J3yi0OgHtnnoRHRAQuYhGnJ4CGYDtoTSyBMmx7rPzyG1pYcFvUH8MxGOSo0wcfUKAmmWAhxHNmVvTvlBbdlm1A+Z1s0dVU1ePVEmUKacXVaq72f3nUjHAfa6tteVE6MOig6ljXcpuZRnnCJZlT9WEFtMGgMfNJBeWSVO0XXXR+tn1bJw5kDMO6quqKHAGCIWI2uZCBdroCMCrmXjc7upAmy3NhnbuHAudTRRXTPCoWssyu5hOkMfnobJBXDM+7KIwhWbFHQnuP2la7S1r9FrAnN2Rn/B0n1stGLX7UGqUgsuDac=
-  on:
-    tags: true
-    all_branches: true
-  skip_cleanup: true

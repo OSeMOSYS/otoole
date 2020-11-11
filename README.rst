@@ -12,6 +12,9 @@ otoole : OSeMOSYS tools for energy work
     :target: https://otoole.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+
 A Python toolkit to support use of OSeMOSYS
 
 
@@ -43,7 +46,7 @@ The easiest way to install the dependencies is to use miniconda.
 2. Add the **conda-forge** channel ``conda config --add channels conda-forge``
 3. Create a new Python environment
    ``conda create -n myenv python=3.7 networkx datapackage
-   pandas pulp graphviz xlrd``
+   pandas graphviz xlrd``
 4. Activate the new environment ``conda activate myenv``
 5. Use pip to install otoole ``pip install otoole``
 
@@ -69,6 +72,9 @@ help function::
 
     otoole --help
 
+Documentation
+=============
+A more detailed documentation of otoole can be found here: https://otoole.readthedocs.io/en/stable/index.html
 
 Contributing
 ============

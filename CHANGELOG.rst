@@ -2,6 +2,42 @@
 Changelog
 =========
 
+Version 0.9
+==========
+- Adds support for processing Gurobi solution files
+- Better handling of datatypes when converting datapackages
+- Fixing bugs on Windows where empty lines were written out during conversion to datapackage
+
+Version 0.8
+===========
+- Behind-the-scenes reorganisation of code to use `ReadStrategies` and `WriteStrategies`
+  pattern. This enables much cleaner structuring of the code and more reusability of
+  modular blocks.
+- Updates to documentation with clearer explaination of how to perform conversions
+- Otoole now requires Python 3.7 or later
+- Harmonisation of results and pre-processing using the strategies mentioned above
+- Bugfixes for #61, #63, #65, #70
+
+Version 0.7
+===========
+- Adds results processing and conversion of results
+- CBC results are transformed into a folder of CSV files
+- Missing intermediate results parameters are automatically generated
+- Adds command ``otoole results cbc csv simplicity.sol ./results --input_datafile simplicity.txt``
+- Removes dependency upon PuLP now that amply is available separately on PyPi
+- Fixed bug with parameter names >31 characters in converting to Excel and fixed round trip
+- Added conversions from Excel to datafile and datapackage to avoid intermediate commands so
+  ``otoole convert excel datapackage <> <>`` and ``otoole convert excel datafile <> <>``
+  are both now legal
+
+Version 0.6
+===========
+- Fixes bug in writing to datafile where any values that matched the default were
+  ignored
+- Adds CLI command to convert to Excel from datapackage e.g.
+  ``otoole convert datapackage excel <datapackage.json> <to.xlsx>``
+- Uses black code style and uses mypy and black for syntax checking and formatting
+
 Version 0.5
 ===========
 - Add validation of names and fuels in datapackage

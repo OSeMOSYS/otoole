@@ -13,11 +13,13 @@ Check the version installed::
 
 Read an online OSeMOSYS datapackage and convert it to a modelfile::
 
-    otoole convert datapackage datafile https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip simplicity.txt
+    wget https://zenodo.org/record/3707794/files/OSeMOSYS/simplicity-v0.2.1.zip
+    unzip simplicity-v0.2.1.zip -d simplicity
+    otoole convert datapackage datafile simplicity/OSeMOSYS-simplicity-11a3a26/datapackage.json ./simplicity.txt
 
 Visualise the Reference Energy System::
 
-    otoole viz res https://zenodo.org/record/3479823/files/KTH-dESA/simplicity-v0.1a0.zip res.png && open res.png
+    otoole viz res https://zenodo.org/record/3707794/files/OSeMOSYS/simplicity-v0.2.1.zip res.png && open res.png
 
 Convert an OSeMOSYS datafile to a datapackage::
 
@@ -29,13 +31,13 @@ technologies::
 
     otoole validate datapackage simplicity/datapackage.json
 
-
 Contents
 ========
 
 .. toctree::
    :maxdepth: 2
 
+   Core Functionality <functionality>
    License <license>
    Authors <authors>
    Changelog <changelog>
