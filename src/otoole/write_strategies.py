@@ -113,7 +113,7 @@ class WriteDatafile(WriteStrategy):
         """
         df = self._form_parameter(df, default)
         handle.write("param default {} : {} :=\n".format(default, parameter_name))
-        df.to_csv(path_or_buf=handle, sep=" ", header=False, index=True)
+        df.to_csv(path_or_buf=handle, sep=" ", header=False, index=False)
         handle.write(";\n")
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO):

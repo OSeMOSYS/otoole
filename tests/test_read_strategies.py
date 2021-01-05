@@ -797,9 +797,8 @@ class TestReadExcel:
             ("IH0012", 2019),
         ]
 
-        print(actual["YearSplit"], actual["YearSplit"].index)
+        assert actual["YearSplit"].index.names == ["TIMESLICE", "YEAR"]
         actual_data = actual["YearSplit"].loc[index, "VALUE"]
-        # assert actual_data == 0.238356164
 
         expected = [
             0.238356164,
