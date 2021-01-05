@@ -93,7 +93,9 @@ class TestWriteDatafile:
 
         data = [["SIMPLICITY", "BIOMASS", 0.95969], ["SIMPLICITY", "ETH1", 4.69969]]
 
-        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
+        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"]).set_index(
+            ["REGION", "FUEL"]
+        )
 
         stream = io.StringIO()
         convert = WriteDatafile()
@@ -120,7 +122,9 @@ class TestWriteDatafile:
             ["SIMPLICITY", "ETH3", -1],
         ]
 
-        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"])
+        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "VALUE"]).set_index(
+            ["REGION", "FUEL"]
+        )
 
         stream = io.StringIO()
         convert = WriteDatafile()
