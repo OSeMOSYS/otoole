@@ -248,14 +248,8 @@ class WriteStrategy(Strategy):
         logger.debug(default_values)
 
         for name, df in sorted(inputs.items()):
-            logger.debug(name)
-
-            df = df.reset_index()
-            if "index" in df.columns:
-                df = df.drop(columns="index")
-
-            logger.debug("Number of columns: %s, %s", len(df.columns), df.columns)
-            if len(df.columns) > 1:
+            logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
+            if len(df.index.names) > 1:
                 default_value = default_values[name]
                 self._write_parameter(df, name, handle, default=default_value)
             else:

@@ -49,6 +49,7 @@ class TestConvert:
         tmpfile.seek(0)
         actual = tmpfile.readlines()
         tmpfile.close()
+
         assert actual[-1] == b"end;\n"
         assert actual[0] == b"# Model file written by *otoole*\n"
         assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.892132\n"
