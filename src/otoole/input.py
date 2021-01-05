@@ -286,12 +286,15 @@ class ReadStrategy(Strategy):
         ---------
         input_data : dict
             Dictionary and pandas DataFrames containing the OSeMOSYS parameters
+
+        Returns
+        -------
+        dict
+            Dictionary and pandas DataFrames containing the OSeMOSYS parameters
         """
         for name, df in input_data.items():
 
             details = self.input_config[name]
-
-            dtypes = {}  # type: Dict[str, str]
 
             if details["type"] == "param":
                 logger.debug("Identified {} as a parameter".format(name))
@@ -301,7 +304,9 @@ class ReadStrategy(Strategy):
                     logger.debug("Unable to set index on {}".format(name))
                     pass
 
-                logger.debug("Column dtypes identified: {}".format(dtypes))
+                logger.debug(
+                    "Column dtypes identified: {}".format(details["index_dtypes"])
+                )
 
                 # Drop empty rows
                 df = (
@@ -313,7 +318,9 @@ class ReadStrategy(Strategy):
             else:
                 logger.debug("Identified {} as a set".format(name))
                 df = df.astype(details["dtype"])
+
             input_data[name] = df
+
         return input_data
 
     @abstractmethod
