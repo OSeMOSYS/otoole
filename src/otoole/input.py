@@ -249,7 +249,8 @@ class WriteStrategy(Strategy):
 
         for name, df in sorted(inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
-            if len(df.index.names) > 1:
+            entity_type = self.input_config[name]["type"]
+            if entity_type == "param":
                 default_value = default_values[name]
                 self._write_parameter(df, name, handle, default=default_value)
             else:
