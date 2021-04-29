@@ -153,9 +153,9 @@ class WriteCsv(WriteStrategy):
         self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
     ) -> pd.DataFrame:
         """Write parameter data"""
-        self._write_out_dataframe(self.filepath, parameter_name, df)
+        self._write_out_dataframe(self.filepath, parameter_name, df, index=True)
 
-    def _write_out_dataframe(self, folder, parameter, df):
+    def _write_out_dataframe(self, folder, parameter, df, index=False):
         """Writes out a dataframe as a csv into the data subfolder of a datapackage
 
         Arguments
@@ -163,6 +163,8 @@ class WriteCsv(WriteStrategy):
         folder : str
         parameter : str
         df : pandas.DataFrame
+        index : bool, default=False
+            Write the index to CSV
 
         """
         filepath = os.path.join(folder, parameter + ".csv")
@@ -170,11 +172,11 @@ class WriteCsv(WriteStrategy):
             logger.info(
                 "Writing %s rows into narrow file for %s", df.shape[0], parameter
             )
-            df.to_csv(csvfile, index=False)
+            df.to_csv(csvfile, index=index)
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO) -> pd.DataFrame:
         """Write set data"""
-        self._write_out_dataframe(self.filepath, set_name, df)
+        self._write_out_dataframe(self.filepath, set_name, df, index=False)
 
     def _footer(self, handle: TextIO):
         pass
@@ -200,7 +202,7 @@ class WriteDatapackage(WriteCsv):
             logger.info(
                 "Writing %s rows into narrow file for %s", df.shape[0], parameter
             )
-            df.to_csv(csvfile, index=False)
+            df.to_csv(csvfile, index=True)
 
     def _footer(self, handle: TextIO):
         datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
