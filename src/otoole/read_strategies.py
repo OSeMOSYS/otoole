@@ -9,6 +9,7 @@ from pandas_datapackage_reader import read_datapackage
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
+from otoole.utils import read_datapackage_schema_into_config
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,6 @@ class _ReadTabular(ReadStrategy):
         logger.debug("Expected headers for %s: %s", name, expected_headers)
 
         if "REGION" in expected_headers and "REGION" not in actual_headers:
-            logger.error("No 'REGION' column provided for %s", name)
             raise ValueError("No REGION column provided for %s", name)
 
         if "MODEOFOPERATION" in actual_headers:
@@ -198,6 +198,9 @@ class ReadDatapackage(ReadStrategy):
         inputs = read_datapackage(filepath)
         default_resource = inputs.pop("default_values").set_index("name").to_dict()
         default_values = default_resource["default_value"]
+        self.input_config = read_datapackage_schema_into_config(
+            filepath, default_values
+        )
         inputs = self._check_index(inputs)
         return inputs, default_values
 

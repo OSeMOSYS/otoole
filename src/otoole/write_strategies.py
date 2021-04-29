@@ -187,7 +187,7 @@ class WriteDatapackage(WriteCsv):
         os.makedirs(os.path.join(self.filepath, "data"), exist_ok=True)
         return None
 
-    def _write_out_dataframe(self, folder, parameter, df):
+    def _write_out_dataframe(self, folder, parameter, df, index=False):
         """Writes out a dataframe as a csv into the data subfolder of a datapackage
 
         Arguments
@@ -202,7 +202,7 @@ class WriteDatapackage(WriteCsv):
             logger.info(
                 "Writing %s rows into narrow file for %s", df.shape[0], parameter
             )
-            df.to_csv(csvfile, index=True)
+            df.to_csv(csvfile, index=index)
 
     def _footer(self, handle: TextIO):
         datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")

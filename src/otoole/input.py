@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -138,18 +138,17 @@ class Strategy(ABC):
     def __init__(
         self, user_config: Optional[Dict] = None, results_config: Optional[Dict] = None
     ):
-        self._input_config = {}
+        self._input_config = {}  # type: Dict[str, Dict[str, Union[str, List[str]]]]
         self._results_config = {}
 
         if user_config:
-            self._input_config = user_config
+            self.input_config = user_config
         else:
-            self._input_config = self._read_config()
+            self.input_config = self._read_config()
         if results_config:
             self._results_config = results_config
         else:
             self._results_config = self._read_results_config()
-        self._input_config = self._add_dtypes(self._input_config)
 
     def _add_dtypes(self, config: Dict):
         for name, details in config.items():
@@ -170,8 +169,12 @@ class Strategy(ABC):
         return read_packaged_file("config.yaml", "otoole.results")
 
     @property
-    def input_config(self):
+    def input_config(self) -> Dict:
         return self._input_config
+
+    @input_config.setter
+    def input_config(self, value: Dict):
+        self._input_config = self._add_dtypes(value)
 
     @property
     def results_config(self):
@@ -310,7 +313,7 @@ class ReadStrategy(Strategy):
                 logger.debug(
                     "Column dtypes identified: {}".format(details["index_dtypes"])
                 )
-
+                logger.debug(df.head())
                 # Drop empty rows
                 df = (
                     df.dropna(axis=0, how="all")
