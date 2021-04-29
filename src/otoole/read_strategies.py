@@ -111,7 +111,7 @@ class ReadExcel(_ReadTabular):
         config = self.input_config
         default_values = self._read_default_values(config)
 
-        xl = pd.ExcelFile(filepath)
+        xl = pd.ExcelFile(filepath, engine="openpyxl")
 
         input_data = {}
 

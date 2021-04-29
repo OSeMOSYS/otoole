@@ -29,9 +29,9 @@ else:
 
 """
 import os
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
-from otoole import Context, ReadExcel, WriteDatafile
+from otoole import Context, ReadExcel, WriteCsv, WriteDatafile
 
 
 class TestConvert:
@@ -54,3 +54,22 @@ class TestConvert:
         assert actual[0] == b"# Model file written by *otoole*\n"
         assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.892132\n"
         assert actual[8996] == b"param default 1 : DepreciationMethod :=\n"
+
+    def test_convert_excel_to_csv(self):
+
+        read_strategy = ReadExcel()
+        write_strategy = WriteCsv()
+        context = Context(read_strategy, write_strategy)
+
+        tmpfile = TemporaryDirectory()
+        from_path = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+
+        context.convert(from_path, tmpfile.name)
+
+        with open(os.path.join(tmpfile.name, "EMISSION.csv")) as csv_file:
+            csv_file.seek(0)
+            actual = csv_file.readlines()
+
+        assert actual[-1] == "NOX\n"
+        assert actual[0] == "VALUE\n"
+        assert actual[1] == "CO2\n"
