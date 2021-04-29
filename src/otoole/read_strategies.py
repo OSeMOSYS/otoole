@@ -53,14 +53,21 @@ class _ReadTabular(ReadStrategy):
 
         return narrow
 
-    def _check_parameter(self, df: pd.DataFrame, config_details: Dict, name: str):
+    def _check_parameter(self, df: pd.DataFrame, expected_headers: List, name: str):
+        """Converts a dataframe from wide to narrow format
+
+        Arguments
+        ---------
+        df: pd.DataFrame
+        expected_headers: List
+        name: str
+        """
         actual_headers = df.columns
-        expected_headers = config_details["indices"]
         logger.debug("Expected headers for %s: %s", name, expected_headers)
 
         if "REGION" in expected_headers and "REGION" not in actual_headers:
-            logger.info("Added 'REGION' column to %s", name)
-            df["REGION"] = "SIMPLICITY"
+            logger.error("No 'REGION' column provided for %s", name)
+            raise ValueError("No REGION column provided for %s", name)
 
         if "MODEOFOPERATION" in actual_headers:
             df = df.rename(columns={"MODEOFOPERATION": "MODE_OF_OPERATION"})
@@ -75,21 +82,22 @@ class _ReadTabular(ReadStrategy):
                 narrow = pd.melt(
                     df,
                     id_vars=expected_headers[:-1],
-                    var_name=expected_headers[-1],
-                    value_name="VALUE",
+                    var_name=expected_headers[-1],  # Normally 'YEAR'
+                    value_name="new_VALUE",
                 )
+                narrow = narrow.rename(columns={"new_VALUE": "VALUE"})
             except IndexError as ex:
-                logger.debug(df.columns)
+                logger.debug("Could not reshape %s", df.columns)
                 raise ex
 
-        expected_headers.append("VALUE")
-        for column in expected_headers:
+        all_headers = expected_headers + ["VALUE"]
+        for column in all_headers:
             if column not in narrow.columns:
                 logger.warning("%s not in header of %s", column, name)
 
-        logger.debug("Final expected headers for %s: %s", name, expected_headers)
+        logger.debug("Final all headers for %s: %s", name, all_headers)
 
-        return narrow[expected_headers]
+        return narrow[all_headers].set_index(expected_headers)
 
 
 class ReadExcel(_ReadTabular):
@@ -103,7 +111,7 @@ class ReadExcel(_ReadTabular):
         config = self.input_config
         default_values = self._read_default_values(config)
 
-        xl = pd.ExcelFile(filepath)
+        xl = pd.ExcelFile(filepath, engine="openpyxl")
 
         input_data = {}
 
@@ -121,19 +129,11 @@ class ReadExcel(_ReadTabular):
             entity_type = config[mod_name]["type"]
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details, mod_name)
-                if not narrow.empty:
-                    narrow_checked = check_datatypes(narrow, config, mod_name)
-                else:
-                    narrow_checked = narrow
+                narrow = self._check_parameter(df, config_details["indices"], mod_name)
             elif entity_type == "set":
                 narrow = self._check_set(df, config_details, mod_name)
-                if not narrow.empty:
-                    narrow_checked = check_set_datatype(narrow, config, mod_name)
-                else:
-                    narrow_checked = narrow
 
-            input_data[mod_name] = narrow_checked
+            input_data[mod_name] = narrow
 
         input_data = self._check_index(input_data)
 
@@ -168,7 +168,7 @@ class ReadCsv(_ReadTabular):
             entity_type = self.input_config[parameter]["type"]
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details, parameter)
+                narrow = self._check_parameter(df, config_details["indices"], parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
                         narrow, self.input_config, parameter

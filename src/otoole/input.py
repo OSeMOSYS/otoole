@@ -248,14 +248,17 @@ class WriteStrategy(Strategy):
         logger.debug(default_values)
 
         for name, df in sorted(inputs.items()):
-            logger.debug(name)
+            logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
-            df = df.reset_index()
-            if "index" in df.columns:
-                df = df.drop(columns="index")
+            try:
+                entity_type = self.input_config[name]["type"]
+            except KeyError:
+                try:
+                    entity_type = self.results_config[name]["type"]
+                except KeyError:
+                    raise KeyError("Cannot find %s in input or results config", name)
 
-            logger.debug("Number of columns: %s, %s", len(df.columns), df.columns)
-            if len(df.columns) > 1:
+            if entity_type == "param":
                 default_value = default_values[name]
                 self._write_parameter(df, name, handle, default=default_value)
             else:
@@ -286,12 +289,15 @@ class ReadStrategy(Strategy):
         ---------
         input_data : dict
             Dictionary and pandas DataFrames containing the OSeMOSYS parameters
+
+        Returns
+        -------
+        dict
+            Dictionary and pandas DataFrames containing the OSeMOSYS parameters
         """
         for name, df in input_data.items():
 
             details = self.input_config[name]
-
-            dtypes = {}  # type: Dict[str, str]
 
             if details["type"] == "param":
                 logger.debug("Identified {} as a parameter".format(name))
@@ -301,7 +307,9 @@ class ReadStrategy(Strategy):
                     logger.debug("Unable to set index on {}".format(name))
                     pass
 
-                logger.debug("Column dtypes identified: {}".format(dtypes))
+                logger.debug(
+                    "Column dtypes identified: {}".format(details["index_dtypes"])
+                )
 
                 # Drop empty rows
                 df = (
@@ -313,7 +321,9 @@ class ReadStrategy(Strategy):
             else:
                 logger.debug("Identified {} as a set".format(name))
                 df = df.astype(details["dtype"])
+
             input_data[name] = df
+
         return input_data
 
     @abstractmethod

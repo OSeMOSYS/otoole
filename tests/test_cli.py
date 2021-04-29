@@ -1,6 +1,6 @@
 import os
 from subprocess import run
-from tempfile import TemporaryFile, mkdtemp
+from tempfile import NamedTemporaryFile, mkdtemp
 
 from pytest import mark
 
@@ -13,14 +13,14 @@ class TestConvert:
         assert result.stdout.strip().decode() == str(__version__)
 
     temp = mkdtemp()
-    temp_excel = TemporaryFile(suffix="xlsx")
-    temp_datafile = TemporaryFile(suffix="dat")
+    temp_excel = NamedTemporaryFile(suffix="xlsx")
+    temp_datafile = NamedTemporaryFile(suffix="dat")
     simplicity = os.path.join("tests", "fixtures", "simplicity.txt")
 
     test_data = [
         (["otoole", "convert", "--help"], "usage: otoole convert [-h]"),
-        (["otoole", "convert", "datafile", "datapackage", simplicity, str(temp)], ""),
-        (["otoole", "convert", "datafile", "excel", simplicity, str(temp_excel)], ""),
+        (["otoole", "convert", "datafile", "datapackage", simplicity, temp], ""),
+        (["otoole", "convert", "datafile", "excel", simplicity, temp_excel.name], ""),
         (
             [
                 "otoole",
@@ -28,7 +28,7 @@ class TestConvert:
                 "datafile",
                 "datafile",
                 simplicity,
-                str(temp_datafile),
+                temp_datafile.name,
             ],
             "",
         ),

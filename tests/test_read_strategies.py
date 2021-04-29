@@ -1,3 +1,4 @@
+import os
 from io import StringIO
 from textwrap import dedent
 from typing import List
@@ -7,7 +8,7 @@ from pytest import mark
 import pandas as pd
 from amply import Amply
 
-from otoole import ReadDatafile, ReadMemory
+from otoole import ReadDatafile, ReadExcel, ReadMemory
 from otoole.results.results import (
     ReadCbc,
     ReadCplex,
@@ -758,3 +759,114 @@ class TestReadDatafile:
             "Parameter ResultsPath could not be found in the configuration."
             in caplog.text
         )
+
+
+class TestReadExcel:
+    def test_read_excel_yearsplit(self):
+        """
+        """
+        spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        reader = ReadExcel()
+        actual, _ = reader.read(spreadsheet)
+        data = [
+            ["IW0016", 2017, 0.238356164],
+            ["IW0016", 2018, 0.238356164],
+            ["IW0016", 2019, 0.238356164],
+            ["IW1624", 2017, 0.119178082],
+            ["IW1624", 2018, 0.119178082],
+            ["IW1624", 2019, 0.119178082],
+            ["IH0012", 2017, 0.071232876],
+            ["IH0012", 2018, 0.071232876],
+            ["IH0012", 2019, 0.071232876],
+        ]
+        expected = pd.DataFrame(data, columns=["TIMESLICE", "YEAR", "VALUE"]).set_index(
+            ["TIMESLICE", "YEAR"]
+        )
+
+        assert "YearSplit" in actual
+
+        index = [
+            ("IW0016", 2017),
+            ("IW0016", 2018),
+            ("IW0016", 2019),
+            ("IW1624", 2017),
+            ("IW1624", 2018),
+            ("IW1624", 2019),
+            ("IH0012", 2017),
+            ("IH0012", 2018),
+            ("IH0012", 2019),
+        ]
+
+        assert actual["YearSplit"].index.names == ["TIMESLICE", "YEAR"]
+        actual_data = actual["YearSplit"].loc[index, "VALUE"]
+
+        expected = [
+            0.238356164,
+            0.238356164,
+            0.238356164,
+            0.119178082,
+            0.119178082,
+            0.119178082,
+            0.071232876,
+            0.071232876,
+            0.071232876,
+        ]
+
+        assert (actual_data == expected).all()
+
+    def test_narrow_parameters(self):
+        data = [
+            ["IW0016", 0.238356164, 0.238356164, 0.238356164],
+            ["IW1624", 0.119178082, 0.119178082, 0.119178082],
+            ["IH0012", 0.071232876, 0.071232876, 0.071232876],
+        ]
+        df = pd.DataFrame(data, columns=["TIMESLICE", 2017, 2018, 2019])
+        config_details = ["TIMESLICE", "YEAR"]
+        name = "YearSplit"
+
+        reader = ReadExcel()
+        actual = reader._check_parameter(df, config_details, name)
+        data = [
+            ["IW0016", 2017, 0.238356164],
+            ["IW1624", 2017, 0.119178082],
+            ["IH0012", 2017, 0.071232876],
+            ["IW0016", 2018, 0.238356164],
+            ["IW1624", 2018, 0.119178082],
+            ["IH0012", 2018, 0.071232876],
+            ["IW0016", 2019, 0.238356164],
+            ["IW1624", 2019, 0.119178082],
+            ["IH0012", 2019, 0.071232876],
+        ]
+        expected = (
+            pd.DataFrame(data, columns=["TIMESLICE", "YEAR", "VALUE"])
+            .astype({"YEAR": "object"})
+            .set_index(["TIMESLICE", "YEAR"])
+        )
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_check_index(self):
+
+        data = [
+            ["IW0016", 2017, 0.238356164],
+            ["IW0016", 2018, 0.238356164],
+            ["IW0016", 2019, 0.238356164],
+            ["IW1624", 2017, 0.119178082],
+            ["IW1624", 2018, 0.119178082],
+            ["IW1624", 2019, 0.119178082],
+            ["IH0012", 2017, 0.071232876],
+            ["IH0012", 2018, 0.071232876],
+            ["IH0012", 2019, 0.071232876],
+        ]
+        fixture = {
+            "YearSplit": pd.DataFrame(data, columns=["TIMESLICE", "YEAR", "VALUE"])
+            .astype({"YEAR": object})
+            .set_index(["TIMESLICE", "YEAR"])
+        }
+        reader = ReadExcel()
+        actual = reader._check_index(fixture)
+        expected = {
+            "YearSplit": pd.DataFrame(
+                data, columns=["TIMESLICE", "YEAR", "VALUE"]
+            ).set_index(["TIMESLICE", "YEAR"])
+        }
+        pd.testing.assert_frame_equal(actual["YearSplit"], expected["YearSplit"])
