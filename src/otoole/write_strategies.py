@@ -1,5 +1,6 @@
 import logging
 import os
+from json import dump
 from typing import Any, TextIO
 
 import pandas as pd
@@ -208,7 +209,7 @@ class WriteDatapackage(WriteCsv):
         datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
         filepath = os.path.join(self.filepath, "datapackage.json")
         with open(filepath, "w", newline="") as destination:
-            destination.writelines(datapackage)
+            dump(datapackage, destination)
         self._write_default_values()
 
     def _write_default_values(self):
