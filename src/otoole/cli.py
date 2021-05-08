@@ -41,6 +41,7 @@ Ask for help on the command line::
 """
 import argparse
 import logging
+import os
 import sys
 
 from otoole import (
@@ -58,7 +59,7 @@ from otoole import (
     __version__,
 )
 from otoole.input import Context
-from otoole.utils import read_packaged_file
+from otoole.utils import _read_file, read_packaged_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
 
@@ -141,14 +142,22 @@ def conversion_matrix(args):
     read_strategy = None
     write_strategy = None
 
+    config = None
+    if args.config:
+        for filename in args.config:
+            _, ending = os.path.splitext(filename)
+            with open(filename, "r") as config_file:
+                config = _read_file(config_file, ending)
+            logger.info("Reading config from {}".format(filename))
+
     if args.from_format == "datafile":
-        read_strategy = ReadDatafile()
+        read_strategy = ReadDatafile(user_config=config)
     elif args.from_format == "datapackage":
-        read_strategy = ReadDatapackage()
+        read_strategy = ReadDatapackage(user_config=config)
     elif args.from_format == "csv":
-        read_strategy = ReadCsv()
+        read_strategy = ReadCsv(user_config=config)
     elif args.from_format == "excel":
-        read_strategy = ReadExcel()
+        read_strategy = ReadExcel(user_config=config)
 
     if args.to_format == "datapackage":
         write_strategy = WriteDatapackage()
@@ -232,6 +241,9 @@ def get_parser():
         "from_path", help="Path to file or folder to convert from"
     )
     convert_parser.add_argument("to_path", help="Path to file or folder to convert to")
+    convert_parser.add_argument(
+        "-c", "--config", action="append", help="Path to config YAML files"
+    )
     convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for validation
@@ -279,7 +291,7 @@ def main():
         if args.verbose:
             debug_hook(exception_type, exception, traceback)
         else:
-            print("{}: {}".format(exception_type.__name__, exception.message))
+            print("{}: {}".format(exception_type.__name__, str(exception)))
 
     sys.excepthook = exception_handler
 
