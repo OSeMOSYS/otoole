@@ -7,7 +7,7 @@ AnnualEmissionLimit:
     indices: [REGION,EMISSION,YEAR]
     type: param
     dtype: float
-    default: -1
+    default: 999999999999999
 AnnualExogenousEmission:
     indices: [REGION,EMISSION,YEAR]
     type: param
@@ -127,7 +127,7 @@ ModelPeriodEmissionLimit:
     indices: [REGION,EMISSION]
     type: param
     dtype: float
-    default: -1
+    default: 999999999999999
 ModelPeriodExogenousEmission:
     indices: [REGION,EMISSION]
     type: param
@@ -242,12 +242,12 @@ TotalAnnualMaxCapacity:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
-    default: -1
+    default: 999999999999999
 TotalAnnualMaxCapacityInvestment:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
-    default: -1
+    default: 999999999999999
 TotalAnnualMinCapacity:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
@@ -267,7 +267,7 @@ TotalTechnologyAnnualActivityUpperLimit:
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
-    default: -1
+    default: 999999999999999
 TotalTechnologyModelPeriodActivityLowerLimit:
     indices: [REGION,TECHNOLOGY]
     type: param
@@ -277,7 +277,7 @@ TotalTechnologyModelPeriodActivityUpperLimit:
     indices: [REGION,TECHNOLOGY]
     type: param
     dtype: float
-    default: -1
+    default: 999999999999999
 TradeRoute:
     indices: [REGION,FUEL,YEAR]
     type: param
