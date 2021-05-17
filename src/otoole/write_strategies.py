@@ -1,9 +1,8 @@
 import logging
 import os
+import pandas as pd
 from json import dump
 from typing import Any, TextIO
-
-import pandas as pd
 
 from otoole.input import WriteStrategy
 from otoole.read_strategies import CSV_TO_EXCEL
@@ -96,6 +95,7 @@ class WriteDatafile(WriteStrategy):
 
     def _form_parameter(self, df: pd.DataFrame, default: float):
 
+        # Don't write out values equal to the default value
         df = df[df.VALUE != default]
         return df
 
@@ -114,7 +114,9 @@ class WriteDatafile(WriteStrategy):
         """
         df = self._form_parameter(df, default)
         handle.write("param default {} : {} :=\n".format(default, parameter_name))
-        df.to_csv(path_or_buf=handle, sep=" ", header=False, index=True)
+        df.to_csv(
+            path_or_buf=handle, sep=" ", header=False, index=True, float_format="%g"
+        )
         handle.write(";\n")
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO):
@@ -127,7 +129,9 @@ class WriteDatafile(WriteStrategy):
         handle: TextIO
         """
         handle.write("set {} :=\n".format(set_name))
-        df.to_csv(path_or_buf=handle, sep=" ", header=False, index=False)
+        df.to_csv(
+            path_or_buf=handle, sep=" ", header=False, index=False, float_format="%g"
+        )
         handle.write(";\n")
 
     def _footer(self, handle: TextIO):
