@@ -146,7 +146,6 @@ class ReadCplex(ReadStrategy):
     def read(
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        data = {}  # type: Dict
 
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
@@ -156,19 +155,11 @@ class ReadCplex(ReadStrategy):
         else:
             raise RuntimeError("To process CPLEX results please provide the input file")
 
-        for linenum, line in enumerate(filepath):
-            try:
-                row_as_list = line.split("\t")
-                name, df = self.convert_df(row_as_list, start_year, end_year,)
-
-                if name in data:
-                    data[name] = data[name].append(df)
-                else:
-                    data[name] = [df]
-
-            except ValueError as ex:
-                msg = "Error caused at line {}: {}. {}"
-                raise ValueError(msg.format(linenum, line, ex))
+        if isinstance(filepath, str):
+            with open(filepath, "r") as sol_file:
+                data = self.extract_rows(sol_file, start_year, end_year)
+        else:
+            data = self.extract_rows(filepath, start_year, end_year)
 
         results = {}
 
@@ -177,11 +168,35 @@ class ReadCplex(ReadStrategy):
 
         return results, self._read_default_values(self.results_config)
 
+    def extract_rows(
+        self, sol_file: TextIO, start_year: int, end_year: int
+    ) -> Dict[str, List[pd.DataFrame]]:
+        """
+        """
+        data = {}  # type: Dict
+        msg = "Error caused at line {}: {}. {}"
+        for linenum, line in enumerate(sol_file):
+            try:
+                row_as_list = line.split("\t")
+                name, df = self.convert_df(row_as_list, start_year, end_year)
+
+                if name in data.keys():
+                    data[name].append(df)
+                else:
+                    data[name] = [df]
+            except ValueError as ex:
+                raise ValueError(msg.format(linenum, line, ex))
+        return data
+
     def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
         """Extracts useful information from a line of a results file
         """
         variable = data[0]
-        number = len(self.results_config[variable]["indices"])
+        try:
+            number = len(self.results_config[variable]["indices"])
+        except KeyError as ex:
+            print(data)
+            raise KeyError(ex)
         dimensions = tuple(data[1:(number)])
         values = data[(number):]
         return (variable, dimensions, values)
@@ -192,9 +207,13 @@ class ReadCplex(ReadStrategy):
         """Read the cplex line into a pandas DataFrame
 
         """
-        variable, dimensions, values = self.extract_variable_dimensions_values(
-            row_as_list
-        )
+        try:
+            variable, dimensions, values = self.extract_variable_dimensions_values(
+                row_as_list
+            )
+        except KeyError as ex:
+            print(row_as_list)
+            raise KeyError(ex)
         index = self.results_config[variable]["indices"]
         columns = index[:-1] + list(range(start_year, end_year + 1, 1))
         df = pd.DataFrame(data=[list(dimensions) + values], columns=columns).set_index(
