@@ -175,6 +175,7 @@ class ReadCplex(ReadStrategy):
         """ """
         data = {}  # type: Dict[str, List[List[str]]]
         for linenum, line in enumerate(sol_file):
+            line = line.replace("\n", "")
             try:
                 row_as_list = line.split("\t")  # type: List[str]
                 name = row_as_list[0]  # type: str
@@ -206,7 +207,15 @@ class ReadCplex(ReadStrategy):
         """Read the cplex lines into a pandas DataFrame"""
         index = self.results_config[variable]["indices"]
         columns = ["variable"] + index[:-1] + list(range(start_year, end_year + 1, 1))
-        df = pd.DataFrame(data=data, columns=columns).set_index(index[:-1])
+        df = pd.DataFrame(data=data, columns=columns)
+        LOGGER.debug(
+            f"Attempting to set index for {variable} with columns {index[:-1]}"
+        )
+        try:
+            df = df.set_index(index[:-1])
+        except NotImplementedError as ex:
+            LOGGER.error(f"Error setting index for {df.head()}")
+            raise NotImplementedError(ex)
         df = df.drop(columns="variable")
         df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
         df = df.reset_index()
