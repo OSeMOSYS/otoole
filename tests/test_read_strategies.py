@@ -1,14 +1,14 @@
+from pytest import mark
+
 import os
+import pandas as pd
+from amply import Amply
 from io import StringIO
 from textwrap import dedent
 from typing import List
 
-from pytest import mark
-
-import pandas as pd
-from amply import Amply
-
 from otoole import ReadDatafile, ReadExcel, ReadMemory
+from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.results import (
     ReadCbc,
     ReadCplex,
@@ -25,43 +25,46 @@ class TestReadCplex:
     cplex_short = "AnnualFixedOperatingCost	REGION	CDBACKSTOP	0.0	0.0	137958.8400384134	305945.38410619126	626159.9611543404	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0"
     cplex_long = "RateOfActivity	REGION	S1D1	CGLFRCFURX	1	0.0	0.0	0.0	0.0	0.0	0.3284446367303371	0.3451714779880536	0.3366163200621617	0.3394945166233896	0.3137488154250392	0.28605725055560716	0.2572505015401749	0.06757558148965725	0.0558936625751148	0.04330608461292407	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0"
 
-    cplex_mid_short = (
-        "AnnualFixedOperatingCost",
+    cplex_mid_empty = (
         pd.DataFrame(
-            data=[
-                ["REGION", "CDBACKSTOP", 2017, 137958.8400384134],
-                ["REGION", "CDBACKSTOP", 2018, 305945.38410619126],
-                ["REGION", "CDBACKSTOP", 2019, 626159.9611543404],
-            ],
+            data=[],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"]),
+        )
+        .astype({"VALUE": float})
+        .set_index(["REGION", "TECHNOLOGY", "YEAR"])
     )
 
-    cplex_mid_long = (
-        "RateOfActivity",
-        pd.DataFrame(
-            data=[
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2020, 0.3284446367303371],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2021, 0.3451714779880536],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2022, 0.3366163200621617],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2023, 0.3394945166233896],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2024, 0.3137488154250392],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2025, 0.28605725055560716],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2026, 0.2572505015401749],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2027, 0.06757558148965725],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2028, 0.0558936625751148],
-                ["REGION", "S1D1", "CGLFRCFURX", 1, 2029, 0.04330608461292407],
-            ],
-            columns=[
-                "REGION",
-                "TIMESLICE",
-                "TECHNOLOGY",
-                "MODE_OF_OPERATION",
-                "YEAR",
-                "VALUE",
-            ],
-        ).set_index(["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"]),
-    )
+    cplex_mid_short = pd.DataFrame(
+        data=[
+            ["REGION", "CDBACKSTOP", 2017, 137958.8400384134],
+            ["REGION", "CDBACKSTOP", 2018, 305945.38410619126],
+            ["REGION", "CDBACKSTOP", 2019, 626159.9611543404],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+    cplex_mid_long = pd.DataFrame(
+        data=[
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2020, 0.3284446367303371],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2021, 0.3451714779880536],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2022, 0.3366163200621617],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2023, 0.3394945166233896],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2024, 0.3137488154250392],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2025, 0.28605725055560716],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2026, 0.2572505015401749],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2027, 0.06757558148965725],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2028, 0.0558936625751148],
+            ["REGION", "S1D1", "CGLFRCFURX", 1, 2029, 0.04330608461292407],
+        ],
+        columns=[
+            "REGION",
+            "TIMESLICE",
+            "TECHNOLOGY",
+            "MODE_OF_OPERATION",
+            "YEAR",
+            "VALUE",
+        ],
+    ).set_index(["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"])
 
     dataframe_short = {
         "AnnualFixedOperatingCost": pd.DataFrame(
@@ -132,22 +135,90 @@ class TestReadCplex:
             data, _ = cplex_reader.read(file_buffer, input_data=input_data)
         assert "AnnualFixedOperatingCost" in data
         expected = (
-            pd.DataFrame(columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],)
-            .astype({"VALUE": float, "YEAR": int})
+            pd.DataFrame(
+                [],
+                columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+            )
+            .astype({"REGION": str, "VALUE": float, "YEAR": int})
             .set_index(["REGION", "TECHNOLOGY", "YEAR"])
         )
         actual = data["AnnualFixedOperatingCost"]
-        pd.testing.assert_frame_equal(actual, expected)
+        pd.testing.assert_frame_equal(actual, expected, check_index_type=False)
 
-    test_data_mid = [(cplex_short, cplex_mid_short), (cplex_long, cplex_mid_long)]
+    test_data_to_cplex = [
+        (cplex_empty, cplex_mid_empty),
+        (cplex_short, cplex_mid_short),
+        (cplex_long, cplex_mid_long),
+    ]
 
-    @mark.parametrize("cplex_input,expected", test_data_mid, ids=["short", "long"])
+    @mark.parametrize(
+        "cplex_input,expected", test_data_to_cplex, ids=["empty", "short", "long"]
+    )
     def test_convert_cplex_to_df(self, cplex_input, expected):
 
         data = cplex_input.split("\t")
+        variable = data[0]
         cplex_reader = ReadCplex()
-        actual = cplex_reader.convert_df(data, 2015, 2070)
-        pd.testing.assert_frame_equal(actual[1], expected[1])
+        actual = cplex_reader.convert_df([data], variable, 2015, 2070)
+        pd.testing.assert_frame_equal(actual, expected, check_index_type=False)
+
+    def test_convert_lines_to_df_empty(self):
+
+        data = [
+            [
+                "AnnualFixedOperatingCost",
+                "REGION",
+                "AOBACKSTOP",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+            ]
+        ]
+        variable = "AnnualFixedOperatingCost"
+        cplex_reader = ReadCplex()
+        actual = cplex_reader.convert_df(data, variable, 2015, 2023)
+        pd.testing.assert_frame_equal(
+            actual,
+            pd.DataFrame(
+                data=[],
+                columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+            )
+            .astype({"REGION": str, "TECHNOLOGY": str, "YEAR": int, "VALUE": float})
+            .set_index(["REGION", "TECHNOLOGY", "YEAR"]),
+            check_index_type=False,
+        )
+
+    def test_check_datatypes_with_empty(self):
+
+        df = pd.DataFrame(data=[], columns=["REGION", "FUEL", "YEAR", "VALUE"])
+
+        parameter = "AccumulatedAnnualDemand"
+
+        config_dict = {
+            "AccumulatedAnnualDemand": {
+                "indices": ["REGION", "FUEL", "YEAR"],
+                "type": "param",
+                "dtype": float,
+                "default": 0,
+            },
+            "REGION": {"dtype": "str", "type": "set"},
+            "FUEL": {"dtype": "str", "type": "set"},
+            "YEAR": {"dtype": "int", "type": "set"},
+        }
+
+        actual = check_datatypes(df, config_dict, parameter)
+
+        expected = pd.DataFrame(
+            data=[], columns=["REGION", "FUEL", "YEAR", "VALUE"]
+        ).astype({"REGION": str, "FUEL": str, "YEAR": int, "VALUE": float})
+
+        pd.testing.assert_frame_equal(actual, expected, check_index_type=False)
 
 
 class TestReadGurobi:
@@ -258,7 +329,12 @@ class TestReadCbc:
         columns=["REGION", "_REGION", "TIMESLICE", "FUEL", "YEAR", "VALUE"],
     ).set_index(["REGION", "_REGION", "TIMESLICE", "FUEL", "YEAR"])
 
-    test_data = [(cbc_data, otoole_data,)]
+    test_data = [
+        (
+            cbc_data,
+            otoole_data,
+        )
+    ]
 
     @mark.parametrize("cbc_input,expected", test_data)
     def test_read_cbc_to_otoole_dataframe(self, cbc_input, expected):
@@ -398,7 +474,9 @@ class TestReadCbc:
     test_data_3 = [(total_cost_cbc, {}, total_cost_otoole_df)]  # type: List
 
     @mark.parametrize(
-        "cbc_solution,input_data,expected", test_data_3, ids=["TotalDiscountedCost"],
+        "cbc_solution,input_data,expected",
+        test_data_3,
+        ids=["TotalDiscountedCost"],
     )
     def test_convert_cbc_to_csv_long_read(self, cbc_solution, input_data, expected):
         cbc_reader = ReadCbc()
@@ -511,8 +589,7 @@ class TestReadCbc:
 
 
 class TestCleanOnRead:
-    """Tests that a datapackage is cleaned and indexed upon reading
-    """
+    """Tests that a datapackage is cleaned and indexed upon reading"""
 
     def test_index_dtypes_available(self):
         reader = ReadMemory({})
@@ -763,8 +840,7 @@ class TestReadDatafile:
 
 class TestReadExcel:
     def test_read_excel_yearsplit(self):
-        """
-        """
+        """ """
         spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
         reader = ReadExcel()
         actual, _ = reader.read(spreadsheet)

@@ -1,8 +1,8 @@
 import logging
-from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
-
 import pandas as pd
+from abc import abstractmethod
+from io import StringIO
+from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes
@@ -140,13 +140,11 @@ class ReadResults(ReadStrategy):
 
 
 class ReadCplex(ReadStrategy):
-    """
-    """
+    """ """
 
     def read(
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        data = {}  # type: Dict
 
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
@@ -156,61 +154,70 @@ class ReadCplex(ReadStrategy):
         else:
             raise RuntimeError("To process CPLEX results please provide the input file")
 
-        for linenum, line in enumerate(filepath):
-            try:
-                row_as_list = line.split("\t")
-                name, df = self.convert_df(row_as_list, start_year, end_year,)
-
-                if name in data:
-                    data[name] = data[name].append(df)
-                else:
-                    data[name] = [df]
-
-            except ValueError as ex:
-                msg = "Error caused at line {}: {}. {}"
-                raise ValueError(msg.format(linenum, line, ex))
+        if isinstance(filepath, str):
+            with open(filepath, "r") as sol_file:
+                data = self.extract_rows(sol_file, start_year, end_year)
+        elif isinstance(filepath, StringIO):
+            data = self.extract_rows(filepath, start_year, end_year)
+        else:
+            raise TypeError("Argument filepath type must be a string or an open file")
 
         results = {}
 
         for name, contents in data.items():
-            results[name] = pd.concat(contents)
+            results[name] = self.convert_df(contents, name, start_year, end_year)
 
         return results, self._read_default_values(self.results_config)
 
+    def extract_rows(
+        self, sol_file: TextIO, start_year: int, end_year: int
+    ) -> Dict[str, List[List[str]]]:
+        """ """
+        data = {}  # type: Dict[str, List[List[str]]]
+        for linenum, line in enumerate(sol_file):
+            try:
+                row_as_list = line.split("\t")  # type: List[str]
+                name = row_as_list[0]  # type: str
+
+                if name in data.keys():
+                    data[name].append(row_as_list)
+                else:
+                    data[name] = [row_as_list]
+            except ValueError as ex:
+                msg = "Error caused at line {}: {}. {}"
+                raise ValueError(msg.format(linenum, line, ex))
+        return data
+
     def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
-        """Extracts useful information from a line of a results file
-        """
+        """Extracts useful information from a line of a results file"""
         variable = data[0]
-        number = len(self.results_config[variable]["indices"])
+        try:
+            number = len(self.results_config[variable]["indices"])
+        except KeyError as ex:
+            print(data)
+            raise KeyError(ex)
         dimensions = tuple(data[1:(number)])
         values = data[(number):]
         return (variable, dimensions, values)
 
     def convert_df(
-        self, row_as_list: List, start_year: int, end_year: int
-    ) -> Tuple[str, pd.DataFrame]:
-        """Read the cplex line into a pandas DataFrame
-
-        """
-        variable, dimensions, values = self.extract_variable_dimensions_values(
-            row_as_list
-        )
+        self, data: List[List[str]], variable: str, start_year: int, end_year: int
+    ) -> pd.DataFrame:
+        """Read the cplex lines into a pandas DataFrame"""
         index = self.results_config[variable]["indices"]
-        columns = index[:-1] + list(range(start_year, end_year + 1, 1))
-        df = pd.DataFrame(data=[list(dimensions) + values], columns=columns).set_index(
-            index[:-1]
-        )
+        columns = ["variable"] + index[:-1] + list(range(start_year, end_year + 1, 1))
+        df = pd.DataFrame(data=data, columns=columns).set_index(index[:-1])
+        df = df.drop(columns="variable")
         df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
         df = df.reset_index()
         df = check_datatypes(df, {**self.input_config, **self.results_config}, variable)
         df = df.set_index(index)
         df = df[(df != 0).any(axis=1)]
-        return (variable, df)
+        return df
 
 
 class ReadGurobi(ReadResults):
-    """Read a Gurobi solution file into memory
-    """
+    """Read a Gurobi solution file into memory"""
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
         """Reads a Gurobi solution file into a pandas DataFrame
@@ -220,7 +227,11 @@ class ReadGurobi(ReadResults):
         file_path : str
         """
         df = pd.read_csv(
-            file_path, header=None, sep=" ", names=["Variable", "Value"], skiprows=2,
+            file_path,
+            header=None,
+            sep=" ",
+            names=["Variable", "Value"],
+            skiprows=2,
         )  # type: pd.DataFrame
         df[["Variable", "Index"]] = df["Variable"].str.split("(", expand=True)
         df["Index"] = df["Index"].str.replace(")", "")

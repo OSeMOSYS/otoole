@@ -1,9 +1,9 @@
 """Read in a folder of irregular wide-format csv files and write them out as narrow csvs
 """
 import logging
-from typing import Dict
-
+import numpy as np
 import pandas as pd
+from typing import Dict
 
 logger = logging.getLogger()
 
@@ -30,13 +30,13 @@ def check_set_datatype(
 
 
 def check_datatypes(
-    narrow: pd.DataFrame, config_details: Dict, parameter: str
+    df: pd.DataFrame, config_details: Dict, parameter: str
 ) -> pd.DataFrame:
     """Checks a parameters datatypes
 
     Arguments
     ---------
-    narrow : pandas.DataFrame
+    df : pandas.DataFrame
         The parameter data
     config_details : dict
         The configuration dictionary
@@ -44,16 +44,18 @@ def check_datatypes(
         The name of the parameter
     """
     logger.info("Checking datatypes for %s", parameter)
+    logger.debug(df.columns)
     dtypes = {}
 
-    for column in narrow.columns:
+    for column in df.columns:
         if column == "VALUE":
             datatype = config_details[parameter]["dtype"]
             dtypes["VALUE"] = datatype
         else:
             datatype = config_details[column]["dtype"]
             dtypes[column] = datatype
-        if narrow[column].dtype != datatype:
+            logger.debug(f"Found {datatype} for column {column}")
+        if df[column].dtype != datatype:
             logger.info(
                 "dtype of column %s does not match %s for parameter %s",
                 column,
@@ -63,14 +65,15 @@ def check_datatypes(
             if datatype == "int":
                 dtypes[column] = "int64"
                 try:
-                    narrow[column] = narrow[column].apply(_cast_to_int)
+                    df[column] = df[column].apply(_cast_to_int)
                 except ValueError as ex:
                     msg = "Unable to apply datatype for column {}: {}".format(
                         column, str(ex)
                     )
                     raise ValueError(msg)
-    return narrow.astype(dtypes)
+
+    return df.astype(dtypes)
 
 
 def _cast_to_int(value):
-    return int(float(value))
+    return np.int64(float(value))
