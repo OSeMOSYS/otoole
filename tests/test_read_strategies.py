@@ -13,7 +13,7 @@ from otoole.results.results import (
     ReadCbc,
     ReadCplex,
     ReadGurobi,
-    check_duplicate_index,
+    check_for_duplicates,
     identify_duplicate,
     rename_duplicate_column,
 )
@@ -354,7 +354,7 @@ class TestReadCbc:
             ],
             columns=["Variable", "Index", "Value"],
         )
-        actual = ReadCbc()._convert_dataframe_to_csv(prelim_data, {})["Trade"]
+        actual = ReadCbc()._convert_wide_to_long(prelim_data)["Trade"]
         pd.testing.assert_frame_equal(actual, self.otoole_data)
 
     test_data_4 = [
@@ -365,7 +365,7 @@ class TestReadCbc:
 
     @mark.parametrize("data,expected", test_data_4)
     def test_handle_duplicate_indices(self, data, expected):
-        assert check_duplicate_index(data) is expected
+        assert check_for_duplicates(data) is expected
 
     test_data_5 = [
         (["REGION", "REGION", "TIMESLICE", "FUEL", "YEAR"], 1),
@@ -434,7 +434,7 @@ class TestReadCbc:
 
     test_data_2 = [
         # First case
-        (total_cost_cbc_mid, {}, total_cost_otoole_df),
+        (total_cost_cbc_mid, total_cost_otoole_df),
         # Second case
         (
             pd.DataFrame(
@@ -445,7 +445,6 @@ class TestReadCbc:
                 ],
                 columns=["Variable", "Index", "Value"],
             ),
-            {},
             {
                 "AnnualEmissions": pd.DataFrame(
                     data=[
@@ -460,13 +459,13 @@ class TestReadCbc:
     ]  # type: List
 
     @mark.parametrize(
-        "results,cbc_input,expected",
+        "results,expected",
         test_data_2,
         ids=["TotalDiscountedCost", "AnnualEmissions1"],
     )
-    def test_convert_cbc_to_csv_long(self, results, cbc_input, expected):
+    def test_convert_cbc_to_csv_long(self, results, expected):
         cbc_reader = ReadCbc()
-        actual = cbc_reader._convert_dataframe_to_csv(results, cbc_input)
+        actual = cbc_reader._convert_wide_to_long(results)
         assert isinstance(actual, dict)
         for name, df in actual.items():
             pd.testing.assert_frame_equal(df, expected[name])
@@ -487,24 +486,35 @@ class TestReadCbc:
         assert isinstance(actual, pd.DataFrame)
         pd.testing.assert_frame_equal(actual, expected["TotalDiscountedCost"])
 
-    def test_convert_cbc_to_csv_short(self):
-        cbc_results = pd.DataFrame(
-            data=[
-                ["RateOfActivity", "SIMPLICITY,ID,GAS_EXTRACTION,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,IN,GAS_EXTRACTION,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,SD,GAS_EXTRACTION,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,SN,GAS_EXTRACTION,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,WD,GAS_EXTRACTION,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,WN,GAS_EXTRACTION,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,ID,DUMMY,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,IN,DUMMY,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,SD,DUMMY,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,SN,DUMMY,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,WD,DUMMY,1,2014", 1],
-                ["RateOfActivity", "SIMPLICITY,WN,DUMMY,1,2014", 1],
-            ],
-            columns=["Variable", "Index", "Value"],
-        )
+    def test_calculate_results(self):
+        cbc_results = {
+            "RateOfActivity": pd.DataFrame(
+                data=[
+                    ["SIMPLICITY", "GAS_EXTRACTION", "ID", 1, 2014, 1],
+                    ["SIMPLICITY", "GAS_EXTRACTION", "IN", 1, 2014, 1],
+                    ["SIMPLICITY", "GAS_EXTRACTION", "SD", 1, 2014, 1],
+                    ["SIMPLICITY", "GAS_EXTRACTION", "SN", 1, 2014, 1],
+                    ["SIMPLICITY", "GAS_EXTRACTION", "WD", 1, 2014, 1],
+                    ["SIMPLICITY", "GAS_EXTRACTION", "WN", 1, 2014, 1],
+                    ["SIMPLICITY", "DUMMY", "ID", 1, 2014, 1],
+                    ["SIMPLICITY", "DUMMY", "IN", 1, 2014, 1],
+                    ["SIMPLICITY", "DUMMY", "SD", 1, 2014, 1],
+                    ["SIMPLICITY", "DUMMY", "SN", 1, 2014, 1],
+                    ["SIMPLICITY", "DUMMY", "WD", 1, 2014, 1],
+                    ["SIMPLICITY", "DUMMY", "WN", 1, 2014, 1],
+                ],
+                columns=[
+                    "REGION",
+                    "TECHNOLOGY",
+                    "TIMESLICE",
+                    "MODE_OF_OPERATION",
+                    "YEAR",
+                    "VALUE",
+                ],
+            ).set_index(
+                ["REGION", "TECHNOLOGY", "TIMESLICE", "MODE_OF_OPERATION", "YEAR"]
+            )
+        }
         input_data = {
             "EmissionActivityRatio": pd.DataFrame(
                 data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],
@@ -538,7 +548,7 @@ class TestReadCbc:
         ).set_index(["REGION", "EMISSION", "YEAR"])
 
         cbc_reader = ReadCbc()
-        actual = cbc_reader._convert_dataframe_to_csv(cbc_results, input_data)
+        actual = cbc_reader.calculate_results(cbc_results, input_data)
         assert isinstance(actual, dict)
         pd.testing.assert_frame_equal(actual["AnnualEmissions"], expected)
 
