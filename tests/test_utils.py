@@ -1,9 +1,12 @@
+import pytest
+
 from unittest.mock import MagicMock
 
 from otoole.utils import extract_config, read_packaged_file
 
 
 class TestDataPackageSchema:
+    @pytest.mark.xfail
     def test_read_datapackage_schema_into_config(self):
 
         schema = read_packaged_file("datapackage.json", "otoole.preprocess")
