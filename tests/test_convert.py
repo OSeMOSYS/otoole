@@ -52,7 +52,7 @@ class TestConvert:
 
         assert actual[-1] == b"end;\n"
         assert actual[0] == b"# Model file written by *otoole*\n"
-        assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.892132\n"
+        assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.8921\n"
         assert actual[8996] == b"param default 1 : DepreciationMethod :=\n"
 
     def test_convert_excel_to_csv(self):
