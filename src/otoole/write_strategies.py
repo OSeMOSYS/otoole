@@ -45,7 +45,7 @@ class WriteExcel(WriteStrategy):
 
             if total_columns > 3:
                 logger.debug(
-                    "More than 2 columns for {}: {}".format(parameter_name, names)
+                    "More than 3 columns for {}: {}".format(parameter_name, names)
                 )
                 rows = names[0:-2]
                 columns = names[-2]
@@ -54,14 +54,6 @@ class WriteExcel(WriteStrategy):
                 logger.debug("dtypes: {}".format(df.dtypes))
                 pivot = df.reset_index().pivot(
                     index=rows, columns=columns, values=values
-                )
-            elif total_columns == 3:
-                logger.debug(f"Two columns for {parameter_name}: {names}")
-                rows = names[0]
-                values = names[1]
-                logger.debug(f"Rows: {rows}; values: {values}")
-                pivot = df.reset_index().pivot(
-                    index=rows, columns=values, values=values
                 )
             else:
                 logger.debug(f"One column for {parameter_name}: {names}")
