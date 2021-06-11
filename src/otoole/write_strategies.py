@@ -33,34 +33,42 @@ class WriteExcel(WriteStrategy):
 
         if not df.empty:
 
-            names = df.columns.to_list()
-            if len(names) > 2:
+            index_names = df.index.names
+            column_names = df.columns.to_list()
+            if index_names[0]:
+                names = index_names + column_names
+            else:
+                names = column_names
+            logger.debug(f"Identified {len(names)} names: {names}")
+
+            total_columns = len(names)
+
+            if total_columns > 3:
                 logger.debug(
                     "More than 2 columns for {}: {}".format(parameter_name, names)
                 )
                 rows = names[0:-2]
                 columns = names[-2]
                 values = names[-1]
-                logger.debug("Rows: %s; columns: %s; values: %s", rows, columns, values)
+                logger.debug(f"Rows: {rows}; columns: {columns}; values: {values}")
                 logger.debug("dtypes: {}".format(df.dtypes))
-                pivot = pd.pivot_table(
-                    df, index=rows, columns=columns, values=values, fill_value=default
+                pivot = df.reset_index().pivot(
+                    index=rows, columns=columns, values=values
                 )
-            elif len(names) == 2:
-                logger.debug("Two columns for {}: {}".format(parameter_name, names))
+            elif total_columns == 3:
+                logger.debug(f"Two columns for {parameter_name}: {names}")
                 rows = names[0]
                 values = names[1]
-                logger.debug("Rows: %s; values: %s", rows, values)
-                pivot = pd.pivot_table(
-                    df, index=rows, values=values, fill_value=default
+                logger.debug(f"Rows: {rows}; values: {values}")
+                pivot = df.reset_index().pivot(
+                    index=rows, columns=values, values=values
                 )
             else:
-                logger.debug("One column for {}: {}".format(parameter_name, names))
+                logger.debug(f"One column for {parameter_name}: {names}")
                 pivot = df.copy()
-                pivot = pivot.reset_index(drop=True)
 
         else:
-            logger.debug("Dataframe {} is empty".format(parameter_name))
+            logger.debug(f"Dataframe {parameter_name} is empty")
             pivot = df.copy()
 
         return pivot
@@ -77,9 +85,10 @@ class WriteExcel(WriteStrategy):
         except KeyError:
             name = parameter_name
         df = self._form_parameter(df, parameter_name, default)
-        df.to_excel(handle, sheet_name=name, merge_cells=False)
+        df.to_excel(handle, sheet_name=name, merge_cells=False, index=True)
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: pd.ExcelWriter):
+        df = df.reset_index()
         df.to_excel(handle, sheet_name=set_name, merge_cells=False, index=False)
 
     def _footer(self, handle=pd.ExcelWriter):
