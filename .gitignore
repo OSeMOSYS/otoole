@@ -13,9 +13,22 @@ __pycache__/*
 .*.swp
 */.ipynb_checkpoints/*
 .DS_Store
-.vscode
+*.feather
+*.parquet
+*.kgrind
+*.sol
+*.lp
+*.txt
+*.csv
+datapackage.json
+*.ipynb
 
 # Project files
+*.srctrlbm
+*.srctrldb
+*.srctrlprj
+.vscode
+*.code-workspace
 .ropeproject
 .project
 .pydevproject

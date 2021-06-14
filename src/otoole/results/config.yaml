@@ -172,3 +172,6 @@ UseByTechnology:
     dtype: float
     default: 0
     calculated: False
+_REGION:
+    type: set
+    dtype: str

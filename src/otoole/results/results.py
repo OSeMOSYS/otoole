@@ -1,8 +1,8 @@
 import logging
-from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
-
 import pandas as pd
+from abc import abstractmethod
+from io import StringIO
+from typing import Any, Dict, List, Set, TextIO, Tuple, Union
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes
@@ -35,30 +35,62 @@ class ReadResults(ReadStrategy):
         else:
             input_data = None
 
-        cbc = self._convert_to_dataframe(filepath)
-        results = self._convert_dataframe_to_csv(cbc, input_data)
-        default_values = self._read_default_values(self.results_config)
+        available_results = self.get_results_from_file(
+            filepath, input_data
+        )  # type: Dict[str, pd.DataFrame]
+        results = self.calculate_results(
+            available_results, input_data
+        )  # type: Dict[str, pd.DataFrame]
+        default_values = self._read_default_values(self.results_config)  # type: Dict
         return results, default_values
+
+    @abstractmethod
+    def get_results_from_file(self, filepath, input_data):
+        raise NotImplementedError()
+
+    def calculate_results(
+        self,
+        available_results: Dict[str, pd.DataFrame],
+        input_data: Dict[str, pd.DataFrame],
+    ) -> Dict[str, pd.DataFrame]:
+        """Populates the results with calculated values using input data"""
+
+        results = {}
+        results_package = ResultsPackage(available_results, input_data)
+
+        for name in sorted(self.results_config.keys()):
+
+            LOGGER.info("Looking for %s", name)
+
+            try:
+                results[name] = results_package[name]
+            except KeyError as ex:
+                LOGGER.info("No calculation method available for %s", name)
+                LOGGER.debug("Error calculating %s: %s", name, str(ex))
+
+        return results
+
+
+class ReadResultsCBC(ReadResults):
+    def get_results_from_file(self, filepath, input_data):
+        cbc = self._convert_to_dataframe(filepath)
+        available_results = self._convert_wide_to_long(cbc)
+        return available_results
 
     @abstractmethod
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
         raise NotImplementedError()
 
-    def _convert_dataframe_to_csv(
-        self, data: pd.DataFrame, input_data: Optional[Dict[str, pd.DataFrame]] = None
-    ) -> Dict[str, pd.DataFrame]:
-        """Convert from dataframe to long format
+    def _convert_wide_to_long(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        """Convert from wide to long format
 
         Converts a pandas DataFrame containing all CBC results to reformatted
-        dictionary of pandas DataFrames in long format ready to write out as
-        csv files
+        dictionary of pandas DataFrames in long format ready to write out
 
         Arguments
         ---------
         data : pandas.DataFrame
             CBC results stored in a dataframe
-        input_data_path : str, default=None
-            Path to the OSeMOSYS data file containing input data
 
         Example
         -------
@@ -71,16 +103,13 @@ class ReadResults(ReadStrategy):
                                     0  SIMPLICITY  2015  187.01576
                                     1  SIMPLICITY  2016  183.30788}
         """
-        input_config = self.input_config
-        results_config = self.results_config
 
-        sets = {x: y for x, y in input_config.items() if y["type"] == "set"}
+        sets = {x: y for x, y in self.input_config.items() if y["type"] == "set"}
 
         results = {}  # type: Dict[str, pd.DataFrame]
-
         not_found = []
 
-        for name, details in sorted(results_config.items()):
+        for name, details in sorted(self.results_config.items()):
             df = data[data["Variable"] == name]
 
             if not df.empty:
@@ -102,115 +131,138 @@ class ReadResults(ReadStrategy):
                 df = df[columns]
 
                 index = details["indices"].copy()
-                # catches pandas error when there are duplicate column indices
-                if check_duplicate_index(index):
-                    index = rename_duplicate_column(index)
-                    LOGGER.debug("Original column names: %s", columns)
-                    renamed_columns = rename_duplicate_column(columns)
-                    LOGGER.debug("New column names: %s", renamed_columns)
-                    df.columns = renamed_columns
+                df, index = check_duplicate_index(df, columns, index)
                 results[name] = df.set_index(index)
             else:
                 not_found.append(name)
 
         LOGGER.debug("Unable to find result variables for: %s", ", ".join(not_found))
 
-        results_package = ResultsPackage(results, input_data)
-
-        for name in not_found:
-
-            LOGGER.info("Looking for %s", name)
-            details = results_config[name]
-
-            try:
-                df = results_package[name]
-            except KeyError as ex:
-                LOGGER.info("No calculation method available for %s", name)
-                LOGGER.debug("Error calculating %s: %s", name, str(ex))
-                df = pd.DataFrame()
-
-            if not df.empty:
-                results[name] = df
-            else:
-                LOGGER.warning(
-                    "Calculation returned empty dataframe for parameter '%s'", name
-                )
-
         return results
 
 
-class ReadCplex(ReadStrategy):
-    """
-    """
+def check_duplicate_index(df: pd.DataFrame, columns: List, index: List) -> pd.DataFrame:
+    """Catches pandas error when there are duplicate column indices"""
+    if check_for_duplicates(index):
+        index = rename_duplicate_column(index)
+        LOGGER.debug("Original column names: %s", columns)
+        renamed_columns = rename_duplicate_column(columns)
+        LOGGER.debug("New column names: %s", renamed_columns)
+        df.columns = renamed_columns
+    return df, index
 
-    def read(
-        self, filepath: Union[str, TextIO], **kwargs
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        data = {}  # type: Dict
 
-        if "input_data" in kwargs:
-            input_data = kwargs["input_data"]
+def check_for_duplicates(index: List) -> bool:
+    return len(set(index)) != len(index)
+
+
+def identify_duplicate(index: List) -> Union[int, bool]:
+    elements = set()  # type: Set
+    for counter, elem in enumerate(index):
+        if elem in elements:
+            return counter
+        else:
+            elements.add(elem)
+    return False
+
+
+def rename_duplicate_column(index: List) -> List:
+    column = index.copy()
+    location = identify_duplicate(column)
+    if location:
+        column[location] = "_" + column[location]
+    return column
+
+
+class ReadCplex(ReadResults):
+    """ """
+
+    def get_results_from_file(
+        self, filepath: Union[str, TextIO], input_data
+    ) -> Dict[str, pd.DataFrame]:
+
+        if input_data:
             years = input_data["YEAR"].values  # type: List
             start_year = int(years[0])
             end_year = int(years[-1])
         else:
             raise RuntimeError("To process CPLEX results please provide the input file")
 
-        for linenum, line in enumerate(filepath):
-            try:
-                row_as_list = line.split("\t")
-                name, df = self.convert_df(row_as_list, start_year, end_year,)
-
-                if name in data:
-                    data[name] = data[name].append(df)
-                else:
-                    data[name] = [df]
-
-            except ValueError as ex:
-                msg = "Error caused at line {}: {}. {}"
-                raise ValueError(msg.format(linenum, line, ex))
+        if isinstance(filepath, str):
+            with open(filepath, "r") as sol_file:
+                data = self.extract_rows(sol_file, start_year, end_year)
+        elif isinstance(filepath, StringIO):
+            data = self.extract_rows(filepath, start_year, end_year)
+        else:
+            raise TypeError("Argument filepath type must be a string or an open file")
 
         results = {}
 
-        for name, contents in data.items():
-            results[name] = pd.concat(contents)
+        for name in data.keys():
+            results[name] = self.convert_df(data[name], name, start_year, end_year)
 
-        return results, self._read_default_values(self.results_config)
+        return results
+
+    def extract_rows(
+        self, sol_file: TextIO, start_year: int, end_year: int
+    ) -> Dict[str, List[List[str]]]:
+        """ """
+        data = {}  # type: Dict[str, List[List[str]]]
+        for linenum, line in enumerate(sol_file):
+            line = line.replace("\n", "")
+            try:
+                row_as_list = line.split("\t")  # type: List[str]
+                name = row_as_list[0]  # type: str
+
+                if name in data.keys():
+                    data[name].append(row_as_list)
+                else:
+                    data[name] = [row_as_list]
+            except ValueError as ex:
+                msg = "Error caused at line {}: {}. {}"
+                raise ValueError(msg.format(linenum, line, ex))
+        return data
 
     def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
-        """Extracts useful information from a line of a results file
-        """
+        """Extracts useful information from a line of a results file"""
         variable = data[0]
-        number = len(self.results_config[variable]["indices"])
+        try:
+            number = len(self.results_config[variable]["indices"])
+        except KeyError as ex:
+            print(data)
+            raise KeyError(ex)
         dimensions = tuple(data[1:(number)])
         values = data[(number):]
         return (variable, dimensions, values)
 
     def convert_df(
-        self, row_as_list: List, start_year: int, end_year: int
-    ) -> Tuple[str, pd.DataFrame]:
-        """Read the cplex line into a pandas DataFrame
-
-        """
-        variable, dimensions, values = self.extract_variable_dimensions_values(
-            row_as_list
-        )
+        self, data: List[List[str]], variable: str, start_year: int, end_year: int
+    ) -> pd.DataFrame:
+        """Read the cplex lines into a pandas DataFrame"""
         index = self.results_config[variable]["indices"]
-        columns = index[:-1] + list(range(start_year, end_year + 1, 1))
-        df = pd.DataFrame(data=[list(dimensions) + values], columns=columns).set_index(
-            index[:-1]
+        columns = ["variable"] + index[:-1] + list(range(start_year, end_year + 1, 1))
+        df = pd.DataFrame(data=data, columns=columns)
+        df, index = check_duplicate_index(df, columns, index)
+        df = df.drop(columns="variable")
+
+        LOGGER.debug(
+            f"Attempting to set index for {variable} with columns {index[:-1]}"
         )
+        try:
+            df = df.set_index(index[:-1])
+        except NotImplementedError as ex:
+            LOGGER.error(f"Error setting index for {df.head()}")
+            raise NotImplementedError(ex)
         df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
         df = df.reset_index()
         df = check_datatypes(df, {**self.input_config, **self.results_config}, variable)
         df = df.set_index(index)
         df = df[(df != 0).any(axis=1)]
-        return (variable, df)
+        return df
 
 
-class ReadGurobi(ReadResults):
-    """Read a Gurobi solution file into memory
-    """
+class ReadGurobi(ReadResultsCBC):
+    """Read a Gurobi solution file into memory"""
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
         """Reads a Gurobi solution file into a pandas DataFrame
@@ -220,7 +272,11 @@ class ReadGurobi(ReadResults):
         file_path : str
         """
         df = pd.read_csv(
-            file_path, header=None, sep=" ", names=["Variable", "Value"], skiprows=2,
+            file_path,
+            header=None,
+            sep=" ",
+            names=["Variable", "Value"],
+            skiprows=2,
         )  # type: pd.DataFrame
         df[["Variable", "Index"]] = df["Variable"].str.split("(", expand=True)
         df["Index"] = df["Index"].str.replace(")", "")
@@ -229,7 +285,7 @@ class ReadGurobi(ReadResults):
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
-class ReadCbc(ReadResults):
+class ReadCbc(ReadResultsCBC):
     """Read a CBC solution file into memory
 
     Arguments
@@ -267,25 +323,3 @@ class ReadCbc(ReadResults):
         df["Index"] = df["Index"].str.replace(")", "")
         df = df.drop(columns=["indexvalue"])
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
-
-
-def check_duplicate_index(index: List) -> bool:
-    return len(set(index)) != len(index)
-
-
-def identify_duplicate(index: List) -> Union[int, bool]:
-    elements = set()  # type: Set
-    for counter, elem in enumerate(index):
-        if elem in elements:
-            return counter
-        else:
-            elements.add(elem)
-    return False
-
-
-def rename_duplicate_column(index: List) -> List:
-    column = index.copy()
-    location = identify_duplicate(column)
-    if location:
-        column[location] = "_" + column[location]
-    return column

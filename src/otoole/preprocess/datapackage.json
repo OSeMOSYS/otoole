@@ -294,7 +294,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -1354,7 +1354,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -1616,7 +1616,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -1860,7 +1860,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -1926,7 +1926,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -2206,7 +2206,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -2315,7 +2315,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
@@ -2493,7 +2493,7 @@
                     },
                     {
                         "name": "VALUE",
-                        "type": "string",
+                        "type": "number",
                         "format": "default"
                     }
                 ],
