@@ -104,7 +104,7 @@ class ReadResultsCBC(ReadResults):
                                     1  SIMPLICITY  2016  183.30788}
         """
 
-        sets = {x: y for x, y in self.input_config.items() if y["type"] == "set"}
+        sets = {x: y for x, y in self.user_config.items() if y["type"] == "set"}
 
         results = {}  # type: Dict[str, pd.DataFrame]
         not_found = []
@@ -255,7 +255,7 @@ class ReadCplex(ReadResults):
             raise NotImplementedError(ex)
         df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
         df = df.reset_index()
-        df = check_datatypes(df, {**self.input_config, **self.results_config}, variable)
+        df = check_datatypes(df, self.user_config, variable)
         df = df.set_index(index)
         df = df[(df != 0).any(axis=1)]
         return df

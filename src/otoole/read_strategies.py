@@ -1,11 +1,10 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
-
 import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 from pandas_datapackage_reader import read_datapackage
+from typing import Any, Dict, List, TextIO, Tuple, Union
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
@@ -27,11 +26,10 @@ CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
 
 
 class ReadMemory(ReadStrategy):
-    """Read a dict of OSeMOSYS parameters from memory
-    """
+    """Read a dict of OSeMOSYS parameters from memory"""
 
     def __init__(
-        self, parameters: Dict[str, pd.DataFrame], user_config: Optional[Dict] = None
+        self, parameters: Dict[str, pd.DataFrame], user_config: Dict[str, Dict]
     ):
         super().__init__(user_config)
         self._parameters = parameters
@@ -40,7 +38,7 @@ class ReadMemory(ReadStrategy):
         self, filepath: Union[str, TextIO] = None, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.input_config
+        config = self.user_config
         default_values = self._read_default_values(config)
         self._parameters = self._check_index(self._parameters)
         return self._parameters, default_values
@@ -101,14 +99,13 @@ class _ReadTabular(ReadStrategy):
 
 
 class ReadExcel(_ReadTabular):
-    """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames
-    """
+    """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames"""
 
     def read(
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.input_config
+        config = self.user_config
         default_values = self._read_default_values(config)
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
@@ -149,11 +146,11 @@ class ReadCsv(_ReadTabular):
 
         input_data = {}
 
-        default_values = self._read_default_values(self.input_config)
+        default_values = self._read_default_values(self.user_config)
 
-        for parameter, details in self.input_config.items():
+        for parameter, details in self.user_config.items():
             logger.info("Looking for %s", parameter)
-            config_details = self.input_config[parameter]
+            config_details = self.user_config[parameter]
 
             csv_path = os.path.join(filepath, parameter + ".csv")
 
@@ -165,13 +162,13 @@ class ReadCsv(_ReadTabular):
                 default_columns = expected_columns + ["VALUE"]
                 df = pd.DataFrame(columns=default_columns)
 
-            entity_type = self.input_config[parameter]["type"]
+            entity_type = self.user_config[parameter]["type"]
 
             if entity_type == "param":
                 narrow = self._check_parameter(df, config_details["indices"], parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
-                        narrow, self.input_config, parameter
+                        narrow, self.user_config, parameter
                     )
                 else:
                     narrow_checked = narrow
@@ -179,7 +176,7 @@ class ReadCsv(_ReadTabular):
                 narrow = self._check_set(df, config_details, parameter)
                 if not narrow.empty:
                     narrow_checked = check_set_datatype(
-                        narrow, self.input_config, parameter
+                        narrow, self.user_config, parameter
                     )
                 else:
                     narrow_checked = narrow
@@ -198,9 +195,7 @@ class ReadDatapackage(ReadStrategy):
         inputs = read_datapackage(filepath)
         default_resource = inputs.pop("default_values").set_index("name").to_dict()
         default_values = default_resource["default_value"]
-        self.input_config = read_datapackage_schema_into_config(
-            filepath, default_values
-        )
+        self.user_config = read_datapackage_schema_into_config(filepath, default_values)
         inputs = self._check_index(inputs)
         return inputs, default_values
 
@@ -210,7 +205,7 @@ class ReadDatafile(ReadStrategy):
         self, filepath, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.input_config
+        config = self.user_config
         default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)

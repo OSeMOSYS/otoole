@@ -1,6 +1,6 @@
 """The ``input`` module allows you to access the conversion routines programmatically
 
-To use the routines, you need to instanciate a ``ReadStrategy`` and a ``WriteStrategy``
+To use the routines, you need to instantiate a ``ReadStrategy`` and a ``WriteStrategy``
 relevant for the format of the input and output data.  You then pass these to a
 ``Context``.
 
@@ -41,12 +41,9 @@ Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
-
 import pandas as pd
-
-from otoole.utils import read_packaged_file
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, TextIO, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -101,8 +98,7 @@ class Context:
     def _read(
         self, filepath: str, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        """Delegate reading to the strategy, depending upon the format
-        """
+        """Delegate reading to the strategy, depending upon the format"""
         return self._read_strategy.read(filepath, **kwargs)
 
     def _write(self, inputs: Dict, filepath: str, default_values: Dict) -> None:
@@ -128,27 +124,20 @@ class Strategy(ABC):
 
     Arguments
     ---------
-    input_config : dict, default=None
+    user_config : dict, default=None
         A user configuration for the input parameters and sets
     results_config : dict, default=None
         A user configuration for the results parameters
 
     """
 
-    def __init__(
-        self, user_config: Optional[Dict] = None, results_config: Optional[Dict] = None
-    ):
-        self._input_config = {}  # type: Dict[str, Dict[str, Union[str, List[str]]]]
-        self._results_config = {}
+    def __init__(self, user_config: Dict[str, Dict]):
 
-        if user_config:
-            self.input_config = user_config
-        else:
-            self.input_config = self._read_config()
-        if results_config:
-            self._results_config = results_config
-        else:
-            self._results_config = self._read_results_config()
+        self.user_config = user_config
+
+        self.results_config = {
+            x: y for x, y in self.user_config.items() if y["type"] == "result"
+        }
 
     def _add_dtypes(self, config: Dict):
         for name, details in config.items():
@@ -162,23 +151,16 @@ class Strategy(ABC):
                 details["index_dtypes"] = dtypes
         return config
 
-    def _read_config(self) -> Dict[str, Dict]:
-        return read_packaged_file("config.yaml", "otoole.preprocess")
-
-    def _read_results_config(self) -> Dict[str, Dict]:
-        return read_packaged_file("config.yaml", "otoole.results")
-
     @property
-    def input_config(self) -> Dict:
-        return self._input_config
+    def user_config(self) -> Dict:
+        return self._user_config
 
-    @input_config.setter
-    def input_config(self, value: Dict):
-        self._input_config = self._add_dtypes(value)
-
-    @property
-    def results_config(self):
-        return self._results_config
+    @user_config.setter
+    def user_config(self, value: Dict):
+        if value:
+            self._user_config = self._add_dtypes(value)
+        elif value is None:
+            raise ValueError("A user configuration must be passed into the reader")
 
     @staticmethod
     def _read_default_values(config):
@@ -206,9 +188,9 @@ class WriteStrategy(Strategy):
 
     def __init__(
         self,
+        user_config: Dict,
         filepath: Optional[str] = None,
         default_values: Optional[Dict] = None,
-        user_config: Optional[Dict] = None,
     ):
         super().__init__(user_config=user_config)
         if filepath:
@@ -242,8 +224,7 @@ class WriteStrategy(Strategy):
         raise NotImplementedError()
 
     def write(self, inputs: Dict, filepath: str, default_values: Dict):
-        """Perform the conversion from dict of dataframes to destination format
-        """
+        """Perform the conversion from dict of dataframes to destination format"""
         self.filepath = filepath
         self.default_values = default_values
 
@@ -254,7 +235,7 @@ class WriteStrategy(Strategy):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
             try:
-                entity_type = self.input_config[name]["type"]
+                entity_type = self.user_config[name]["type"]
             except KeyError:
                 try:
                     entity_type = self.results_config[name]["type"]
@@ -300,7 +281,7 @@ class ReadStrategy(Strategy):
         """
         for name, df in input_data.items():
 
-            details = self.input_config[name]
+            details = self.user_config[name]
 
             if details["type"] == "param":
                 logger.debug("Identified {} as a parameter".format(name))

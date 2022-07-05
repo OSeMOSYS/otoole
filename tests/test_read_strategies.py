@@ -108,8 +108,8 @@ class TestReadCplex:
     ]
 
     @mark.parametrize("cplex_input,expected", test_data, ids=["short", "long"])
-    def test_read_cplex_to_dataframe(self, cplex_input, expected):
-        cplex_reader = ReadCplex()
+    def test_read_cplex_to_dataframe(self, cplex_input, expected, user_config):
+        cplex_reader = ReadCplex(user_config=user_config)
 
         input_data = {
             "YEAR": pd.DataFrame(data=list(range(2015, 2071, 1)), columns=["VALUE"])
@@ -122,10 +122,10 @@ class TestReadCplex:
 
     test_data_mid = [(cplex_short, cplex_mid_short), (cplex_long, cplex_mid_long)]
 
-    def test_read_empty_cplex_to_dataframe(self):
+    def test_read_empty_cplex_to_dataframe(self, user_config):
         cplex_input = self.cplex_empty
 
-        cplex_reader = ReadCplex()
+        cplex_reader = ReadCplex(user_config)
 
         input_data = {
             "YEAR": pd.DataFrame(data=list(range(2015, 2071, 1)), columns=["VALUE"])
@@ -154,15 +154,15 @@ class TestReadCplex:
     @mark.parametrize(
         "cplex_input,expected", test_data_to_cplex, ids=["empty", "short", "long"]
     )
-    def test_convert_cplex_to_df(self, cplex_input, expected):
+    def test_convert_cplex_to_df(self, cplex_input, expected, user_config):
 
         data = cplex_input.split("\t")
         variable = data[0]
-        cplex_reader = ReadCplex()
+        cplex_reader = ReadCplex(user_config=user_config)
         actual = cplex_reader.convert_df([data], variable, 2015, 2070)
         pd.testing.assert_frame_equal(actual, expected, check_index_type=False)
 
-    def test_convert_lines_to_df_empty(self):
+    def test_convert_lines_to_df_empty(self, user_config):
 
         data = [
             [
@@ -181,7 +181,7 @@ class TestReadCplex:
             ]
         ]
         variable = "AnnualFixedOperatingCost"
-        cplex_reader = ReadCplex()
+        cplex_reader = ReadCplex(user_config)
         actual = cplex_reader.convert_df(data, variable, 2015, 2023)
         pd.testing.assert_frame_equal(
             actual,
@@ -238,9 +238,9 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
 """
     )
 
-    def test_convert_to_dataframe(self):
+    def test_convert_to_dataframe(self, user_config):
         input_file = self.gurobi_data
-        reader = ReadGurobi()
+        reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
         print(actual)
@@ -260,9 +260,9 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
 
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_solution_to_dataframe(self):
+    def test_solution_to_dataframe(self, user_config):
         input_file = self.gurobi_data
-        reader = ReadGurobi()
+        reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
         print(actual)
@@ -337,12 +337,14 @@ class TestReadCbc:
     ]
 
     @mark.parametrize("cbc_input,expected", test_data)
-    def test_read_cbc_to_otoole_dataframe(self, cbc_input, expected):
+    def test_read_cbc_to_otoole_dataframe(self, cbc_input, expected, user_config):
         with StringIO(cbc_input) as file_buffer:
-            actual = ReadCbc().read(file_buffer, kwargs={"input_data": {}})[0]["Trade"]
+            actual = ReadCbc(user_config).read(file_buffer, kwargs={"input_data": {}})[
+                0
+            ]["Trade"]
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_read_cbc_dataframe_to_otoole_dataframe(self):
+    def test_read_cbc_dataframe_to_otoole_dataframe(self, user_config):
 
         prelim_data = pd.DataFrame(
             data=[
@@ -354,7 +356,7 @@ class TestReadCbc:
             ],
             columns=["Variable", "Index", "Value"],
         )
-        actual = ReadCbc()._convert_wide_to_long(prelim_data)["Trade"]
+        actual = ReadCbc(user_config)._convert_wide_to_long(prelim_data)["Trade"]
         pd.testing.assert_frame_equal(actual, self.otoole_data)
 
     test_data_4 = [
@@ -426,8 +428,8 @@ class TestReadCbc:
     test_data = [(total_cost_cbc, total_cost_cbc_mid)]
 
     @mark.parametrize("cbc_input,expected", test_data, ids=["TotalDiscountedCost"])
-    def test_read_cbc_to_dataframe(self, cbc_input, expected):
-        cbc_reader = ReadCbc()
+    def test_read_cbc_to_dataframe(self, cbc_input, expected, user_config):
+        cbc_reader = ReadCbc(user_config)
         with StringIO(cbc_input) as file_buffer:
             actual = cbc_reader._convert_to_dataframe(file_buffer)
         pd.testing.assert_frame_equal(actual, expected)
@@ -463,8 +465,8 @@ class TestReadCbc:
         test_data_2,
         ids=["TotalDiscountedCost", "AnnualEmissions1"],
     )
-    def test_convert_cbc_to_csv_long(self, results, expected):
-        cbc_reader = ReadCbc()
+    def test_convert_cbc_to_csv_long(self, results, expected, user_config):
+        cbc_reader = ReadCbc(user_config=user_config)
         actual = cbc_reader._convert_wide_to_long(results)
         assert isinstance(actual, dict)
         for name, df in actual.items():
@@ -477,8 +479,10 @@ class TestReadCbc:
         test_data_3,
         ids=["TotalDiscountedCost"],
     )
-    def test_convert_cbc_to_csv_long_read(self, cbc_solution, input_data, expected):
-        cbc_reader = ReadCbc()
+    def test_convert_cbc_to_csv_long_read(
+        self, cbc_solution, input_data, expected, user_config
+    ):
+        cbc_reader = ReadCbc(user_config=user_config)
         with StringIO(cbc_solution) as file_buffer:
             actual = cbc_reader.read(file_buffer, kwargs={"input_data": input_data})[0][
                 "TotalDiscountedCost"
@@ -486,7 +490,7 @@ class TestReadCbc:
         assert isinstance(actual, pd.DataFrame)
         pd.testing.assert_frame_equal(actual, expected["TotalDiscountedCost"])
 
-    def test_calculate_results(self):
+    def test_calculate_results(self, user_config):
         cbc_results = {
             "RateOfActivity": pd.DataFrame(
                 data=[
@@ -547,14 +551,14 @@ class TestReadCbc:
             columns=["REGION", "EMISSION", "YEAR", "VALUE"],
         ).set_index(["REGION", "EMISSION", "YEAR"])
 
-        cbc_reader = ReadCbc()
+        cbc_reader = ReadCbc(user_config)
         actual = cbc_reader.calculate_results(cbc_results, input_data)
         assert isinstance(actual, dict)
         pd.testing.assert_frame_equal(actual["AnnualEmissions"], expected)
 
-    def test_solution_to_dataframe(self):
+    def test_solution_to_dataframe(self, user_config):
         input_file = self.total_cost_cbc
-        reader = ReadCbc()
+        reader = ReadCbc(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
         expected = self.total_cost_otoole_df
@@ -576,9 +580,9 @@ class TestReadCbc:
 """
     )
 
-    def test_manage_infeasible_variables(self):
+    def test_manage_infeasible_variables(self, user_config):
         input_file = self.cbc_infeasible
-        reader = ReadCbc()
+        reader = ReadCbc(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
         expected = pd.DataFrame(
@@ -601,9 +605,9 @@ class TestReadCbc:
 class TestCleanOnRead:
     """Tests that a datapackage is cleaned and indexed upon reading"""
 
-    def test_index_dtypes_available(self):
-        reader = ReadMemory({})
-        config = reader._input_config
+    def test_index_dtypes_available(self, user_config):
+        reader = ReadMemory({}, user_config=user_config)
+        config = reader.user_config
         assert "index_dtypes" in config["AccumulatedAnnualDemand"].keys()
         actual = config["AccumulatedAnnualDemand"]["index_dtypes"]
         assert actual == {
@@ -613,7 +617,7 @@ class TestCleanOnRead:
             "VALUE": "float",
         }
 
-    def test_remove_empty_lines(self):
+    def test_remove_empty_lines(self, user_config):
 
         data = [
             ["SIMPLICITY", "ETH", 2014, 1.0],
@@ -624,7 +628,7 @@ class TestCleanOnRead:
         df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"])
         parameters = {"AccumulatedAnnualDemand": df}
 
-        reader = ReadMemory(parameters)
+        reader = ReadMemory(parameters, user_config=user_config)
         actual, _ = reader.read()
 
         expected = {
@@ -644,7 +648,7 @@ class TestCleanOnRead:
             actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
         )
 
-    def test_change_types(self):
+    def test_change_types(self, user_config):
 
         data = [
             ["SIMPLICITY", "ETH", 2014.0, 1],
@@ -655,7 +659,7 @@ class TestCleanOnRead:
         ).astype({"REGION": str, "FUEL": str, "YEAR": float, "VALUE": int})
         parameters = {"AccumulatedAnnualDemand": df}
 
-        reader = ReadMemory(parameters)
+        reader = ReadMemory(parameters, user_config=user_config)
         actual, _ = reader.read()
 
         expected = {
@@ -677,7 +681,7 @@ class TestCleanOnRead:
 
 
 class TestReadMemoryStrategy:
-    def test_read_memory(self):
+    def test_read_memory(self, user_config):
 
         data = [
             ["SIMPLICITY", "ETH", 2014, 1.0],
@@ -688,7 +692,7 @@ class TestReadMemoryStrategy:
         df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"])
         parameters = {"AccumulatedAnnualDemand": df}
 
-        actual, default_values = ReadMemory(parameters).read()
+        actual, default_values = ReadMemory(parameters, user_config).read()
 
         expected = {
             "AccumulatedAnnualDemand": pd.DataFrame(
@@ -701,18 +705,50 @@ class TestReadMemoryStrategy:
             actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
         )
 
+    def test_read_memory_user_config(self, user_config):
+
+        data = [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            ["SIMPLICITY", "RAWSUG", 2015, 0.51],
+        ]
+        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"])
+        parameters = {"AccumulatedAnnualDemand": df}
+
+        actual, default_values = ReadMemory(parameters, user_config=user_config).read()
+
+        expected = {
+            "AccumulatedAnnualDemand": pd.DataFrame(
+                data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"]
+            ).set_index(["REGION", "FUEL", "YEAR"])
+        }
+
+        assert "AccumulatedAnnualDemand" in actual.keys()
+        pd.testing.assert_frame_equal(
+            actual["AccumulatedAnnualDemand"], expected["AccumulatedAnnualDemand"]
+        )
+
+        assert default_values["AccumulatedAnnualDemand"] == 0
+
 
 class TestConfig:
-    def test_read_config(self):
+    def test_read_config(self, user_config):
 
-        read = ReadDatafile()
+        read = ReadDatafile(user_config=user_config)
 
-        actual = read._read_config()
+        actual = read.user_config
         expected = {
             "default": 0,
             "dtype": "float",
             "indices": ["REGION", "FUEL", "YEAR"],
             "type": "param",
+            "index_dtypes": {
+                "FUEL": "str",
+                "REGION": "str",
+                "VALUE": "float",
+                "YEAR": "int",
+            },
         }
         assert actual["AccumulatedAnnualDemand"] == expected
 
@@ -732,7 +768,7 @@ class TestReadDatafile:
             end;"""
         )
 
-    def test_convert_amply_to_dataframe(self):
+    def test_convert_amply_to_dataframe(self, user_config):
 
         config = {
             "VariableCost": {
@@ -778,7 +814,7 @@ class TestReadDatafile:
     2 999999.0;"""
         )
 
-        read = ReadDatafile()
+        read = ReadDatafile(user_config=user_config)
 
         actual = read._convert_amply_to_dataframe(amply, config)
         expected = pd.DataFrame(
@@ -792,7 +828,7 @@ class TestReadDatafile:
         )
         pd.testing.assert_frame_equal(actual["VariableCost"], expected)
 
-    def test_convert_amply_data_to_list_of_lists(self):
+    def test_convert_amply_data_to_list_of_lists(self, user_config):
 
         data = {
             "SIMPLICITY": {
@@ -806,34 +842,34 @@ class TestReadDatafile:
             ["SIMPLICITY", "GAS_EXTRACTION", 1.0, 2014.0, 7.5],
             ["SIMPLICITY", "GAS_EXTRACTION", 2.0, 2014.0, 999999.0],
         ]
-        read = ReadDatafile()
+        read = ReadDatafile(user_config=user_config)
         actual = read._convert_amply_data_to_list(data)
         assert actual == expected
 
-    def test_load_parameters(self):
+    def test_load_parameters(self, user_config):
 
         config = {"TestParameter": {"type": "param", "indices": ["index1", "index2"]}}
-        read = ReadDatafile()
+        read = ReadDatafile(user_config=user_config)
         actual = read._load_parameter_definitions(config)
         expected = "param TestParameter {index1,index2};\n"
         assert actual == expected
 
-    def test_load_sets(self):
+    def test_load_sets(self, user_config):
 
         config = {"TestSet": {"type": "set"}}
 
-        read = ReadDatafile()
+        read = ReadDatafile(user_config=user_config)
         actual = read._load_parameter_definitions(config)
         expected = "set TestSet;\n"
         assert actual == expected
 
-    def test_catch_error_no_parameter(self, caplog):
+    def test_catch_error_no_parameter(self, caplog, user_config):
         """Fix for https://github.com/OSeMOSYS/otoole/issues/70 where parameter in
         datafile but not in config causes error.  Instead, throw warning (and advise
         that user should use a custom configuration).
         """
-        read = ReadDatafile()
-        config = read.input_config
+        read = ReadDatafile(user_config=user_config)
+        config = read.user_config
         amply_datafile = amply = Amply(
             """set REGION;
             set TECHNOLOGY;
@@ -849,10 +885,10 @@ class TestReadDatafile:
 
 
 class TestReadExcel:
-    def test_read_excel_yearsplit(self):
+    def test_read_excel_yearsplit(self, user_config):
         """ """
         spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
-        reader = ReadExcel()
+        reader = ReadExcel(user_config=user_config)
         actual, _ = reader.read(spreadsheet)
         data = [
             ["IW0016", 2017, 0.238356164],
@@ -900,7 +936,7 @@ class TestReadExcel:
 
         assert (actual_data == expected).all()
 
-    def test_narrow_parameters(self):
+    def test_narrow_parameters(self, user_config):
         data = [
             ["IW0016", 0.238356164, 0.238356164, 0.238356164],
             ["IW1624", 0.119178082, 0.119178082, 0.119178082],
@@ -910,7 +946,7 @@ class TestReadExcel:
         config_details = ["TIMESLICE", "YEAR"]
         name = "YearSplit"
 
-        reader = ReadExcel()
+        reader = ReadExcel(user_config=user_config)
         actual = reader._check_parameter(df, config_details, name)
         data = [
             ["IW0016", 2017, 0.238356164],
@@ -930,7 +966,7 @@ class TestReadExcel:
         )
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_check_index(self):
+    def test_check_index(self, user_config):
 
         data = [
             ["IW0016", 2017, 0.238356164],
@@ -943,13 +979,13 @@ class TestReadExcel:
             ["IH0012", 2018, 0.071232876],
             ["IH0012", 2019, 0.071232876],
         ]
-        fixture = {
+        df = {
             "YearSplit": pd.DataFrame(data, columns=["TIMESLICE", "YEAR", "VALUE"])
             .astype({"YEAR": object})
             .set_index(["TIMESLICE", "YEAR"])
         }
-        reader = ReadExcel()
-        actual = reader._check_index(fixture)
+        reader = ReadExcel(user_config=user_config)
+        actual = reader._check_index(df)
         expected = {
             "YearSplit": pd.DataFrame(
                 data, columns=["TIMESLICE", "YEAR", "VALUE"]
