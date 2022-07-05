@@ -142,11 +142,10 @@ def conversion_matrix(args):
 
     config = None
     if args.config:
-        for filename in args.config:
-            _, ending = os.path.splitext(filename)
-            with open(filename, "r") as config_file:
-                config = _read_file(config_file, ending)
-            logger.info("Reading config from {}".format(filename))
+        _, ending = os.path.splitext(args.config)
+        with open(args.config, "r") as config_file:
+            config = _read_file(config_file, ending)
+        logger.info("Reading config from {}".format(args.config))
 
     if args.from_format == "datafile":
         read_strategy = ReadDatafile(user_config=config)
@@ -241,9 +240,7 @@ def get_parser():
         "from_path", help="Path to file or folder to convert from"
     )
     convert_parser.add_argument("to_path", help="Path to file or folder to convert to")
-    convert_parser.add_argument(
-        "-c", "--config", action="append", help="Path to config YAML files"
-    )
+    convert_parser.add_argument("config", help="Path to config YAML file")
     convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for validation

@@ -29,7 +29,6 @@ class TestConvert:
                 "datapackage",
                 simplicity,
                 temp,
-                "-c",
                 config_path,
             ],
             "",
@@ -43,7 +42,6 @@ class TestConvert:
                 "excel",
                 simplicity,
                 temp_excel.name,
-                "-c",
                 config_path,
             ],
             "",
@@ -57,7 +55,6 @@ class TestConvert:
                 "datafile",
                 simplicity,
                 temp_datafile.name,
-                "-c",
                 config_path,
             ],
             "",
@@ -75,7 +72,7 @@ class TestConvert:
 
     test_errors = [
         (
-            ["otoole", "convert", "datafile", "cplex", "x", "y"],
+            ["otoole", "convert", "datafile", "cplex", "x", "y", config_path],
             "error: argument to_format: invalid choice: 'cplex'",
         )
     ]
@@ -97,11 +94,7 @@ class TestConvert:
             temp_datafile.name,
         ]
         actual = run(commands, capture_output=True)
-        assert actual.returncode == 1
-        assert (
-            actual.stdout
-            == b"ValueError: A user configuration must be passed into the reader\n"
-        )
+        assert actual.returncode == 2
 
     def test_convert_datafile_datafile_with_user_config(self):
         simplicity = os.path.join("tests", "fixtures", "simplicity.txt")
@@ -115,7 +108,6 @@ class TestConvert:
             "datafile",
             simplicity,
             temp_datafile.name,
-            "-c",
             user_config,
         ]
         actual = run(commands, capture_output=True)

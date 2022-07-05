@@ -1,6 +1,10 @@
 =========
 Changelog
 =========
+Version 2.0
+===========
+- Requires explicit provision of a user-defined configuration file for otoole to workbook
+- Fixed issue #114 so that conversion to Excel workbooks is now operating
 
 Version 0.9
 ==========

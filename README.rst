@@ -24,30 +24,29 @@ Description
 **otoole** is a Python package which provides a command-line interface
 for users of OSeMOSYS.
 
-The aim of the package is to provide a community resource which
-centralises the commonly used pre- and post-processing steps
-around the use of OSeMOSYS.
+The aim of the package is to provide commonly used pre- and post-processing steps
+for OSeMOSYS.
 
 .. image:: img/osemosys_dataflow.png
 
 **otoole** aims to support different ways of storing input data and results,
 including csv files, databases, datapackages and Excel workbooks,
 as well as different implementations of the OSeMOSYS model.
+This improves interoperability of analyses and
+generally makes life a little bit easier.
 
 Dependencies
 ------------
 
-*otoole* requires a number of dependencies, including pygraphviz,
-which can be difficult to install on Windows.
-
+*otoole* requires a number of dependencies.
 The easiest way to install the dependencies is to use miniconda.
 
 1. Obtain the `miniconda package: <https://docs.conda.io/en/latest/miniconda.html>`_
 2. Add the **conda-forge** channel ``conda config --add channels conda-forge``
 3. Create a new Python environment
-   ``conda create -n myenv python=3.7 networkx datapackage
+   ``conda create -n otoole python=3.7 networkx datapackage
    pandas graphviz=2.46.1 xlrd``
-4. Activate the new environment ``conda activate myenv``
+4. Activate the new environment ``conda activate otoole``
 5. Use pip to install otoole ``pip install otoole``
 
 

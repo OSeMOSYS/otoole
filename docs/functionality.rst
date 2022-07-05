@@ -18,8 +18,8 @@ Core Functionality
 .. image:: img/osemosys_dataflow.png
 
 As shown in the diagram, *otoole* deals primarily with data before and after OSeMOSYS.
-We call the data work upto the generation of a datafile which is read in by GLPK
-pre-processing.  Anything that happens with the immediate outputs of a solver, such as
+We call the data work prior to the generation of a datafile which is read in by GLPK
+pre-processing. Anything that happens with the immediate outputs of a solver, such as
 the recommended open-source solvers GLPK, CBC, or the proprietary solvers CPLEX and Gurobi,
 is called results and post-processing. You can find more information in the sections below.
 
@@ -50,49 +50,50 @@ complex transformations.
 This command allows you to convert between various different input formats::
 
     $ otoole convert --help
-
-    usage: otoole convert [-h]
-                        {csv,datafile,datapackage,excel,sql}
-                        {csv,datafile,datapackage,excel,sql} from_path to_path
+    usage: otoole convert [-h] {csv,datafile,datapackage,excel} {csv,datafile,datapackage,excel} from_path to_path config
 
     positional arguments:
-    {csv,datafile,datapackage,excel,sql}
+    {csv,datafile,datapackage,excel}
                             Input data format to convert from
-    {csv,datafile,datapackage,excel,sql}
+    {csv,datafile,datapackage,excel}
                             Input data format to convert to
     from_path             Path to file or folder to convert from
     to_path               Path to file or folder to convert to
+    config                Path to config YAML file
 
     optional arguments:
     -h, --help            show this help message and exit
 
+As of version 2.0, you must provide a user-defined configuration file containing information
+about all of the sets, parameters and result variables in your model. See more about this below.
+
 For example, to convert from an existing OSeMOSYS datafile, and create a Tabular Datapackage, you
 use the following command::
 
-    otoole convert datafile datapackage simplicity.txt simplicity
+    otoole convert datafile datapackage simplicity.txt simplicity config.yaml
 
 This creates the Tabular Datapackage in a folder called ``simplicity``.
 
 Similarly, create an Excel workbook from a datafile::
 
-    otoole convert datafile excel simplicity.txt simplicity.xlsx
+    otoole convert datafile excel simplicity.txt simplicity.xlsx config.yaml
 
 And then convert it back again::
 
-    otoole convert excel datafile simplicity.xlsx simplicity.txt
+    otoole convert excel datafile simplicity.xlsx simplicity.txt config.yaml
 
 To create a folder of CSV files from an Excel workbook::
 
-    otoole convert excel csv simplicity.xlsx simplicity
+    otoole convert excel csv simplicity.xlsx simplicity config.yaml
 
 To convert back again, run the following command::
 
-    otoole convert csv excel simplicity simplicity.xlsx
+    otoole convert csv excel simplicity simplicity.xlsx config.yaml
 
 In each of the examples, you provide the path to the file or folder, depending on the context.
 For a datapackage, you need to provide the path to the ``datapackage.json`` file::
 
-    otoole convert datapackage datafile simplicity/datapackage.json simplicity.txt
+    otoole convert datapackage datafile simplicity/datapackage.json simplicity.txt config.yaml
 
 The Excel workbook is created in a specific format. Each tab in the workbook corresponds to one set or parameter.
 Parameters with a ``YEAR`` index are pivotted, so that the elements in set ``YEAR`` create columns in a table, with
