@@ -1,5 +1,6 @@
 import io
 import pandas as pd
+from tempfile import NamedTemporaryFile
 
 from otoole.write_strategies import WriteDatafile, WriteExcel
 
@@ -77,6 +78,18 @@ class TestWriteExcel:
         )
 
         pd.testing.assert_frame_equal(actual, expected)
+
+    def test_write_out_empty_dataframe(self, user_config):
+
+        temp_excel = NamedTemporaryFile(suffix=".xlsx")
+        handle = pd.ExcelWriter(temp_excel.name)
+        convert = WriteExcel(user_config)
+
+        df = pd.DataFrame(
+            data=None, columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        convert._write_parameter(df, "AvailabilityFactor", handle, default=0)
 
 
 class TestWriteDatafile:

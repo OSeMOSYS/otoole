@@ -77,14 +77,18 @@ class WriteExcel(WriteStrategy):
         except KeyError:
             name = parameter_name
         df = self._form_parameter(df, parameter_name, default)
-        df.to_excel(handle, sheet_name=name, merge_cells=False, index=True)
+        if not df.empty:
+            df.to_excel(handle, sheet_name=name, merge_cells=False, index=True)
+        else:
+            # df.to_excel(handle, sheet_name=name, merge_cells=False, index=False)
+            logger.info(f"Skipped writing {parameter_name} as it is empty")
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: pd.ExcelWriter):
-        df = df.reset_index()
         df.to_excel(handle, sheet_name=set_name, merge_cells=False, index=False)
 
     def _footer(self, handle=pd.ExcelWriter):
-        handle.close()
+        # handle.close()
+        pass
 
 
 class WriteDatafile(WriteStrategy):
