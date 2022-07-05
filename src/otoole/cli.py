@@ -87,9 +87,7 @@ def cplex2cbc(args):
 
 
 def result_matrix(args):
-    """Post-process results from CBC solution file into CSV format
-
-    """
+    """Post-process results from CBC solution file into CSV format"""
     msg = "Conversion from {} to {} is not yet implemented".format(
         args.from_format, args.to_format
     )
@@ -160,13 +158,13 @@ def conversion_matrix(args):
         read_strategy = ReadExcel(user_config=config)
 
     if args.to_format == "datapackage":
-        write_strategy = WriteDatapackage()
+        write_strategy = WriteDatapackage(user_config=config)
     elif args.to_format == "excel":
-        write_strategy = WriteExcel()
+        write_strategy = WriteExcel(user_config=config)
     elif args.to_format == "datafile":
-        write_strategy = WriteDatafile()
+        write_strategy = WriteDatafile(user_config=config)
     elif args.to_format == "csv":
-        write_strategy = WriteCsv()
+        write_strategy = WriteCsv(user_config=config)
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
@@ -205,7 +203,9 @@ def get_parser():
         choices=sorted(["cbc", "cplex", "gurobi"]),
     )
     result_parser.add_argument(
-        "to_format", help="Result data format to convert to", choices=sorted(["csv"]),
+        "to_format",
+        help="Result data format to convert to",
+        choices=sorted(["csv"]),
     )
     result_parser.add_argument(
         "from_path", help="Path to file or folder to convert from"

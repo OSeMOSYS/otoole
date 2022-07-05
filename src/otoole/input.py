@@ -135,6 +135,9 @@ class Strategy(ABC):
 
         self.user_config = user_config
 
+        # self.input_config = {
+        #     x: y for x, y in self.user_config.items() if y["type"] in ["param", 'set']
+        # }
         self.results_config = {
             x: y for x, y in self.user_config.items() if y["type"] == "result"
         }
