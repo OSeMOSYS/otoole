@@ -9,7 +9,35 @@
 
 from pytest import fixture
 
+import os
 import pandas as pd
+from typing import Dict
+
+from otoole.utils import _read_file
+
+
+@fixture
+def user_config() -> Dict:
+    """Reads in an example user config
+
+    Read in an example user config file which can be passed into all
+    Read and Write strategies for testing
+
+    Returns
+    -------
+    Dict
+    """
+    file_path = os.path.join("tests", "fixtures", "config.yaml")
+    with open(file_path, "r") as config_file:
+        config = _read_file(config_file, ".yaml")  # typing: Dict
+
+    file_path = os.path.join("tests", "fixtures", "config_r.yaml")
+    with open(file_path, "r") as config_file:
+        results = _read_file(config_file, ".yaml")  # typing: Dict
+
+    config.update(results)
+
+    return config
 
 
 @fixture
