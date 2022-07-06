@@ -1,10 +1,9 @@
 import json
 import os
-from typing import Dict, List, Union
-
 from datapackage import Package
 from sqlalchemy import create_engine
-from yaml import SafeLoader, load
+from typing import Dict, List, Union
+from yaml import SafeLoader, load  # type: ignore
 
 try:
     import importlib.resources as resources
@@ -15,9 +14,9 @@ except ImportError:
 
 def _read_file(open_file, ending):
     if ending == ".yaml" or ending == ".yml":
-        contents = load(open_file, Loader=SafeLoader)
+        contents = load(open_file, Loader=SafeLoader)  # typing: Dict
     elif ending == ".json":
-        contents = json.load(open_file)
+        contents = json.load(open_file)  # typing: Dict
     else:
         contents = open_file.readlines()
     return contents
