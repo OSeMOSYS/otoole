@@ -90,6 +90,10 @@ first need to install the package in *develop mode*::
     git checkout <branch you wish to use>
     python setup.py develop
 
+Alternatively, use pip to install otoole from git in editable mode
+
+    pip install -e git+http://github.com/OSeMOSYS/otoole@master#egg=otoole
+
 Now, all changes made in the codebase will automatically be reflected
 in the installed Python version accessible on the command line or from
 importing otoole modules into other Python packages.
