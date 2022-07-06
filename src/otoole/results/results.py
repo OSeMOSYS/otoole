@@ -115,7 +115,7 @@ class ReadResultsCBC(ReadResults):
             if not df.empty:
 
                 LOGGER.debug("Extracting results for %s", name)
-                indices = details["indices"]
+                indices = details["indices"]  # typing: List
 
                 df[indices] = df["Index"].str.split(",", expand=True)
 
@@ -279,7 +279,7 @@ class ReadGurobi(ReadResultsCBC):
             skiprows=2,
         )  # type: pd.DataFrame
         df[["Variable", "Index"]] = df["Variable"].str.split("(", expand=True)
-        df["Index"] = df["Index"].str.replace(")", "")
+        df["Index"] = df["Index"].str.replace(")", "", regex=True)
         LOGGER.debug(df)
         df = df[(df["Value"] != 0)].reset_index()
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
@@ -316,10 +316,10 @@ class ReadCbc(ReadResultsCBC):
         df["Variable"] = (
             df["Variable"]
             .astype(str)
-            .str.replace(r"^\*\*", "")
+            .str.replace(r"^\*\*", "", regex=True)
             .str.split(expand=True)[1]
         )
         df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
-        df["Index"] = df["Index"].str.replace(")", "")
+        df["Index"] = df["Index"].str.replace(")", "", regex=True)
         df = df.drop(columns=["indexvalue"])
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
