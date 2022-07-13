@@ -1,8 +1,8 @@
+from pytest import mark
+
 import os
 from subprocess import run
 from tempfile import NamedTemporaryFile, mkdtemp
-
-from pytest import mark
 
 from otoole import __version__
 
@@ -13,22 +13,49 @@ class TestConvert:
         assert result.stdout.strip().decode() == str(__version__)
 
     temp = mkdtemp()
-    temp_excel = NamedTemporaryFile(suffix="xlsx")
-    temp_datafile = NamedTemporaryFile(suffix="dat")
+    temp_excel = NamedTemporaryFile(suffix=".xlsx")
+    temp_datafile = NamedTemporaryFile(suffix=".dat")
     simplicity = os.path.join("tests", "fixtures", "simplicity.txt")
+    config_path = os.path.join("tests", "fixtures", "config.yaml")
 
     test_data = [
-        (["otoole", "convert", "--help"], "usage: otoole convert [-h]"),
-        (["otoole", "convert", "datafile", "datapackage", simplicity, temp], ""),
-        (["otoole", "convert", "datafile", "excel", simplicity, temp_excel.name], ""),
+        (["otoole", "-v", "convert", "--help"], "usage: otoole convert [-h]"),
         (
             [
                 "otoole",
+                "-v",
+                "convert",
+                "datafile",
+                "datapackage",
+                simplicity,
+                temp,
+                config_path,
+            ],
+            "",
+        ),
+        (
+            [
+                "otoole",
+                "-v",
+                "convert",
+                "datafile",
+                "excel",
+                simplicity,
+                temp_excel.name,
+                config_path,
+            ],
+            "",
+        ),
+        (
+            [
+                "otoole",
+                "-v",
                 "convert",
                 "datafile",
                 "datafile",
                 simplicity,
                 temp_datafile.name,
+                config_path,
             ],
             "",
         ),
@@ -40,10 +67,12 @@ class TestConvert:
     def test_convert_commands(self, commands, expected):
         actual = run(commands, capture_output=True)
         assert expected in str(actual.stdout)
+        print(" ".join(commands))
+        assert actual.returncode == 0, print(actual.stdout)
 
     test_errors = [
         (
-            ["otoole", "convert", "datafile", "cplex", "x", "y"],
+            ["otoole", "convert", "datafile", "cplex", "x", "y", config_path],
             "error: argument to_format: invalid choice: 'cplex'",
         )
     ]
@@ -52,3 +81,34 @@ class TestConvert:
     def test_convert_error(self, commands, expected):
         actual = run(commands, capture_output=True)
         assert expected in str(actual.stderr)
+
+    def test_convert_datafile_datafile_no_user_config(self):
+        simplicity = os.path.join("tests", "fixtures", "simplicity.txt")
+        temp_datafile = NamedTemporaryFile(suffix=".dat")
+        commands = [
+            "otoole",
+            "convert",
+            "datafile",
+            "datafile",
+            simplicity,
+            temp_datafile.name,
+        ]
+        actual = run(commands, capture_output=True)
+        assert actual.returncode == 2
+
+    def test_convert_datafile_datafile_with_user_config(self):
+        simplicity = os.path.join("tests", "fixtures", "simplicity.txt")
+        user_config = os.path.join("tests", "fixtures", "config.yaml")
+        temp_datafile = NamedTemporaryFile(suffix=".dat")
+        commands = [
+            "otoole",
+            "-vvv",
+            "convert",
+            "datafile",
+            "datafile",
+            simplicity,
+            temp_datafile.name,
+            user_config,
+        ]
+        actual = run(commands, capture_output=True)
+        assert actual.returncode == 0

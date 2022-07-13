@@ -1,13 +1,14 @@
 import io
 import pandas as pd
+from tempfile import NamedTemporaryFile
 
 from otoole.write_strategies import WriteDatafile, WriteExcel
 
 
 class TestWriteExcel:
-    def test_form_empty_parameter_with_defaults(self):
+    def test_form_empty_parameter_with_defaults(self, user_config):
 
-        convert = WriteExcel()  # typing: WriteExcel
+        convert = WriteExcel(user_config)  # typing: WriteExcel
 
         data = []
 
@@ -20,9 +21,9 @@ class TestWriteExcel:
         ).set_index(["REGION", "FUEL"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_empty_two_index_param_with_defaults(self):
+    def test_form_empty_two_index_param_with_defaults(self, user_config):
 
-        convert = WriteExcel()  # typing: WriteExcel
+        convert = WriteExcel(user_config)  # typing: WriteExcel
 
         df = pd.DataFrame(data=[], columns=["REGION", "VALUE"]).set_index("REGION")
         actual = convert._form_parameter(df, "test_parameter", 0)
@@ -31,9 +32,9 @@ class TestWriteExcel:
         )
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_two_index_param(self):
+    def test_form_two_index_param(self, user_config):
 
-        convert = WriteExcel()  # typing: WriteExcel
+        convert = WriteExcel(user_config)  # typing: WriteExcel
 
         df = pd.DataFrame(
             data=[["SIMPLICITY", 0.10], ["UTOPIA", 0.20]], columns=["REGION", "VALUE"]
@@ -44,9 +45,9 @@ class TestWriteExcel:
         print(actual, expected)
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_one_columns(self):
+    def test_form_one_columns(self, user_config):
 
-        convert = WriteExcel()  # typing: WriteExcel
+        convert = WriteExcel(user_config)  # typing: WriteExcel
 
         data = ["A", "B", "C"]
 
@@ -56,9 +57,9 @@ class TestWriteExcel:
         print(actual, expected)
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_form_three_columns(self):
+    def test_form_three_columns(self, user_config):
 
-        convert = WriteExcel()  # typing: WriteExcel
+        convert = WriteExcel(user_config)  # typing: WriteExcel
 
         data = [["SIMPLICITY", "COAL", 2015, 41], ["SIMPLICITY", "COAL", 2016, 42]]
 
@@ -78,11 +79,23 @@ class TestWriteExcel:
 
         pd.testing.assert_frame_equal(actual, expected)
 
+    def test_write_out_empty_dataframe(self, user_config):
+
+        temp_excel = NamedTemporaryFile(suffix=".xlsx")
+        handle = pd.ExcelWriter(temp_excel.name)
+        convert = WriteExcel(user_config)
+
+        df = pd.DataFrame(
+            data=None, columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        convert._write_parameter(df, "AvailabilityFactor", handle, default=0)
+
 
 class TestWriteDatafile:
-    def test_write_empty_parameter_with_defaults(self):
+    def test_write_empty_parameter_with_defaults(self, user_config):
 
-        convert = WriteDatafile()  # typing: WriteDatafile
+        convert = WriteDatafile(user_config)  # typing: WriteDatafile
 
         data = []
 
@@ -98,7 +111,7 @@ class TestWriteDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_as_tabbing_format(self):
+    def test_write_parameter_as_tabbing_format(self, user_config):
 
         data = [["SIMPLICITY", "BIOMASS", 0.95969], ["SIMPLICITY", "ETH1", 4.69969]]
 
@@ -107,7 +120,7 @@ class TestWriteDatafile:
         )
 
         stream = io.StringIO()
-        convert = WriteDatafile()
+        convert = WriteDatafile(user_config)
         convert._write_parameter(df, "test_parameter", stream, 0)
 
         stream.seek(0)
@@ -122,7 +135,7 @@ class TestWriteDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_parameter_skip_defaults(self):
+    def test_write_parameter_skip_defaults(self, user_config):
 
         data = [
             ["SIMPLICITY", "BIOMASS", 0.95969],
@@ -136,7 +149,7 @@ class TestWriteDatafile:
         )
 
         stream = io.StringIO()
-        convert = WriteDatafile()
+        convert = WriteDatafile(user_config)
         convert._write_parameter(df, "test_parameter", stream, -1)
 
         stream.seek(0)
@@ -151,14 +164,14 @@ class TestWriteDatafile:
         for actual_line, expected_line in zip(actual, expected):
             assert actual_line == expected_line
 
-    def test_write_set(self):
+    def test_write_set(self, user_config):
 
         data = [["BIOMASS"], ["ETH1"]]
 
         df = pd.DataFrame(data=data, columns=["VALUE"])
 
         stream = io.StringIO()
-        convert = WriteDatafile()
+        convert = WriteDatafile(user_config)
         convert._write_set(df, "TECHNOLOGY", stream)
 
         stream.seek(0)

@@ -87,9 +87,7 @@ def cplex2cbc(args):
 
 
 def result_matrix(args):
-    """Post-process results from CBC solution file into CSV format
-
-    """
+    """Post-process results from CBC solution file into CSV format"""
     msg = "Conversion from {} to {} is not yet implemented".format(
         args.from_format, args.to_format
     )
@@ -144,11 +142,10 @@ def conversion_matrix(args):
 
     config = None
     if args.config:
-        for filename in args.config:
-            _, ending = os.path.splitext(filename)
-            with open(filename, "r") as config_file:
-                config = _read_file(config_file, ending)
-            logger.info("Reading config from {}".format(filename))
+        _, ending = os.path.splitext(args.config)
+        with open(args.config, "r") as config_file:
+            config = _read_file(config_file, ending)
+        logger.info("Reading config from {}".format(args.config))
 
     if args.from_format == "datafile":
         read_strategy = ReadDatafile(user_config=config)
@@ -160,13 +157,13 @@ def conversion_matrix(args):
         read_strategy = ReadExcel(user_config=config)
 
     if args.to_format == "datapackage":
-        write_strategy = WriteDatapackage()
+        write_strategy = WriteDatapackage(user_config=config)
     elif args.to_format == "excel":
-        write_strategy = WriteExcel()
+        write_strategy = WriteExcel(user_config=config)
     elif args.to_format == "datafile":
-        write_strategy = WriteDatafile()
+        write_strategy = WriteDatafile(user_config=config)
     elif args.to_format == "csv":
-        write_strategy = WriteCsv()
+        write_strategy = WriteCsv(user_config=config)
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
@@ -205,7 +202,9 @@ def get_parser():
         choices=sorted(["cbc", "cplex", "gurobi"]),
     )
     result_parser.add_argument(
-        "to_format", help="Result data format to convert to", choices=sorted(["csv"]),
+        "to_format",
+        help="Result data format to convert to",
+        choices=sorted(["csv"]),
     )
     result_parser.add_argument(
         "from_path", help="Path to file or folder to convert from"
@@ -241,9 +240,7 @@ def get_parser():
         "from_path", help="Path to file or folder to convert from"
     )
     convert_parser.add_argument("to_path", help="Path to file or folder to convert to")
-    convert_parser.add_argument(
-        "-c", "--config", action="append", help="Path to config YAML files"
-    )
+    convert_parser.add_argument("config", help="Path to config YAML file")
     convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for validation
