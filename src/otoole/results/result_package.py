@@ -63,8 +63,7 @@ class ResultsPackage(Mapping):
 
     @property
     def data(self) -> Dict[str, pd.DataFrame]:
-        """View the results dictionary
-        """
+        """View the results dictionary"""
         return self._data
 
     @property
@@ -409,8 +408,7 @@ class ResultsPackage(Mapping):
         return data[(data != 0).all(1)]
 
     def production_by_technology_annual(self) -> pd.DataFrame:
-        """Aggregates production by technology to the annual level
-        """
+        """Aggregates production by technology to the annual level"""
         try:
             production_by_technology = self["ProductionByTechnology"].copy(deep=True)
         except KeyError as ex:

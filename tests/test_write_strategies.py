@@ -1,9 +1,9 @@
-from pytest import fixture
-
 import io
+from tempfile import NamedTemporaryFile
+
 import pandas as pd
 from frictionless import Package, Resource
-from tempfile import NamedTemporaryFile
+from pytest import fixture
 from yaml import SafeLoader, load  # type: ignore
 
 from otoole.preprocess.create_datapackage import generate_package

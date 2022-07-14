@@ -1,5 +1,4 @@
 import pytest
-
 from yaml import FullLoader, load
 
 from otoole.validate import (

@@ -1,8 +1,9 @@
 import logging
 import os
+from typing import TextIO
+
 import pandas as pd
 from frictionless import Package, Resource
-from typing import TextIO
 
 from otoole.input import WriteStrategy
 from otoole.preprocess.create_datapackage import generate_package

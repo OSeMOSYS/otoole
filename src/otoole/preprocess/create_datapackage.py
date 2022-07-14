@@ -6,8 +6,9 @@
 
 import logging
 import os
-from frictionless import Package
 from typing import Dict
+
+from frictionless import Package
 
 logger = logging.getLogger()
 

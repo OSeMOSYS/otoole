@@ -1,6 +1,6 @@
-import pytest
-
 import tempfile
+
+import pytest
 
 from otoole.visualise import create_res
 

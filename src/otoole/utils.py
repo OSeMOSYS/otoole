@@ -1,8 +1,9 @@
 import json
 import os
+from typing import Dict, List, Union
+
 from datapackage import Package
 from sqlalchemy import create_engine
-from typing import Dict, List, Union
 from yaml import SafeLoader, load  # type: ignore
 
 try:

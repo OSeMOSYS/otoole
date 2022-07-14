@@ -1,7 +1,6 @@
-from pytest import fixture, raises
-
 import pandas as pd
 from pandas.testing import assert_frame_equal
+from pytest import fixture, raises
 
 from otoole.results.result_package import ResultsPackage, capital_recovery_factor
 
@@ -252,16 +251,14 @@ def two_tech_emission_activity(
 
 class TestCalculateAnnualEmissions:
     def test_null(self, null: ResultsPackage):
-        """
-        """
+        """ """
         package = null
         with raises(KeyError) as ex:
             package.annual_emissions()
         assert "Cannot calculate AnnualEmissions due to missing data" in str(ex.value)
 
     def test_minimal(self, minimal: ResultsPackage):
-        """
-        """
+        """ """
         package = minimal
         actual = package.annual_emissions()
 
@@ -273,8 +270,7 @@ class TestCalculateAnnualEmissions:
         assert_frame_equal(actual, expected)
 
     def test_missing_tech(self, two_tech):
-        """
-        """
+        """ """
         package = two_tech
         actual = package.annual_emissions()
 
@@ -287,8 +283,7 @@ class TestCalculateAnnualEmissions:
 
 class TestCalculateAnnualTechnologyEmissions:
     def test_null(self, null: ResultsPackage):
-        """
-        """
+        """ """
         package = null
         with raises(KeyError) as ex:
             package.annual_technology_emissions()
@@ -297,8 +292,7 @@ class TestCalculateAnnualTechnologyEmissions:
         )
 
     def test_minimal(self, two_tech):
-        """
-        """
+        """ """
         package = two_tech
         actual = package.annual_technology_emissions()
 
@@ -310,8 +304,7 @@ class TestCalculateAnnualTechnologyEmissions:
         assert_frame_equal(actual, expected)
 
     def test_no_zeros(self, two_tech_emission_activity):
-        """
-        """
+        """ """
         package = two_tech_emission_activity
         actual = package.annual_technology_emissions()
 
@@ -325,8 +318,7 @@ class TestCalculateAnnualTechnologyEmissions:
 
 class TestCalculateAnnualTechnologyEmissionsByMode:
     def test_null(self, null):
-        """
-        """
+        """ """
         package = null
 
         with raises(KeyError) as ex:
@@ -337,8 +329,7 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
         )
 
     def test_minimal(self, two_tech):
-        """
-        """
+        """ """
         package = two_tech
         actual = package.annual_technology_emission_by_mode()
         expected = pd.DataFrame(
@@ -356,8 +347,7 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
         assert_frame_equal(actual, expected)
 
     def test_no_zeros(self, two_tech_emission_activity):
-        """
-        """
+        """ """
         package = two_tech_emission_activity
         actual = package.annual_technology_emission_by_mode()
 
@@ -652,7 +642,8 @@ class TestCapitalRecoveryFactor:
         actual = capital_recovery_factor([], [], [], discount_rate)
 
         expected = pd.DataFrame(
-            data=[], columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+            data=[],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
@@ -667,9 +658,7 @@ class TestResultsPackage:
             package["BlaBla"]
 
     def test_results_package_dummy_results(self):
-        """Access results using dictionary keys
-
-        """
+        """Access results using dictionary keys"""
         package = ResultsPackage({"BlaBla": pd.DataFrame()})
 
         pd.testing.assert_frame_equal(package["BlaBla"], pd.DataFrame())

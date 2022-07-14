@@ -1,11 +1,11 @@
-from pytest import mark
-
 import os
-import pandas as pd
-from amply import Amply
 from io import StringIO
 from textwrap import dedent
 from typing import List
+
+import pandas as pd
+from amply import Amply
+from pytest import mark
 
 from otoole import ReadDatafile, ReadExcel, ReadMemory
 from otoole.preprocess.longify_data import check_datatypes

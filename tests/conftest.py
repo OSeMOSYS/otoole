@@ -7,11 +7,11 @@
     https://pytest.org/latest/plugins.html
 """
 
-from pytest import fixture
-
 import os
-import pandas as pd
 from typing import Dict
+
+import pandas as pd
+from pytest import fixture
 
 from otoole.utils import _read_file
 

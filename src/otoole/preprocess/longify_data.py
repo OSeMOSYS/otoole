@@ -1,9 +1,10 @@
 """Read in a folder of irregular wide-format csv files and write them out as narrow csvs
 """
 import logging
+from typing import Dict
+
 import numpy as np
 import pandas as pd
-from typing import Dict
 
 logger = logging.getLogger()
 

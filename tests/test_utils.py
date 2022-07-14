@@ -1,6 +1,6 @@
-import pytest
-
 from unittest.mock import MagicMock
+
+import pytest
 
 from otoole.utils import extract_config, read_packaged_file
 
