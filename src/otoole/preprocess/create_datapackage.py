@@ -6,80 +6,98 @@
 
 import logging
 import os
-
-from datapackage import Package
-
-from otoole.utils import read_packaged_file
+from frictionless import Package
+from typing import Dict
 
 logger = logging.getLogger()
 
 
-def generate_package(path_to_package):
-    """Creates a datapackage in folder ``path_to_package``
+def generate_package(package: Package, config: Dict[str, Dict]) -> Package:
+    """Adds schema information to a basic Resource
 
+    Arguments
+    ---------
+    package: Package
+        A frictionless Package
+    config: Dict[str, Dict]
+        A user-configuration dictionary
+
+    Returns
+    -------
+    dict
+
+    Notes
+    -----
     [{'fields': 'REGION', 'reference': {'resource': 'REGION', 'fields': 'VALUE'}}]
     """
 
-    datapath = os.path.join(path_to_package)
-    package = Package(base_path=datapath)
+    logger.debug(f"Auto-identified resources {package.resources}")
 
-    package.infer("data/*.csv")
+    # package.licenses = [
+    #     {
+    #         "name": "CC-BY-4.0",
+    #         "path": "https://creativecommons.org/licenses/by/4.0/",
+    #         "title": "Creative Commons Attribution 4.0",
+    #     }
+    # ]
 
-    package.descriptor["licenses"] = [
-        {
-            "name": "CC-BY-4.0",
-            "path": "https://creativecommons.org/licenses/by/4.0/",
-            "title": "Creative Commons Attribution 4.0",
-        }
-    ]
+    # package.title = "The OSeMOSYS Simplicity Example Model"
 
-    package.descriptor["title"] = "The OSeMOSYS Simplicity Example Model"
+    # package.name = "osemosys_model_simplicity"
 
-    package.descriptor["name"] = "osemosys_model_simplicity"
+    # package.contributors = [
+    #     {
+    #         "title": "Will Usher",
+    #         "email": "wusher@kth.se",
+    #         "path": "https://www.kth.se/profile/wusher/",
+    #         "role": "author",
+    #     }
+    # ]
 
-    package.descriptor["contributors"] = [
-        {
-            "title": "Will Usher",
-            "email": "wusher@kth.se",
-            "path": "http://www.kth.se/wusher",
-            "role": "author",
-        }
-    ]
+    for resource in package.resources:  # typing: Resource
 
-    package.commit()
+        name = resource.title  # Use the title which preserves case
 
-    config = read_packaged_file("config.yaml", "otoole.preprocess")
+        logger.debug(f"Updating resource '{name}'")
 
-    new_resources = []
-    for resource in package.resources:
-
-        descriptor = resource.descriptor
-
-        name = resource.name
         if config[name]["type"] == "param":
 
             indices = config[name]["indices"]
             logger.debug("Indices of %s are %s", name, indices)
 
+            fields = []
             foreign_keys = []
             for index in indices:
                 key = {
                     "fields": index,
-                    "reference": {"resource": index, "fields": "VALUE"},
+                    "reference": {"resource": index.lower(), "fields": "VALUE"},
                 }
                 foreign_keys.append(key)
+                field = {"name": index, "type": config[index]["dtype"]}
 
-            descriptor["schema"]["foreignKeys"] = foreign_keys
-            descriptor["schema"]["primaryKey"] = indices
-            descriptor["schema"]["missingValues"] = [""]
+                fields.append(field)
 
-        new_resources.append(descriptor)
+            value_field = {"name": "VALUE", "type": config[name]["dtype"]}
 
-    package.descriptor["resources"] = new_resources
-    package.commit()
+            fields.append(value_field)
 
-    filepath = os.path.join(path_to_package, "datapackage.json")
-    package.save(filepath)
+            resource.schema.fields = fields
+            resource.schema.foreign_keys = foreign_keys
+            resource.schema.primary_key = indices
+            resource.schema.missing_values = [""]
+
+        elif config[name]["type"] == "set":
+
+            fields = []
+            value_field = {"name": "VALUE", "type": config[name]["dtype"]}
+
+            fields.append(value_field)
+            resource.schema.fields = fields
+            resource.schema.missing_values = [""]
+
+        logger.debug(f"Schema for resource {name}: {resource.schema}")
+
+    return package
 
 
 def validate_contents(path_to_package):

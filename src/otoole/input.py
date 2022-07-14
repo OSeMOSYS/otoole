@@ -253,7 +253,7 @@ class WriteStrategy(Strategy):
 
         self._footer(handle)
 
-        if handle:
+        if isinstance(handle, TextIO):
             handle.close()
 
 
