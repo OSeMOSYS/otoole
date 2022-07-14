@@ -1,12 +1,13 @@
 import logging
 import os
+from typing import TextIO
+
 import pandas as pd
-from json import dump
-from typing import Any, TextIO
+from frictionless import Package, Resource
 
 from otoole.input import WriteStrategy
+from otoole.preprocess.create_datapackage import generate_package
 from otoole.read_strategies import CSV_TO_EXCEL
-from otoole.utils import read_packaged_file
 
 logger = logging.getLogger(__name__)
 
@@ -155,17 +156,8 @@ class WriteCsv(WriteStrategy):
     user_config: dict, default=None
     """
 
-    def _header(self) -> Any:
-        os.makedirs(os.path.join(self.filepath), exist_ok=True)
-        return None
-
-    def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
-    ) -> pd.DataFrame:
-        """Write parameter data"""
-        self._write_out_dataframe(self.filepath, parameter_name, df, index=True)
-
-    def _write_out_dataframe(self, folder, parameter, df, index=False):
+    @staticmethod
+    def _write_out_dataframe(folder, parameter, df, index=False):
         """Writes out a dataframe as a csv into the data subfolder of a datapackage
 
         Arguments
@@ -184,6 +176,16 @@ class WriteCsv(WriteStrategy):
             )
             df.to_csv(csvfile, index=index)
 
+    def _header(self) -> Package:
+        os.makedirs(os.path.join(self.filepath), exist_ok=True)
+        return None
+
+    def _write_parameter(
+        self, df: pd.DataFrame, parameter_name: str, handle: Package, default: float
+    ) -> pd.DataFrame:
+        """Write parameter data"""
+        self._write_out_dataframe(self.filepath, parameter_name, df, index=True)
+
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO) -> pd.DataFrame:
         """Write set data"""
         self._write_out_dataframe(self.filepath, set_name, df, index=False)
@@ -192,11 +194,7 @@ class WriteCsv(WriteStrategy):
         pass
 
 
-class WriteDatapackage(WriteCsv):
-    def _header(self) -> Any:
-        os.makedirs(os.path.join(self.filepath, "data"), exist_ok=True)
-        return None
-
+class WriteDatapackage(WriteStrategy):
     def _write_out_dataframe(self, folder, parameter, df, index=False):
         """Writes out a dataframe as a csv into the data subfolder of a datapackage
 
@@ -214,19 +212,52 @@ class WriteDatapackage(WriteCsv):
             )
             df.to_csv(csvfile, index=index)
 
-    def _footer(self, handle: TextIO):
-        datapackage = read_packaged_file("datapackage.json", "otoole.preprocess")
-        filepath = os.path.join(self.filepath, "datapackage.json")
-        with open(filepath, "w", newline="") as destination:
-            dump(datapackage, destination)
-        self._write_default_values()
-
-    def _write_default_values(self):
+    def _write_default_values(self, handle):
 
         default_values_path = os.path.join(self.filepath, "data", "default_values.csv")
         with open(default_values_path, "w", newline="") as csv_file:
+
             csv_file.write("name,default_value\n")
 
+            rows = []
             for name, contents in self.user_config.items():
                 if contents["type"] == "param":
                     csv_file.write("{},{}\n".format(name, contents["default"]))
+                    rows.append([name, contents["default"]])
+
+        df = pd.DataFrame(rows, columns=["name", "default_value"])
+        self._add_resource("default_values", df)
+
+    def _header(self) -> Package:
+        os.makedirs(os.path.join(self.filepath, "data"), exist_ok=True)
+        return Package()
+
+    def _add_resource(self, parameter_name: str, df: pd.DataFrame) -> Resource:
+        resource = Resource(df)
+        resource.name = parameter_name.lower()
+        resource.title = parameter_name
+        return resource
+
+    def _write_parameter(
+        self, df: pd.DataFrame, parameter_name: str, handle: Package, default: float
+    ) -> pd.DataFrame:
+        """Write parameter data"""
+        self._write_out_dataframe(self.filepath, parameter_name, df, index=True)
+
+        resource = self._add_resource(parameter_name, df)
+        handle.add_resource(resource)
+
+    def _write_set(self, df: pd.DataFrame, set_name, handle: Package) -> pd.DataFrame:
+        """Write set data"""
+        self._write_out_dataframe(self.filepath, set_name, df, index=False)
+
+        resource = self._add_resource(set_name, df)
+        handle.add_resource(resource)
+
+    def _footer(self, handle: Package):
+
+        self._write_default_values(handle)
+        package = generate_package(handle, self.user_config)
+
+        filepath = os.path.join(self.filepath, "datapackage.yaml")
+        package.to_yaml(filepath)

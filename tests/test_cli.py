@@ -1,8 +1,8 @@
-from pytest import mark
-
 import os
 from subprocess import run
 from tempfile import NamedTemporaryFile, mkdtemp
+
+from pytest import mark
 
 from otoole import __version__
 

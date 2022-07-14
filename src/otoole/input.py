@@ -41,9 +41,10 @@ Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
 from __future__ import annotations
 
 import logging
-import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, TextIO, Tuple, Union
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -253,7 +254,7 @@ class WriteStrategy(Strategy):
 
         self._footer(handle)
 
-        if handle:
+        if isinstance(handle, TextIO):
             handle.close()
 
 

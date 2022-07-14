@@ -1,13 +1,15 @@
 =========
 Changelog
 =========
-Version 2.0
+Version 1.0
 ===========
 - Requires explicit provision of a user-defined configuration file for otoole to workbook
+- Reads in a model configuration from a datapackage
 - Fixed issue #114 so that conversion to Excel workbooks is now operating
+- Bumped pyscaffold to 4.2
 
 Version 0.9
-==========
+===========
 - Adds support for processing Gurobi solution files
 - Better handling of datatypes when converting datapackages
 - Fixing bugs on Windows where empty lines were written out during conversion to datapackage

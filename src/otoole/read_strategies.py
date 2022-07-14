@@ -1,10 +1,11 @@
 import logging
 import os
+from typing import Any, Dict, List, TextIO, Tuple, Union
+
 import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 from pandas_datapackage_reader import read_datapackage
-from typing import Any, Dict, List, TextIO, Tuple, Union
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype

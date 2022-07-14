@@ -1,7 +1,5 @@
 class OtooleException(Exception):
-    """Base class for all otoole exceptions.
-
-    """
+    """Base class for all otoole exceptions."""
 
     pass
 

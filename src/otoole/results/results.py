@@ -1,8 +1,9 @@
 import logging
-import pandas as pd
 from abc import abstractmethod
 from io import StringIO
 from typing import Any, Dict, List, Set, TextIO, Tuple, Union
+
+import pandas as pd
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes
