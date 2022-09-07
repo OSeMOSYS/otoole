@@ -599,31 +599,6 @@ class ResultsPackage(Mapping):
         -----
         From the formulation::
 
-            r~REGION, y~YEAR,
-            sum{t in TECHNOLOGY}
-            ((((    (sum{yy in YEAR: y-yy
-                         < OperationalLife[r,t]
-                         && y-yy>=0}
-                        NewCapacity[r,t,yy])
-                        + ResidualCapacity[r,t,y])
-                    * FixedCost[r,t,y]
-                    + sum{m in MODE_OF_OPERATION, l in TIMESLICE}
-                        RateOfActivity[r,l,t,m,y] * YearSplit[l,y]
-                        * VariableCost[r,t,m,y])
-                / ((1+DiscountRate[r,t])^(y-min{yy in YEAR} min(yy)+0.5))
-                + CapitalCost[r,t,y] * NewCapacity[r,t,y]
-                / ((1+DiscountRate[r,t])^(y-min{yy in YEAR} min(yy)))
-                + DiscountedTechnologyEmissionsPenalty[r,t,y]
-                - DiscountedSalvageValue[r,t,y]
-            )    )
-            + sum{r in REGION, s in STORAGE, y in YEAR}
-                (CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
-                / ((1+DiscountRate[r,t])^(y-min{yy in YEAR} min(yy)))
-                    - SalvageValueStorage[r,s,y]
-                    / ((1+DiscountRate[r,t])^(max{yy in YEAR}
-                        max(yy)-min{yy in YEAR} min(yy)+1))
-                )~VALUE;
-
 	    r~REGION, y~YEAR,
 	    sum{t in TECHNOLOGY}
         (
