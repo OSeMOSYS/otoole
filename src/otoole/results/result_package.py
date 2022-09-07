@@ -336,12 +336,16 @@ class ResultsPackage(Mapping):
                 regions, technologies, discount_rate, operational_life
         )
 
-        data = capital_cost.mul(new_capacity, fill_value=0.0)
-        data = data.mul(capital_recovery_factor, fill_value=0.0)
-        data = data.mul(pv_annuity, fill_value=0.0)
+        capital_investment = capital_cost.mul(new_capacity, fill_value=0.0)
+        capital_investment = capital_investment.mul(
+            capital_recovery_factor, fill_value=0.0).mul(
+            pv_annuity, fill_value=0.0)
+
+        data = capital_investment
 
         if not data.empty:
-            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+            data = data.groupby(
+                by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
 
         return data[(data != 0).all(1)]
 
@@ -619,6 +623,32 @@ class ResultsPackage(Mapping):
                     / ((1+DiscountRate[r,t])^(max{yy in YEAR}
                         max(yy)-min{yy in YEAR} min(yy)+1))
                 )~VALUE;
+
+	    r~REGION, y~YEAR,
+	    sum{t in TECHNOLOGY}
+        (
+            (
+                (
+                    (
+                        sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                        NewCapacity[r,t,yy]
+                    ) 
+                    + ResidualCapacity[r,t,y]
+                ) 
+                * FixedCost[r,t,y]
+                + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
+                RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
+            ) 
+            / (DiscountFactorMid[r,y])
+            + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
+            + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
+            + sum{s in STORAGE}
+            (
+                CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]) 
+                - CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
+            )
+        ) ~VALUE;
+
         """
         try:
             discount_rate = self["DiscountRate"]
@@ -648,26 +678,31 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
-        crf_op = capital_recovery_factor(
-            regions, technologies, years, discount_rate, 0.5
+        discount_factor = discount_factor(
+            regions, years, discount_rate, 0.0
         )
-        crf_cap = capital_recovery_factor(
-            regions, technologies, years, discount_rate, 0.0
+
+        discount_factor_mid = discount_factor(
+            regions, years, discount_rate, 0.5
         )
 
         undiscounted_operational_costs = annual_fixed_operating_cost.add(
             annual_variable_operating_cost, fill_value=0.0
         )
         discounted_operational_costs = undiscounted_operational_costs.div(
-            crf_op, fill_value=0.0
+            discount_factor_mid, fill_value=0.0
         )
-        discounted_capital_costs = capital_investment.div(crf_cap, fill_value=0.0)
+
+        discounted_capital_costs = capital_investment.div(discount_factor, fill_value=0.0)
+
         discounted_total_costs = discounted_operational_costs.add(
             discounted_capital_costs, fill_value=0.0
         )
+
         discounted_total_costs = discounted_total_costs.add(
             discounted_emissions_penalty, fill_value=0.0
         )
+
         discounted_total_costs = discounted_total_costs.sub(
             discounted_salvage_value, fill_value=0.0
         )
