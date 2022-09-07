@@ -790,3 +790,86 @@ def capital_recovery_factor(
         return pd.DataFrame(
             [], columns=["REGION", "TECHNOLOGY", "VALUE"]
         ).set_index(["REGION", "TECHNOLOGY"])
+
+def pv_annuity(
+    regions: List,
+    technologies: List,
+    discount_rate: pd.DataFrame,
+    operational_life: pd.DataFrame,
+) -> pd.DataFrame:
+    """Calculates the present value of an annuity
+
+    Arguments
+    ---------
+    regions: list
+    technologies: list
+    discount_rate: pd.DataFrame
+    operational_life: pd.DataFrame
+
+    Notes
+    -----
+    From the formulation::
+
+    param PvAnnuity{r in REGION, t in TECHNOLOGY} :=
+	    (1 - (1 + DiscountRate[r])^(-(OperationalLife[r,t]))) * (1 + DiscountRate[r]) / DiscountRate[r];
+    """
+    if regions and technologies:
+        index = pd.MultiIndex.from_product(
+            [regions, technologies], names=["REGION", "TECHNOLOGY"]
+        )
+        
+        pva = discount_rate.reindex(index).reset_index(level="TECHNOLOGY")
+        pva["RATE"] = discount_rate["VALUE"] + 1
+        pva = pva.set_index([pva.index, "TECHNOLOGY"])
+
+        pva["VALUE"] = ((1-pva["RATE"].pow(-operational_life["VALUE"])
+            ).mul(pva["RATE"]) / discount_rate["VALUE"]).round(6)
+
+        pva=pva.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
+                    ["REGION", "TECHNOLOGY"])
+    else:
+        return pd.DataFrame(
+            [], columns=["REGION", "TECHNOLOGY", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+def discount_factor(
+    regions: List,
+    years: List,
+    discount_rate: pd.DataFrame,
+    adj: float = 0.0,
+) -> pd.DataFrame:
+    """Calculates the discount factor
+
+    Arguments
+    ---------
+    regions: list
+    years: list
+    discount_rate: pd.DataFrame
+    adj: float, default=0.0
+        Adjust to beginning of the year (default), mid year (0.5) or end year (1.0)
+
+    Notes
+    -----
+    From the formulations::
+
+    param DiscountFactor{r in REGION, y in YEAR} :=
+	    (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
+
+    param DiscountFactorMid{r in REGION, y in YEAR} :=
+	    (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5);
+    """
+    
+    if regions and years:
+        index = pd.MultiIndex.from_product(
+            [regions, years], names=["REGION", "YEAR"]
+        )
+        discount_factor = discount_rate.reindex(index).reset_index(level="YEAR")
+        discount_factor["NUM"] = discount_factor["YEAR"] - discount_factor["YEAR"].min()
+        discount_factor["RATE"] = 1 + discount_rate
+        discount_factor["VALUE"] = discount_factor["RATE"].pow(discount_factor["NUM"] + adj)
+        discount_factor = discount_factor.reset_index()[
+            ["REGION", "YEAR", "VALUE"]].set_index(["REGION", "YEAR"])
+    else:
+        return pd.DataFrame(
+            [], columns=["REGION", "YEAR", "VALUE"]
+        ).set_index(["REGION", "YEAR"])
