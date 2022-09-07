@@ -756,33 +756,37 @@ class ResultsPackage(Mapping):
 def capital_recovery_factor(
     regions: List,
     technologies: List,
-    years: List,
-    discount_rate: pd.DataFrame,
-    adj: float = 0.0,
+    discount_rate_idv: pd.DataFrame,
+    operational_life: pd.DataFrame,
 ) -> pd.DataFrame:
     """Calculates the capital recovery factor
 
     Arguments
     ---------
     regions: list
-    years: list
-    discount_rate: pd.DataFrame
-    adj: float, default=0.0
-        Adjust to beginning of the year (default), mid year (0.5) or end year (1.0)
+    technologies: list
+    discount_rate_idv: pd.DataFrame
+    operational_life: pd.DataFrame
+
+    Notes
+    -----
+    From the formulation::
+
+    param CapitalRecoveryFactor{r in REGION, t in TECHNOLOGY} :=
+	    (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
     """
-    if regions and technologies and years:
+    if regions and technologies:
         index = pd.MultiIndex.from_product(
-            [regions, technologies, years], names=["REGION", "TECHNOLOGY", "YEAR"]
+            [regions, technologies], names=["REGION", "TECHNOLOGY"]
         )
-        crf = discount_rate.reindex(index)
-        crf = crf.reset_index(level="YEAR")
-        crf["NUM"] = crf["YEAR"] - crf["YEAR"].min()
-        crf["Rate"] = 1 + discount_rate
-        crf["VALUE"] = crf["Rate"].pow(crf["NUM"] + adj)
-        return crf.reset_index()[["REGION", "TECHNOLOGY", "YEAR", "VALUE"]].set_index(
-            ["REGION", "TECHNOLOGY", "YEAR"]
-        )
+        crf = discount_rate_idv.reindex(index)
+        crf["RATE"] = crf["VALUE"] + 1
+        crf["NUMER"] = (1-crf["RATE"].pow(-1))
+        crf["DENOM"] = (1-crf["RATE"].pow(-operational_life["VALUE"]))
+        crf["VALUE"] = (crf["NUMER"]/crf["DENOM"]).round(6)
+        return crf.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
+                    ["REGION", "TECHNOLOGY"])
     else:
         return pd.DataFrame(
-            [], columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+            [], columns=["REGION", "TECHNOLOGY", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY"])
