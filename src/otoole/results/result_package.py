@@ -307,15 +307,42 @@ class ResultsPackage(Mapping):
         From the formulation::
 
             r~REGION, t~TECHNOLOGY, y~YEAR,
-            CapitalCost[r,t,y] * NewCapacity[r,t,y] ~VALUE;
+            CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * 
+            PvAnnuity[r,t] ~VALUE;
         """
         try:
             capital_cost = self["CapitalCost"]
             new_capacity = self["NewCapacity"]
+            operational_life = self["OperationalLife"]
+            discount_rate = self["DiscountRate"]
+            discount_rate_idv = self["DiscountRateIdv"]
+
+            regions = self["REGION"]["VALUE"].to_list()
+            technologies = self.get_unique_values_from_index(
+                [
+                    capital_cost,
+                    new_capacity,
+                ],
+                "TECHNOLOGY",
+            )
+
         except KeyError as ex:
             raise KeyError(self._msg("CapitalInvestment", str(ex)))
 
+        capital_recovery_factor = capital_recovery_factor(
+            regions, technologies, discount_rate_idv, operational_life
+        )
+        pv_annuity = pv_annuity(
+                regions, technologies, discount_rate, operational_life
+        )
+
         data = capital_cost.mul(new_capacity, fill_value=0.0)
+        data = data.mul(capital_recovery_factor, fill_value=0.0)
+        data = data.mul(pv_annuity, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
         return data[(data != 0).all(1)]
 
     def demand(self) -> pd.DataFrame:
