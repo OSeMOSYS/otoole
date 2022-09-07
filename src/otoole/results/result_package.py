@@ -825,7 +825,7 @@ def pv_annuity(
         pva["VALUE"] = ((1-pva["RATE"].pow(-operational_life["VALUE"])
             ).mul(pva["RATE"]) / discount_rate["VALUE"]).round(6)
 
-        pva=pva.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
+        return pva.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
                     ["REGION", "TECHNOLOGY"])
     else:
         return pd.DataFrame(
@@ -867,9 +867,50 @@ def discount_factor(
         discount_factor["NUM"] = discount_factor["YEAR"] - discount_factor["YEAR"].min()
         discount_factor["RATE"] = 1 + discount_rate
         discount_factor["VALUE"] = discount_factor["RATE"].pow(discount_factor["NUM"] + adj)
-        discount_factor = discount_factor.reset_index()[
-            ["REGION", "YEAR", "VALUE"]].set_index(["REGION", "YEAR"])
+        return discount_factor.reset_index()[["REGION", "YEAR", "VALUE"]].set_index(
+            ["REGION", "YEAR"])
     else:
         return pd.DataFrame(
             [], columns=["REGION", "YEAR", "VALUE"]
         ).set_index(["REGION", "YEAR"])
+
+def discount_factor_storage(
+    regions: List,
+    storages: List,
+    years: List,
+    discount_rate_storage: pd.DataFrame,
+    adj: float = 0.0,
+) -> pd.DataFrame:
+    """Calculates the discount factor
+
+    Arguments
+    ---------
+    regions: list
+    storages: list
+    years: list
+    discount_rate_storage: pd.DataFrame
+    adj: float, default=0.0
+        Adjust to beginning of the year (default), mid year (0.5) or end year (1.0)
+
+    Notes
+    -----
+    From the formulations::
+
+    param DiscountFactorStorage{r in REGION, s in STORAGE, y in YEAR} :=
+	    (1 + DiscountRateStorage[r,s]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
+    """
+    
+    if regions and years:
+        index = pd.MultiIndex.from_product(
+            [regions, storages, years], names=["REGION", "STORAGE", "YEAR"]
+        )
+        discount_fac_storage = discount_rate_storage.reindex(index).reset_index(level="YEAR")
+        discount_fac_storage["NUM"] = discount_fac_storage["YEAR"] - discount_fac_storage["YEAR"].min()
+        discount_fac_storage["RATE"] = 1 + discount_rate_storage
+        discount_fac_storage["VALUE"] = discount_fac_storage["RATE"].pow(discount_fac_storage["NUM"] + adj)
+        return discount_fac_storage.reset_index()[
+            ["REGION", "STORAGE", "YEAR", "VALUE"]].set_index(["REGION", "STORAGE", "YEAR"])
+    else:
+        return pd.DataFrame(
+            [], columns=["REGION", "STORAGE", "YEAR", "VALUE"]
+        ).set_index(["REGION", "STORAGE", "YEAR"])
