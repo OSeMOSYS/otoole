@@ -307,7 +307,7 @@ class ResultsPackage(Mapping):
         From the formulation::
 
             r~REGION, t~TECHNOLOGY, y~YEAR,
-            CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * 
+            CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] *
             PvAnnuity[r,t] ~VALUE;
         """
         try:
@@ -329,23 +329,20 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("CapitalInvestment", str(ex)))
 
-        capital_recovery_factor = capital_recovery_factor(
+        crf = capital_recovery_factor(
             regions, technologies, discount_rate_idv, operational_life
         )
-        pv_annuity = pv_annuity(
-                regions, technologies, discount_rate, operational_life
-        )
+        pva = pv_annuity(regions, technologies, discount_rate, operational_life)
 
         capital_investment = capital_cost.mul(new_capacity, fill_value=0.0)
-        capital_investment = capital_investment.mul(
-            capital_recovery_factor, fill_value=0.0).mul(
-            pv_annuity, fill_value=0.0)
+        capital_investment = capital_investment.mul(crf, fill_value=0.0).mul(
+            pva, fill_value=0.0
+        )
 
         data = capital_investment
 
         if not data.empty:
-            data = data.groupby(
-                by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
 
         return data[(data != 0).all(1)]
 
@@ -379,30 +376,23 @@ class ResultsPackage(Mapping):
             DiscountedTechnologyEmissionsPenalty[r,t,y] :=
 
             EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y] *
-            YearSplit[l,y] * EmissionsPenalty[r,e,y] /
-            ((1+DiscountRate[r, t]) ^ (y - min{yy in YEAR} min(yy) + 0.5))
-
+            YearSplit[l,y] * EmissionsPenalty[r,e,y] / DiscountFactorMid[r,y]
         """
         try:
             annual_technology_emission_by_mode = self["AnnualTechnologyEmissionByMode"]
             emission_penalty = self["EmissionsPenalty"]
             regions = self["REGION"]["VALUE"].to_list()
-            technologies = list(
-                annual_technology_emission_by_mode.reset_index()["TECHNOLOGY"].unique()
-            )
             years = self["YEAR"]["VALUE"].to_list()
             discount_rate = self["DiscountRate"]
 
-            crf = capital_recovery_factor(
-                regions, technologies, years, discount_rate, adj=0.5
-            )
         except KeyError as ex:
             raise KeyError(self._msg("DiscountedTechnologyEmissionsPenalty", str(ex)))
 
+        discount_factor_mid = discount_factor(regions, years, discount_rate, 0.5)
         emissions_penalty = annual_technology_emission_by_mode.mul(
             emission_penalty, fill_value=0.0
         )
-        data = emissions_penalty.div(crf, fill_value=0.0)
+        data = emissions_penalty.div(discount_factor_mid, fill_value=0.0)
 
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
@@ -599,27 +589,27 @@ class ResultsPackage(Mapping):
         -----
         From the formulation::
 
-	    r~REGION, y~YEAR,
-	    sum{t in TECHNOLOGY}
+            r~REGION, y~YEAR,
+            sum{t in TECHNOLOGY}
         (
             (
                 (
                     (
                         sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
                         NewCapacity[r,t,yy]
-                    ) 
+                    )
                     + ResidualCapacity[r,t,y]
-                ) 
+                )
                 * FixedCost[r,t,y]
                 + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
                 RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
-            ) 
+            )
             / (DiscountFactorMid[r,y])
             + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
             + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
             + sum{s in STORAGE}
             (
-                CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]) 
+                CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y])
                 - CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
             )
         ) ~VALUE;
@@ -637,15 +627,6 @@ class ResultsPackage(Mapping):
             annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
             capital_investment = self["CapitalInvestment"]
 
-            technologies = self.get_unique_values_from_index(
-                [
-                    annual_fixed_operating_cost,
-                    annual_variable_operating_cost,
-                    capital_investment,
-                ],
-                "TECHNOLOGY",
-            )
-
             discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
             discounted_salvage_value = self["DiscountedSalvageValue"]
 
@@ -653,22 +634,18 @@ class ResultsPackage(Mapping):
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
-        discount_factor = discount_factor(
-            regions, years, discount_rate, 0.0
-        )
+        df_start = discount_factor(regions, years, discount_rate, 0.0)
 
-        discount_factor_mid = discount_factor(
-            regions, years, discount_rate, 0.5
-        )
+        df_mid = discount_factor(regions, years, discount_rate, 0.5)
 
         undiscounted_operational_costs = annual_fixed_operating_cost.add(
             annual_variable_operating_cost, fill_value=0.0
         )
         discounted_operational_costs = undiscounted_operational_costs.div(
-            discount_factor_mid, fill_value=0.0
+            df_mid, fill_value=0.0
         )
 
-        discounted_capital_costs = capital_investment.div(discount_factor, fill_value=0.0)
+        discounted_capital_costs = capital_investment.div(df_start, fill_value=0.0)
 
         discounted_total_costs = discounted_operational_costs.add(
             discounted_capital_costs, fill_value=0.0
@@ -810,7 +787,7 @@ def capital_recovery_factor(
     From the formulation::
 
     param CapitalRecoveryFactor{r in REGION, t in TECHNOLOGY} :=
-	    (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
+            (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
     """
     if regions and technologies:
         index = pd.MultiIndex.from_product(
@@ -818,15 +795,17 @@ def capital_recovery_factor(
         )
         crf = discount_rate_idv.reindex(index)
         crf["RATE"] = crf["VALUE"] + 1
-        crf["NUMER"] = (1-crf["RATE"].pow(-1))
-        crf["DENOM"] = (1-crf["RATE"].pow(-operational_life["VALUE"]))
-        crf["VALUE"] = (crf["NUMER"]/crf["DENOM"]).round(6)
+        crf["NUMER"] = 1 - crf["RATE"].pow(-1)
+        crf["DENOM"] = 1 - crf["RATE"].pow(-operational_life["VALUE"])
+        crf["VALUE"] = (crf["NUMER"] / crf["DENOM"]).round(6)
         return crf.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
-                    ["REGION", "TECHNOLOGY"])
+            ["REGION", "TECHNOLOGY"]
+        )
     else:
-        return pd.DataFrame(
-            [], columns=["REGION", "TECHNOLOGY", "VALUE"]
-        ).set_index(["REGION", "TECHNOLOGY"])
+        return pd.DataFrame([], columns=["REGION", "TECHNOLOGY", "VALUE"]).set_index(
+            ["REGION", "TECHNOLOGY"]
+        )
+
 
 def pv_annuity(
     regions: List,
@@ -848,26 +827,30 @@ def pv_annuity(
     From the formulation::
 
     param PvAnnuity{r in REGION, t in TECHNOLOGY} :=
-	    (1 - (1 + DiscountRate[r])^(-(OperationalLife[r,t]))) * (1 + DiscountRate[r]) / DiscountRate[r];
+            (1 - (1 + DiscountRate[r])^(-(OperationalLife[r,t]))) * (1 + DiscountRate[r]) / DiscountRate[r];
     """
     if regions and technologies:
         index = pd.MultiIndex.from_product(
             [regions, technologies], names=["REGION", "TECHNOLOGY"]
         )
-        
+
         pva = discount_rate.reindex(index).reset_index(level="TECHNOLOGY")
         pva["RATE"] = discount_rate["VALUE"] + 1
         pva = pva.set_index([pva.index, "TECHNOLOGY"])
 
-        pva["VALUE"] = ((1-pva["RATE"].pow(-operational_life["VALUE"])
-            ).mul(pva["RATE"]) / discount_rate["VALUE"]).round(6)
+        pva["VALUE"] = (
+            (1 - pva["RATE"].pow(-operational_life["VALUE"])).mul(pva["RATE"])
+            / discount_rate["VALUE"]
+        ).round(6)
 
         return pva.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
-                    ["REGION", "TECHNOLOGY"])
+            ["REGION", "TECHNOLOGY"]
+        )
     else:
-        return pd.DataFrame(
-            [], columns=["REGION", "TECHNOLOGY", "VALUE"]
-        ).set_index(["REGION", "TECHNOLOGY"])
+        return pd.DataFrame([], columns=["REGION", "TECHNOLOGY", "VALUE"]).set_index(
+            ["REGION", "TECHNOLOGY"]
+        )
+
 
 def discount_factor(
     regions: List,
@@ -890,26 +873,28 @@ def discount_factor(
     From the formulations::
 
     param DiscountFactor{r in REGION, y in YEAR} :=
-	    (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
+            (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
 
     param DiscountFactorMid{r in REGION, y in YEAR} :=
-	    (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5);
+            (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5);
     """
-    
+
     if regions and years:
-        index = pd.MultiIndex.from_product(
-            [regions, years], names=["REGION", "YEAR"]
-        )
+        index = pd.MultiIndex.from_product([regions, years], names=["REGION", "YEAR"])
         discount_factor = discount_rate.reindex(index).reset_index(level="YEAR")
         discount_factor["NUM"] = discount_factor["YEAR"] - discount_factor["YEAR"].min()
         discount_factor["RATE"] = 1 + discount_rate
-        discount_factor["VALUE"] = discount_factor["RATE"].pow(discount_factor["NUM"] + adj)
+        discount_factor["VALUE"] = discount_factor["RATE"].pow(
+            discount_factor["NUM"] + adj
+        )
         return discount_factor.reset_index()[["REGION", "YEAR", "VALUE"]].set_index(
-            ["REGION", "YEAR"])
+            ["REGION", "YEAR"]
+        )
     else:
-        return pd.DataFrame(
-            [], columns=["REGION", "YEAR", "VALUE"]
-        ).set_index(["REGION", "YEAR"])
+        return pd.DataFrame([], columns=["REGION", "YEAR", "VALUE"]).set_index(
+            ["REGION", "YEAR"]
+        )
+
 
 def discount_factor_storage(
     regions: List,
@@ -934,19 +919,26 @@ def discount_factor_storage(
     From the formulations::
 
     param DiscountFactorStorage{r in REGION, s in STORAGE, y in YEAR} :=
-	    (1 + DiscountRateStorage[r,s]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
+            (1 + DiscountRateStorage[r,s]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
     """
-    
+
     if regions and years:
         index = pd.MultiIndex.from_product(
             [regions, storages, years], names=["REGION", "STORAGE", "YEAR"]
         )
-        discount_fac_storage = discount_rate_storage.reindex(index).reset_index(level="YEAR")
-        discount_fac_storage["NUM"] = discount_fac_storage["YEAR"] - discount_fac_storage["YEAR"].min()
+        discount_fac_storage = discount_rate_storage.reindex(index).reset_index(
+            level="YEAR"
+        )
+        discount_fac_storage["NUM"] = (
+            discount_fac_storage["YEAR"] - discount_fac_storage["YEAR"].min()
+        )
         discount_fac_storage["RATE"] = 1 + discount_rate_storage
-        discount_fac_storage["VALUE"] = discount_fac_storage["RATE"].pow(discount_fac_storage["NUM"] + adj)
+        discount_fac_storage["VALUE"] = discount_fac_storage["RATE"].pow(
+            discount_fac_storage["NUM"] + adj
+        )
         return discount_fac_storage.reset_index()[
-            ["REGION", "STORAGE", "YEAR", "VALUE"]].set_index(["REGION", "STORAGE", "YEAR"])
+            ["REGION", "STORAGE", "YEAR", "VALUE"]
+        ].set_index(["REGION", "STORAGE", "YEAR"])
     else:
         return pd.DataFrame(
             [], columns=["REGION", "STORAGE", "YEAR", "VALUE"]
