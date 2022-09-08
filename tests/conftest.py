@@ -62,7 +62,6 @@ def discount_rate():
         data=[["SIMPLICITY", 0.05]],
         columns=["REGION", "VALUE"],
     ).set_index(["REGION"])
-
     return df
 
 
@@ -72,7 +71,15 @@ def discount_rate_idv():
         data=[["SIMPLICITY", "GAS_EXTRACTION", 0.05], ["SIMPLICITY", "DUMMY", 0.05]],
         columns=["REGION", "TECHNOLOGY", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY"])
+    return df
 
+
+@fixture
+def discount_rate_storage():
+    df = pd.DataFrame(
+        data=[["SIMPLICITY", "DAM", 0.05]],
+        columns=["REGION", "STORAGE", "VALUE"],
+    ).set_index(["REGION", "STORAGE"])
     return df
 
 
