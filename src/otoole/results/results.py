@@ -33,7 +33,7 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
-            # input_data = self._expand_defaults(input_data)
+            input_data = self._expand_defaults(input_data)
         else:
             input_data = None
 
