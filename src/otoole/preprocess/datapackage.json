@@ -336,6 +336,41 @@
                         "format": "default"
                     },
                     {
+                        "name": "VALUE",
+                        "type": "number",
+                        "format": "default"
+                    }
+                ],
+                "missingValues": [""],
+                "foreignKeys": [
+                    {
+                        "fields": "REGION",
+                        "reference": {
+                            "resource": "REGION",
+                            "fields": "VALUE"
+                        }
+                    }
+                ],
+                "primaryKey": [
+                    "REGION"
+                ]
+            }
+        },
+        {
+            "path": "data/DiscountRateIdv.csv",
+            "profile": "tabular-data-resource",
+            "name": "DiscountRateIdv",
+            "format": "csv",
+            "mediatype": "text/csv",
+            "encoding": "utf-8",
+            "schema": {
+                "fields": [
+                    {
+                        "name": "REGION",
+                        "type": "string",
+                        "format": "default"
+                    },
+                    {
                         "name": "TECHNOLOGY",
                         "type": "string",
                         "format": "default"

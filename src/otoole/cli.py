@@ -95,20 +95,27 @@ def result_matrix(args):
     read_strategy = None
     write_strategy = None
 
+    config = None
+    if args.config:
+        _, ending = os.path.splitext(args.config)
+        with open(args.config, "r") as config_file:
+            config = _read_file(config_file, ending)
+        logger.info("Reading config from {}".format(args.config))
+
     if args.from_format == "cbc":
-        read_strategy = ReadCbc()
+        read_strategy = ReadCbc(user_config=config)
     elif args.from_format == "cplex":
-        read_strategy = ReadCplex()
+        read_strategy = ReadCplex(user_config=config)
     elif args.from_format == "gurobi":
-        read_strategy = ReadGurobi()
+        read_strategy = ReadGurobi(user_config=config)
 
     if args.to_format == "csv":
-        write_strategy = WriteCsv()
+        write_strategy = WriteCsv(user_config=config)
 
     if args.input_datapackage:
-        input_data, _ = ReadDatapackage().read(args.input_datapackage)
+        input_data, _ = ReadDatapackage(user_config=config).read(args.input_datapackage)
     elif args.input_datafile:
-        input_data, _ = ReadDatafile().read(args.input_datafile)
+        input_data, _ = ReadDatafile(user_config=config).read(args.input_datafile)
     else:
         input_data = {}
 
@@ -220,6 +227,7 @@ def get_parser():
         help="Input GNUMathProg datafile required for OSeMOSYS short or fast results",
         default=None,
     )
+    result_parser.add_argument("config", help="Path to config YAML file")
     result_parser.set_defaults(func=result_matrix)
 
     # Parser for conversion
