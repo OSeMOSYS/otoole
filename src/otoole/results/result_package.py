@@ -641,6 +641,7 @@ class ResultsPackage(Mapping):
         undiscounted_operational_costs = annual_fixed_operating_cost.add(
             annual_variable_operating_cost, fill_value=0.0
         )
+
         discounted_operational_costs = undiscounted_operational_costs.div(
             df_mid, fill_value=0.0
         )
@@ -658,21 +659,6 @@ class ResultsPackage(Mapping):
         discounted_total_costs = discounted_total_costs.sub(
             discounted_salvage_value, fill_value=0.0
         )
-
-        # try:
-        # new_storage_capacity = self["NewStorageCapacity"]
-        # storage_investment = capital_investment.mul(
-        #     new_storage_capacity, fill_value=0.0
-        # )
-        # except KeyError:
-        #     LOGGER.info("Cannot find NewStorageCapacity, assuming empty")
-        # storage_investment = pd.DataFrame()
-
-        # try:
-        # salvage_value_storage = self["SalvageValueStorage"]
-        # except KeyError:
-        #     LOGGER.info("Cannot find SalvageValueStorage, assuming empty")
-        # salvage_value_storage = pd.DataFrame()
 
         data = discounted_total_costs
 
@@ -880,12 +866,12 @@ def discount_factor(
     """
 
     if regions and years:
-        index = pd.MultiIndex.from_product([regions, years], names=["REGION", "YEAR"])
-        discount_factor = discount_rate.reindex(index).reset_index(level="YEAR")
+        discount_rate["YEAR"] = [years]
+        discount_factor = discount_rate.explode("YEAR").reset_index(level="REGION")
         discount_factor["NUM"] = discount_factor["YEAR"] - discount_factor["YEAR"].min()
-        discount_factor["RATE"] = 1 + discount_rate
-        discount_factor["VALUE"] = discount_factor["RATE"].pow(
-            discount_factor["NUM"] + adj
+        discount_factor["RATE"] = discount_factor["VALUE"] + 1
+        discount_factor["VALUE"] = (
+            discount_factor["RATE"].pow(discount_factor["NUM"] + adj).astype(float)
         )
         return discount_factor.reset_index()[["REGION", "YEAR", "VALUE"]].set_index(
             ["REGION", "YEAR"]

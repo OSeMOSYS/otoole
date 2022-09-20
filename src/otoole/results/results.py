@@ -33,6 +33,7 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
+            # input_data = self._expand_defaults(input_data)
         else:
             input_data = None
 
@@ -70,6 +71,40 @@ class ReadResults(ReadStrategy):
                 LOGGER.debug("Error calculating %s: %s", name, str(ex))
 
         return results
+
+    def _expand_defaults(
+        self, input_data: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
+        """Populates an empty parameter dataframe with its default value.
+
+        Arguments
+        ---------
+        input_data: Dict[str, pd.DataFrame]
+            Dictionary of input data
+
+        Returns
+        -------
+        output_data: dict
+            Updated input_data dictionary
+        """
+
+        parameters = [x for x in input_data if input_data[x].empty]
+        output_data = input_data.copy()
+
+        for param in parameters:
+            indices = []
+            for index in self.user_config[param]["indices"]:
+                indices.append(input_data[index]["VALUE"].to_list())  # get set values
+
+            index = pd.MultiIndex.from_product(
+                indices, names=self.user_config[param]["indices"]
+            )
+
+            df = pd.DataFrame(index=index)
+            df["VALUE"] = self.user_config[param]["default"]
+            output_data[param] = df
+
+        return output_data
 
 
 class ReadResultsCBC(ReadResults):
@@ -111,10 +146,11 @@ class ReadResultsCBC(ReadResults):
         not_found = []
 
         for name, details in sorted(self.results_config.items()):
-            df = data[data["Variable"] == name]
+            df_cbc = data[data["Variable"] == name]
 
-            if not df.empty:
+            if not df_cbc.empty:
 
+                df = df_cbc.copy()  # setting with copy warning
                 LOGGER.debug("Extracting results for %s", name)
                 indices = details["indices"]  # typing: List
 

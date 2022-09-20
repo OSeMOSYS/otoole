@@ -249,6 +249,8 @@ class WriteStrategy(Strategy):
             if entity_type == "param":
                 default_value = default_values[name]
                 self._write_parameter(df, name, handle, default=default_value)
+            elif entity_type == "result":
+                self._write_parameter(df, name, handle, default=0)
             else:
                 self._write_set(df, name, handle)
 
