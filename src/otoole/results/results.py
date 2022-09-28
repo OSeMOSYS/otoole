@@ -92,6 +92,11 @@ class ReadResults(ReadStrategy):
         output_data = input_data.copy()
 
         for param in parameters:
+
+            # skip empty sets
+            if "indices" not in self.user_config[param]:
+                continue
+
             indices = []
             for index in self.user_config[param]["indices"]:
                 indices.append(input_data[index]["VALUE"].to_list())  # get set values
