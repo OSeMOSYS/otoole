@@ -21,9 +21,11 @@ from otoole.results.results import (
 
 class TestReadCplex:
 
-    cplex_empty = "AnnualFixedOperatingCost	REGION	AOBACKSTOP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0"
-    cplex_short = "AnnualFixedOperatingCost	REGION	CDBACKSTOP	0.0	0.0	137958.8400384134	305945.38410619126	626159.9611543404	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0"
-    cplex_long = "RateOfActivity	REGION	S1D1	CGLFRCFURX	1	0.0	0.0	0.0	0.0	0.0	0.3284446367303371	0.3451714779880536	0.3366163200621617	0.3394945166233896	0.3137488154250392	0.28605725055560716	0.2572505015401749	0.06757558148965725	0.0558936625751148	0.04330608461292407	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0"
+    cplex_empty = (
+        "AnnualFixedOperatingCost	REGION	AOBACKSTOP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0"
+    )
+    cplex_short = "AnnualFixedOperatingCost	REGION	CDBACKSTOP	0.0	0.0	137958.8400384134	305945.38410619126	626159.9611543404	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0"
+    cplex_long = "RateOfActivity	REGION	S1D1	CGLFRCFURX	1	0.0	0.0	0.0	0.0	0.0	0.3284446367303371	0.3451714779880536	0.3366163200621617	0.3394945166233896	0.3137488154250392	0.28605725055560716	0.2572505015401749	0.06757558148965725	0.0558936625751148	0.04330608461292407	0.0"
 
     cplex_mid_empty = (
         pd.DataFrame(
@@ -69,9 +71,38 @@ class TestReadCplex:
     dataframe_short = {
         "AnnualFixedOperatingCost": pd.DataFrame(
             data=[
+                ["REGION", "CDBACKSTOP", 2015, 0],
+                ["REGION", "CDBACKSTOP", 2016, 0],
                 ["REGION", "CDBACKSTOP", 2017, 137958.8400384134],
                 ["REGION", "CDBACKSTOP", 2018, 305945.3841061913],
                 ["REGION", "CDBACKSTOP", 2019, 626159.9611543404],
+                ["REGION", "CDBACKSTOP", 2020, 0],
+                ["REGION", "CDBACKSTOP", 2021, 0],
+                ["REGION", "CDBACKSTOP", 2022, 0],
+                ["REGION", "CDBACKSTOP", 2023, 0],
+                ["REGION", "CDBACKSTOP", 2024, 0],
+                ["REGION", "CDBACKSTOP", 2025, 0],
+                ["REGION", "CDBACKSTOP", 2026, 0],
+                ["REGION", "CDBACKSTOP", 2027, 0],
+                ["REGION", "CDBACKSTOP", 2028, 0],
+                ["REGION", "CDBACKSTOP", 2029, 0],
+                ["REGION", "CDBACKSTOP", 2030, 0],
+                ["REGION", "CGLFRCFURX", 2015, 0],
+                ["REGION", "CGLFRCFURX", 2016, 0],
+                ["REGION", "CGLFRCFURX", 2017, 0],
+                ["REGION", "CGLFRCFURX", 2018, 0],
+                ["REGION", "CGLFRCFURX", 2019, 0],
+                ["REGION", "CGLFRCFURX", 2020, 0],
+                ["REGION", "CGLFRCFURX", 2021, 0],
+                ["REGION", "CGLFRCFURX", 2022, 0],
+                ["REGION", "CGLFRCFURX", 2023, 0],
+                ["REGION", "CGLFRCFURX", 2024, 0],
+                ["REGION", "CGLFRCFURX", 2025, 0],
+                ["REGION", "CGLFRCFURX", 2026, 0],
+                ["REGION", "CGLFRCFURX", 2027, 0],
+                ["REGION", "CGLFRCFURX", 2028, 0],
+                ["REGION", "CGLFRCFURX", 2029, 0],
+                ["REGION", "CGLFRCFURX", 2030, 0],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -80,6 +111,27 @@ class TestReadCplex:
     dataframe_long = {
         "RateOfActivity": pd.DataFrame(
             data=[
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2015, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2016, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2017, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2018, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2019, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2020, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2021, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2022, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2023, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2024, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2025, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2026, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2027, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2028, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2029, 0],
+                ["REGION", "S1D1", "CDBACKSTOP", 1, 2030, 0],
+                ["REGION", "S1D1", "CGLFRCFURX", 1, 2015, 0],
+                ["REGION", "S1D1", "CGLFRCFURX", 1, 2016, 0],
+                ["REGION", "S1D1", "CGLFRCFURX", 1, 2017, 0],
+                ["REGION", "S1D1", "CGLFRCFURX", 1, 2018, 0],
+                ["REGION", "S1D1", "CGLFRCFURX", 1, 2019, 0],
                 ["REGION", "S1D1", "CGLFRCFURX", 1, 2020, 0.3284446367303371],
                 ["REGION", "S1D1", "CGLFRCFURX", 1, 2021, 0.3451714779880536],
                 ["REGION", "S1D1", "CGLFRCFURX", 1, 2022, 0.3366163200621617],
@@ -90,6 +142,7 @@ class TestReadCplex:
                 ["REGION", "S1D1", "CGLFRCFURX", 1, 2027, 0.06757558148965725],
                 ["REGION", "S1D1", "CGLFRCFURX", 1, 2028, 0.0558936625751148],
                 ["REGION", "S1D1", "CGLFRCFURX", 1, 2029, 0.04330608461292407],
+                ["REGION", "S1D1", "CGLFRCFURX", 1, 2030, 0],
             ],
             columns=[
                 "REGION",
@@ -112,7 +165,13 @@ class TestReadCplex:
         cplex_reader = ReadCplex(user_config=user_config)
 
         input_data = {
-            "YEAR": pd.DataFrame(data=list(range(2015, 2071, 1)), columns=["VALUE"])
+            "YEAR": pd.DataFrame(data=list(range(2015, 2031, 1)), columns=["VALUE"]),
+            "REGION": pd.DataFrame(data=["REGION"], columns=["VALUE"]),
+            "TECHNOLOGY": pd.DataFrame(
+                data=["CDBACKSTOP", "CGLFRCFURX"], columns=["VALUE"]
+            ),
+            "MODE_OF_OPERATION": pd.DataFrame(data=[1], columns=["VALUE"]),
+            "TIMESLICE": pd.DataFrame(data=["S1D1"], columns=["VALUE"]),
         }
 
         with StringIO(cplex_input) as file_buffer:
@@ -128,7 +187,9 @@ class TestReadCplex:
         cplex_reader = ReadCplex(user_config)
 
         input_data = {
-            "YEAR": pd.DataFrame(data=list(range(2015, 2071, 1)), columns=["VALUE"])
+            "YEAR": pd.DataFrame(data=list(range(2015, 2031, 1)), columns=["VALUE"]),
+            "REGION": pd.DataFrame(data=["REGION"], columns=["VALUE"]),
+            "TECHNOLOGY": pd.DataFrame(data=["CDBACKSTOP"], columns=["VALUE"]),
         }
 
         with StringIO(cplex_input) as file_buffer:
@@ -136,10 +197,27 @@ class TestReadCplex:
         assert "AnnualFixedOperatingCost" in data
         expected = (
             pd.DataFrame(
-                [],
+                data=[
+                    ["REGION", "CDBACKSTOP", 2015, 0],
+                    ["REGION", "CDBACKSTOP", 2016, 0],
+                    ["REGION", "CDBACKSTOP", 2017, 0],
+                    ["REGION", "CDBACKSTOP", 2018, 0],
+                    ["REGION", "CDBACKSTOP", 2019, 0],
+                    ["REGION", "CDBACKSTOP", 2020, 0],
+                    ["REGION", "CDBACKSTOP", 2021, 0],
+                    ["REGION", "CDBACKSTOP", 2022, 0],
+                    ["REGION", "CDBACKSTOP", 2023, 0],
+                    ["REGION", "CDBACKSTOP", 2024, 0],
+                    ["REGION", "CDBACKSTOP", 2025, 0],
+                    ["REGION", "CDBACKSTOP", 2026, 0],
+                    ["REGION", "CDBACKSTOP", 2027, 0],
+                    ["REGION", "CDBACKSTOP", 2028, 0],
+                    ["REGION", "CDBACKSTOP", 2029, 0],
+                    ["REGION", "CDBACKSTOP", 2030, 0],
+                ],
                 columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
             )
-            .astype({"REGION": str, "VALUE": float, "YEAR": int})
+            .astype({"REGION": str, "VALUE": float, "YEAR": int, "TECHNOLOGY": str})
             .set_index(["REGION", "TECHNOLOGY", "YEAR"])
         )
         actual = data["AnnualFixedOperatingCost"]
@@ -159,7 +237,7 @@ class TestReadCplex:
         data = cplex_input.split("\t")
         variable = data[0]
         cplex_reader = ReadCplex(user_config=user_config)
-        actual = cplex_reader.convert_df([data], variable, 2015, 2070)
+        actual = cplex_reader.convert_df([data], variable, 2015, 2030)
         pd.testing.assert_frame_equal(actual, expected, check_index_type=False)
 
     def test_convert_lines_to_df_empty(self, user_config):

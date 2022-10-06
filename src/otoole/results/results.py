@@ -40,10 +40,18 @@ class ReadResults(ReadStrategy):
         available_results = self.get_results_from_file(
             filepath, input_data
         )  # type: Dict[str, pd.DataFrame]
+
+        default_values = self._read_default_values(self.results_config)  # type: Dict
+
+        if input_data:
+            available_results = self._expand_result_defaults(
+                available_results, input_data, default_values
+            )
+
         results = self.calculate_results(
             available_results, input_data
         )  # type: Dict[str, pd.DataFrame]
-        default_values = self._read_default_values(self.results_config)  # type: Dict
+
         return results, default_values
 
     @abstractmethod
@@ -110,6 +118,42 @@ class ReadResults(ReadStrategy):
             output_data[param] = df
 
         return output_data
+
+    def _expand_result_defaults(
+        self,
+        available_results: Dict[str, pd.DataFrame],
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, float],
+    ):
+        """Populates default value entry rows in result dataframes
+
+        Parameters
+        ----------
+        available_results : Dict[str, pd.DataFrame],
+        input_data : Dict[str, pd.DataFrame],
+        default_values : Dict[str, float]
+
+        Returns
+        -------
+        results : Dict[str, pd.DataFrame]
+            Updated available reults dictionary
+        """
+        results = {}
+        for result in available_results:
+            df_result = available_results[result]
+            index_data = {}
+            for index in df_result.index.names:
+                index_data[index] = input_data[index]["VALUE"].to_list()
+            multiindex = pd.MultiIndex.from_product(
+                list(index_data.values()), names=list(index_data.keys())
+            )
+            df_default = pd.DataFrame(index=multiindex)
+            df_default["VALUE"] = default_values[result]
+            df = pd.concat([df_result, df_default])
+            df = df[~df.index.duplicated(keep="first")]
+            df = df.sort_index()
+            results[result] = df
+        return results
 
 
 class ReadResultsCBC(ReadResults):

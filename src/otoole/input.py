@@ -170,7 +170,7 @@ class Strategy(ABC):
     def _read_default_values(config):
         default_values = {}
         for name, contents in config.items():
-            if contents["type"] == "param":
+            if contents["type"] != "set":
                 default_values[name] = contents["default"]
         return default_values
 
