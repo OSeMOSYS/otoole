@@ -33,7 +33,7 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
-            input_data = self._expand_defaults(input_data)
+            input_data = self._expand_parameter_defaults(input_data)
         else:
             input_data = None
 
@@ -80,7 +80,7 @@ class ReadResults(ReadStrategy):
 
         return results
 
-    def _expand_defaults(
+    def _expand_parameter_defaults(
         self, input_data: Dict[str, pd.DataFrame]
     ) -> Dict[str, pd.DataFrame]:
         """Populates an empty parameter dataframe with its default value.
