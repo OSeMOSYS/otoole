@@ -80,6 +80,11 @@ DepreciationMethod:
     dtype: float
     default: 1
 DiscountRate:
+    indices: [REGION]
+    type: param
+    dtype: float
+    default: 0.05
+DiscountRateIdv:
     indices: [REGION,TECHNOLOGY]
     type: param
     dtype: float
@@ -423,6 +428,36 @@ SalvageValue:
     default: 0
     calculated: False
 SalvageValueStorage:
+    indices: [REGION, STORAGE, YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: False
+StorageLevelDayTypeFinish:
+    indices: [REGION, STORAGE, SEASON, DAYTYPE, YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: False
+StorageLevelDayTypeStart:
+    indices: [REGION, STORAGE, SEASON, DAYTYPE, YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: False
+StorageLevelSeasonStart:
+    indices: [REGION, STORAGE, SEASON, YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: False
+StorageLevelYearStart:
+    indices: [REGION, STORAGE, YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: False
+StorageLevelYearFinish:
     indices: [REGION, STORAGE, YEAR]
     type: result
     dtype: float
