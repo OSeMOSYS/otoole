@@ -21,6 +21,11 @@ EXCEL_TO_CSV = {
     "TotalTechnologyAnnualActivityUp": "TotalTechnologyAnnualActivityUpperLimit",
     "TotalTechnologyModelPeriodActLo": "TotalTechnologyModelPeriodActivityLowerLimit",
     "TotalTechnologyModelPeriodActUp": "TotalTechnologyModelPeriodActivityUpperLimit",
+    "TechWithCapacityNeededToMeetPea": "TechWithCapacityNeededToMeetPeakTS",
+    "TechnologyActivityByModeUpperLi": "TechnologyActivityByModeUpperLimit",
+    "TechnologyActivityByModeLowerLi": "TechnologyActivityByModeLowerLimit",
+    "TechnologyActivityIncreaseByMod": "TechnologyActivityIncreaseByModeLimit",
+    "TechnologyActivityDecreaseByMod": "TechnologyActivityDecreaseByModeLimit",
 }
 
 CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}

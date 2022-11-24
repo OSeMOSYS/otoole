@@ -81,15 +81,13 @@ class WriteExcel(WriteStrategy):
         if not df.empty:
             df.to_excel(handle, sheet_name=name, merge_cells=False, index=True)
         else:
-            # df.to_excel(handle, sheet_name=name, merge_cells=False, index=False)
             logger.info(f"Skipped writing {parameter_name} as it is empty")
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: pd.ExcelWriter):
         df.to_excel(handle, sheet_name=set_name, merge_cells=False, index=False)
 
     def _footer(self, handle=pd.ExcelWriter):
-        # handle.close()
-        pass
+        handle.close()
 
 
 class WriteDatafile(WriteStrategy):
