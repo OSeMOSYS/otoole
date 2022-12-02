@@ -102,6 +102,8 @@ def result_matrix(args):
             config = _read_file(config_file, ending)
         logger.info("Reading config from {}".format(args.config))
 
+    # set read strategy
+
     if args.from_format == "cbc":
         read_strategy = ReadCbc(user_config=config)
     elif args.from_format == "cplex":
@@ -109,8 +111,12 @@ def result_matrix(args):
     elif args.from_format == "gurobi":
         read_strategy = ReadGurobi(user_config=config)
 
+    # set write strategy
+
+    write_defaults = True if args.write_defaults else False
+
     if args.to_format == "csv":
-        write_strategy = WriteCsv(user_config=config)
+        write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
 
     if args.input_datapackage:
         input_data, _ = ReadDatapackage(user_config=config).read(args.input_datapackage)
@@ -154,6 +160,8 @@ def conversion_matrix(args):
             config = _read_file(config_file, ending)
         logger.info("Reading config from {}".format(args.config))
 
+    # set read strategy
+
     if args.from_format == "datafile":
         read_strategy = ReadDatafile(user_config=config)
     elif args.from_format == "datapackage":
@@ -163,14 +171,22 @@ def conversion_matrix(args):
     elif args.from_format == "excel":
         read_strategy = ReadExcel(user_config=config)
 
+    # set write strategy
+
+    write_defaults = True if args.write_defaults else False
+
     if args.to_format == "datapackage":
-        write_strategy = WriteDatapackage(user_config=config)
+        write_strategy = WriteDatapackage(
+            user_config=config, write_defaults=write_defaults
+        )
     elif args.to_format == "excel":
-        write_strategy = WriteExcel(user_config=config)
+        write_strategy = WriteExcel(user_config=config, write_defaults=write_defaults)
     elif args.to_format == "datafile":
-        write_strategy = WriteDatafile(user_config=config)
+        write_strategy = WriteDatafile(
+            user_config=config, write_defaults=write_defaults
+        )
     elif args.to_format == "csv":
-        write_strategy = WriteCsv(user_config=config)
+        write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
@@ -228,6 +244,12 @@ def get_parser():
         default=None,
     )
     result_parser.add_argument("config", help="Path to config YAML file")
+    result_parser.add_argument(
+        "--write_defaults",
+        help="Writes default values",
+        default=False,
+        action="store_true",
+    )
     result_parser.set_defaults(func=result_matrix)
 
     # Parser for conversion
@@ -249,6 +271,12 @@ def get_parser():
     )
     convert_parser.add_argument("to_path", help="Path to file or folder to convert to")
     convert_parser.add_argument("config", help="Path to config YAML file")
+    convert_parser.add_argument(
+        "--write_defaults",
+        help="Writes default values",
+        default=False,
+        action="store_true",
+    )
     convert_parser.set_defaults(func=conversion_matrix)
 
     # Parser for validation

@@ -33,7 +33,7 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
-            input_data = self._expand_parameter_defaults(input_data)
+            # input_data = self._expand_parameter_defaults(input_data)
         else:
             input_data = None
 
@@ -43,10 +43,10 @@ class ReadResults(ReadStrategy):
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
 
-        if input_data:
-            available_results = self._expand_result_defaults(
-                available_results, input_data, default_values
-            )
+        # if input_data:
+        #     available_results = self._expand_result_defaults(
+        #         available_results, input_data, default_values
+        #     )
 
         results = self.calculate_results(
             available_results, input_data
@@ -80,80 +80,88 @@ class ReadResults(ReadStrategy):
 
         return results
 
-    def _expand_parameter_defaults(
-        self, input_data: Dict[str, pd.DataFrame]
-    ) -> Dict[str, pd.DataFrame]:
-        """Populates an empty parameter dataframe with its default value.
+    # def _expand_parameter_defaults(
+    #     self, input_data: Dict[str, pd.DataFrame]
+    # ) -> Dict[str, pd.DataFrame]:
+    #     """Populates an empty parameter dataframe with its default value.
 
-        Arguments
-        ---------
-        input_data: Dict[str, pd.DataFrame]
-            Dictionary of input data
+    #     Arguments
+    #     ---------
+    #     input_data: Dict[str, pd.DataFrame]
+    #         Dictionary of input data
 
-        Returns
-        -------
-        output_data: dict
-            Updated input_data dictionary
-        """
+    #     Returns
+    #     -------
+    #     output_data: dict
+    #         Updated input_data dictionary
+    #     """
 
-        parameters = [x for x in input_data if input_data[x].empty]
-        output_data = input_data.copy()
+    #     parameters = [x for x in input_data if input_data[x].empty]
+    #     output_data = input_data.copy()
 
-        for param in parameters:
+    #     for param in parameters:
 
-            # skip empty sets
-            if "indices" not in self.user_config[param]:
-                continue
+    #         # skip empty sets
+    #         if "indices" not in self.user_config[param]:
+    #             continue
 
-            indices = []
-            for index in self.user_config[param]["indices"]:
-                indices.append(input_data[index]["VALUE"].to_list())  # get set values
+    #         indices = []
+    #         for index in self.user_config[param]["indices"]:
+    #             indices.append(input_data[index]["VALUE"].to_list())  # get set values
 
-            index = pd.MultiIndex.from_product(
-                indices, names=self.user_config[param]["indices"]
-            )
+    #         index = pd.MultiIndex.from_product(
+    #             indices, names=self.user_config[param]["indices"]
+    #         )
 
-            df = pd.DataFrame(index=index)
-            df["VALUE"] = self.user_config[param]["default"]
-            output_data[param] = df
+    #         df = pd.DataFrame(index=index)
+    #         df["VALUE"] = self.user_config[param]["default"]
+    #         output_data[param] = df
 
-        return output_data
+    #     return output_data
 
-    def _expand_result_defaults(
-        self,
-        available_results: Dict[str, pd.DataFrame],
-        input_data: Dict[str, pd.DataFrame],
-        default_values: Dict[str, float],
-    ):
-        """Populates default value entry rows in result dataframes
+    # def _expand_result_defaults(
+    #     self,
+    #     available_results: Dict[str, pd.DataFrame],
+    #     input_data: Dict[str, pd.DataFrame],
+    #     default_values: Dict[str, float],
+    # ) -> Dict[str, pd.DataFrame]:
+    #     """Populates default value entry rows in result dataframes
 
-        Parameters
-        ----------
-        available_results : Dict[str, pd.DataFrame],
-        input_data : Dict[str, pd.DataFrame],
-        default_values : Dict[str, float]
+    #     Parameters
+    #     ----------
+    #     available_results : Dict[str, pd.DataFrame],
+    #     input_data : Dict[str, pd.DataFrame],
+    #     default_values : Dict[str, float]
 
-        Returns
-        -------
-        results : Dict[str, pd.DataFrame]
-            Updated available reults dictionary
-        """
-        results = {}
-        for result in available_results:
-            df_result = available_results[result]
-            index_data = {}
-            for index in df_result.index.names:
-                index_data[index] = input_data[index]["VALUE"].to_list()
-            multiindex = pd.MultiIndex.from_product(
-                list(index_data.values()), names=list(index_data.keys())
-            )
-            df_default = pd.DataFrame(index=multiindex)
-            df_default["VALUE"] = default_values[result]
-            df = pd.concat([df_result, df_default])
-            df = df[~df.index.duplicated(keep="first")]
-            df = df.sort_index()
-            results[result] = df
-        return results
+    #     Returns
+    #     -------
+    #     results : Dict[str, pd.DataFrame]
+    #         Updated available reults dictionary
+    #     """
+    #     results = {}
+    #     for result in available_results:
+
+    #         # Get any model results
+    #         df_result = available_results[result]
+    #         index_data = {}
+
+    #         # save set information for each result
+    #         for index in df_result.index.names:
+    #             index_data[index] = input_data[index]["VALUE"].to_list()
+    #         multiindex = pd.MultiIndex.from_product(
+    #             list(index_data.values()), names=list(index_data.keys())
+    #         )
+    #         df_default = pd.DataFrame(index=multiindex)
+
+    #         # save default result vale
+    #         df_default["VALUE"] = default_values[result]
+
+    #         # combine result and default value dataframe
+    #         df = pd.concat([df_result, df_default])
+    #         df = df[~df.index.duplicated(keep="first")]
+    #         df = df.sort_index()
+    #         results[result] = df
+    #     return results
 
 
 class ReadResultsCBC(ReadResults):
