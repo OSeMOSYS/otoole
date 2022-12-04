@@ -247,7 +247,7 @@ class WriteStrategy(Strategy):
             try:
                 inputs = self._expand_defaults(inputs, default_values, **kwargs)
             except KeyError as ex:
-                logger.info(ex)
+                logger.debug(ex)
 
         for name, df in sorted(inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
@@ -292,17 +292,12 @@ class WriteStrategy(Strategy):
         Raises
         ------
         KeyError
-            If set defenitons are not in input_data and model_data is not supplied
+            If set defenitons are not in input_data and input_data is not supplied
         """
 
         sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
 
-        if not all(x in data_to_expand for x in sets):
-            if not (kwargs["input_data"]):
-                raise KeyError(
-                    "Must supply input set data to write default result values"
-                )
-
+        # if expanding results, input data is needed for set defenitions
         if "input_data" in kwargs:
             model_data = kwargs["input_data"]
         else:
@@ -327,7 +322,11 @@ class WriteStrategy(Strategy):
             # save set information for each parameter
             index_data = {}
             for index in data.index.names:
-                index_data[index] = model_data[index]["VALUE"].to_list()
+                try:
+                    index_data[index] = model_data[index]["VALUE"].to_list()
+                except KeyError as ex:
+                    logger.info("Can not write default values. Supply input data")
+                    raise KeyError(ex)
 
             # set index
             if len(index_data) > 1:

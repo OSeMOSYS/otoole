@@ -112,3 +112,21 @@ class TestConvert:
         ]
         actual = run(commands, capture_output=True)
         assert actual.returncode == 0
+
+    def test_convert_datafile_datafile_with_default_flag(self):
+        simplicity = os.path.join("tests", "fixtures", "simplicity.txt")
+        user_config = os.path.join("tests", "fixtures", "config.yaml")
+        temp_datafile = NamedTemporaryFile(suffix=".dat")
+        commands = [
+            "otoole",
+            "-vvv",
+            "convert",
+            "datafile",
+            "datafile",
+            simplicity,
+            temp_datafile.name,
+            user_config,
+            "--write_defaults",
+        ]
+        actual = run(commands, capture_output=True)
+        assert actual.returncode == 0
