@@ -63,6 +63,7 @@ This command allows you to convert between various different input formats::
 
     optional arguments:
     -h, --help            show this help message and exit
+    --write_defaults      Write default parameters values from configuration file
 
 As of version 2.0, you must provide a user-defined configuration file containing information
 about all of the sets, parameters and result variables in your model. See more about this below.
@@ -153,6 +154,7 @@ solution file::
     --input_datafile INPUT_DATAFILE
                             Input GNUMathProg datafile required for OSeMOSYS short
                             or fast results
+    --write_defaults      Write default result values from configuration file
 
 This is typically required when using the CBC solver with an LP file generated using
 GLPK. For example::

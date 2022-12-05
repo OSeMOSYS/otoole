@@ -22,7 +22,6 @@ class ResultsPackage(Mapping):
         A dictionary of results data
     input_data: dict, default=None
         Dictionary of input data
-
     """
 
     def __init__(
@@ -122,9 +121,7 @@ class ResultsPackage(Mapping):
         Arguments
         ---------
         operational_life: pandas.DataFrame
-
         new_capacity: pandas.DataFrame
-
         year: pandas.Index
 
         Notes
@@ -134,7 +131,6 @@ class ResultsPackage(Mapping):
             r~REGION, t~TECHNOLOGY, y~YEAR,
             sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
                 NewCapacity[r,t,yy] ~VALUE;
-
         """
         try:
             new_capacity = self["NewCapacity"].copy()
@@ -207,7 +203,6 @@ class ResultsPackage(Mapping):
             FixedCost[r,t,y] *
             ((sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
                 NewCapacity[r,t,yy]) + ResidualCapacity[r,t,y]) ~VALUE;
-
         """
         try:
             total_capacity = self["TotalCapacityAnnual"]
@@ -231,7 +226,6 @@ class ResultsPackage(Mapping):
                 EmissionActivityRatio[r,t,e,m,y]<>0}
             EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y]
                 * YearSplit[l,y];
-
         """
         try:
             data = self["AnnualTechnologyEmissionByMode"].copy(deep=True)
@@ -244,7 +238,7 @@ class ResultsPackage(Mapping):
         return data[(data != 0).all(1)]
 
     def annual_technology_emission_by_mode(self) -> pd.DataFrame:
-        """
+        """AnnualTechnologyEmissionByMode
 
         Notes
         -----
@@ -284,7 +278,6 @@ class ResultsPackage(Mapping):
                 RateOfActivity[r,l,t,m,y]
                 * YearSplit[l,y]
                 * VariableCost[r,t,m,y] ~VALUE;
-
         """
         try:
             rate_of_activity = self["RateOfActivity"]
@@ -368,13 +361,14 @@ class ResultsPackage(Mapping):
         return data[(data != 0).all(1)]
 
     def discounted_tech_emis_pen(self) -> pd.DataFrame:
-        """
+        """DiscountedTechnologyEmissionsPenalty
+
+
         Notes
         -----
         From the formulation::
 
             DiscountedTechnologyEmissionsPenalty[r,t,y] :=
-
             EmissionActivityRatio[r,t,e,m,y] * RateOfActivity[r,l,t,m,y] *
             YearSplit[l,y] * EmissionsPenalty[r,e,y] / DiscountFactorMid[r,y]
         """
@@ -400,9 +394,7 @@ class ResultsPackage(Mapping):
         return data[(data != 0).all(1)]
 
     def production_by_technology(self) -> pd.DataFrame:
-        """Compute production by technology
-
-        ProductionByTechnology
+        """ProductionByTechnology
 
         Notes
         -----
@@ -480,7 +472,6 @@ class ResultsPackage(Mapping):
             r~REGION, l~TIMESLICE, t~TECHNOLOGY, f~FUEL, y~YEAR,
             sum{m in MODE_OF_OPERATION: OutputActivityRatio[r,t,f,m,y] <> 0}
                 RateOfActivity[r,l,t,m,y] * OutputActivityRatio[r,t,f,m,y]~VALUE;
-
         """
         try:
             rate_of_production = self["RateOfProductionByTechnologyByMode"].copy(
@@ -562,7 +553,7 @@ class ResultsPackage(Mapping):
         return data[(data != 0).all(1)]
 
     def total_capacity_annual(self) -> pd.DataFrame:
-        """Compute TotalCapacityAnnual result
+        """TotalCapacityAnnual
 
         Notes
         -----
@@ -591,29 +582,28 @@ class ResultsPackage(Mapping):
 
             r~REGION, y~YEAR,
             sum{t in TECHNOLOGY}
-        (
             (
                 (
                     (
-                        sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
-                        NewCapacity[r,t,yy]
+                        (
+                            sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                            NewCapacity[r,t,yy]
+                        )
+                        + ResidualCapacity[r,t,y]
                     )
-                    + ResidualCapacity[r,t,y]
+                    * FixedCost[r,t,y]
+                    + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
+                    RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
                 )
-                * FixedCost[r,t,y]
-                + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
-                RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
-            )
-            / (DiscountFactorMid[r,y])
-            + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
-            + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
-            + sum{s in STORAGE}
-            (
-                CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y])
-                - CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
-            )
-        ) ~VALUE;
-
+                / (DiscountFactorMid[r,y])
+                + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
+                + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
+                + sum{s in STORAGE}
+                (
+                    CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y])
+                    - CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
+                )
+            ) ~VALUE;
         """
         try:
             discount_rate = self["DiscountRate"]
@@ -772,8 +762,8 @@ def capital_recovery_factor(
     -----
     From the formulation::
 
-    param CapitalRecoveryFactor{r in REGION, t in TECHNOLOGY} :=
-            (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
+        param CapitalRecoveryFactor{r in REGION, t in TECHNOLOGY} :=
+                (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
     """
     if regions and technologies:
         index = pd.MultiIndex.from_product(
@@ -812,8 +802,8 @@ def pv_annuity(
     -----
     From the formulation::
 
-    param PvAnnuity{r in REGION, t in TECHNOLOGY} :=
-            (1 - (1 + DiscountRate[r])^(-(OperationalLife[r,t]))) * (1 + DiscountRate[r]) / DiscountRate[r];
+        param PvAnnuity{r in REGION, t in TECHNOLOGY} :=
+                (1 - (1 + DiscountRate[r])^(-(OperationalLife[r,t]))) * (1 + DiscountRate[r]) / DiscountRate[r];
     """
     if regions and technologies:
         index = pd.MultiIndex.from_product(
@@ -844,7 +834,7 @@ def discount_factor(
     discount_rate: pd.DataFrame,
     adj: float = 0.0,
 ) -> pd.DataFrame:
-    """Calculates the discount factor
+    """DiscountFactor
 
     Arguments
     ---------
@@ -856,13 +846,13 @@ def discount_factor(
 
     Notes
     -----
-    From the formulations::
+    From the formulation::
 
-    param DiscountFactor{r in REGION, y in YEAR} :=
-            (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
+        param DiscountFactor{r in REGION, y in YEAR} :=
+                (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
 
-    param DiscountFactorMid{r in REGION, y in YEAR} :=
-            (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5);
+        param DiscountFactorMid{r in REGION, y in YEAR} :=
+                (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5);
     """
 
     if regions and years:
@@ -889,7 +879,7 @@ def discount_factor_storage(
     discount_rate_storage: pd.DataFrame,
     adj: float = 0.0,
 ) -> pd.DataFrame:
-    """Calculates the discount factor
+    """DiscountFactorStorage
 
     Arguments
     ---------
@@ -902,10 +892,10 @@ def discount_factor_storage(
 
     Notes
     -----
-    From the formulations::
+    From the formulation::
 
-    param DiscountFactorStorage{r in REGION, s in STORAGE, y in YEAR} :=
-            (1 + DiscountRateStorage[r,s]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
+        param DiscountFactorStorage{r in REGION, s in STORAGE, y in YEAR} :=
+                (1 + DiscountRateStorage[r,s]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
     """
 
     if regions and years:
