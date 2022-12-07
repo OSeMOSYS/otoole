@@ -128,6 +128,11 @@ def create_name_mappings(
     for name, params in config.items():
         try:
             csv_to_excel[name] = params["short_name"]
+            if len(csv_to_excel[name]) > 31:
+                logger.warning(
+                    f"The short_name, {csv_to_excel[name]} for parameter {name} "
+                    "is longer then 31 characters will not be read from excel."
+                )
         except KeyError:
             if len(name) > 31:
                 logger.warning(
@@ -139,4 +144,5 @@ def create_name_mappings(
     if map_full_to_short:
         return csv_to_excel
     else:
-        return {v: k for k, v in csv_to_excel.items()}
+        excel_to_csv = {v: k for k, v in csv_to_excel.items()}
+        return excel_to_csv
