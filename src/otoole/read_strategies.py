@@ -9,26 +9,9 @@ from pandas_datapackage_reader import read_datapackage
 
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
-from otoole.utils import read_datapackage_schema_into_config
+from otoole.utils import create_name_mappings, read_datapackage_schema_into_config
 
 logger = logging.getLogger(__name__)
-
-
-EXCEL_TO_CSV = {
-    "TotalAnnualMaxCapacityInvestmen": "TotalAnnualMaxCapacityInvestment",
-    "TotalAnnualMinCapacityInvestmen": "TotalAnnualMinCapacityInvestment",
-    "TotalTechnologyAnnualActivityLo": "TotalTechnologyAnnualActivityLowerLimit",
-    "TotalTechnologyAnnualActivityUp": "TotalTechnologyAnnualActivityUpperLimit",
-    "TotalTechnologyModelPeriodActLo": "TotalTechnologyModelPeriodActivityLowerLimit",
-    "TotalTechnologyModelPeriodActUp": "TotalTechnologyModelPeriodActivityUpperLimit",
-    "TechWithCapacityNeededToMeetPea": "TechWithCapacityNeededToMeetPeakTS",
-    "TechnologyActivityByModeUpperLi": "TechnologyActivityByModeUpperLimit",
-    "TechnologyActivityByModeLowerLi": "TechnologyActivityByModeLowerLimit",
-    "TechnologyActivityIncreaseByMod": "TechnologyActivityIncreaseByModeLimit",
-    "TechnologyActivityDecreaseByMod": "TechnologyActivityDecreaseByModeLimit",
-}
-
-CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
 
 
 class ReadMemory(ReadStrategy):
@@ -113,6 +96,7 @@ class ReadExcel(_ReadTabular):
 
         config = self.user_config
         default_values = self._read_default_values(config)
+        excel_to_csv = create_name_mappings(config, map_full_to_short=False)
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
 
@@ -121,7 +105,7 @@ class ReadExcel(_ReadTabular):
         for name in xl.sheet_names:
 
             try:
-                mod_name = EXCEL_TO_CSV[name]
+                mod_name = excel_to_csv[name]
             except KeyError:
                 mod_name = name
 
