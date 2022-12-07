@@ -102,11 +102,13 @@ class Context:
         """Delegate reading to the strategy, depending upon the format"""
         return self._read_strategy.read(filepath, **kwargs)
 
-    def _write(self, inputs: Dict, filepath: str, default_values: Dict) -> None:
+    def _write(
+        self, inputs: Dict, filepath: str, default_values: Dict, **kwargs
+    ) -> None:
         """
         Delegate writing to the strategy, depending upon the format
         """
-        self._write_strategy.write(inputs, filepath, default_values)
+        self._write_strategy.write(inputs, filepath, default_values, **kwargs)
 
     def convert(self, input_filepath: str, output_filepath: str, **kwargs: Dict):
         """Converts from file ``input_filepath`` to file ``output_filepath``
@@ -117,7 +119,7 @@ class Context:
         output_filepath: str
         """
         inputs, default_values = self._read(input_filepath, **kwargs)
-        self._write(inputs, output_filepath, default_values)
+        self._write(inputs, output_filepath, default_values, **kwargs)
 
 
 class Strategy(ABC):
@@ -127,9 +129,6 @@ class Strategy(ABC):
     ---------
     user_config : dict, default=None
         A user configuration for the input parameters and sets
-    results_config : dict, default=None
-        A user configuration for the results parameters
-
     """
 
     def __init__(self, user_config: Dict[str, Dict]):
@@ -170,7 +169,7 @@ class Strategy(ABC):
     def _read_default_values(config):
         default_values = {}
         for name, contents in config.items():
-            if contents["type"] == "param":
+            if contents["type"] != "set":
                 default_values[name] = contents["default"]
         return default_values
 
@@ -195,6 +194,7 @@ class WriteStrategy(Strategy):
         user_config: Dict,
         filepath: Optional[str] = None,
         default_values: Optional[Dict] = None,
+        write_defaults: bool = False,
     ):
         super().__init__(user_config=user_config)
         if filepath:
@@ -206,6 +206,8 @@ class WriteStrategy(Strategy):
             self.default_values = default_values
         else:
             self.default_values = {}
+
+        self.write_defaults = write_defaults
 
     @abstractmethod
     def _header(self) -> Union[TextIO, Any]:
@@ -227,13 +229,25 @@ class WriteStrategy(Strategy):
     def _footer(self, handle: TextIO):
         raise NotImplementedError()
 
-    def write(self, inputs: Dict, filepath: str, default_values: Dict):
+    def write(
+        self,
+        inputs: Dict[str, pd.DataFrame],
+        filepath: str,
+        default_values: Dict[str, float],
+        **kwargs,
+    ):
         """Perform the conversion from dict of dataframes to destination format"""
         self.filepath = filepath
         self.default_values = default_values
 
         handle = self._header()
         logger.debug(default_values)
+
+        if self.write_defaults:
+            try:
+                inputs = self._expand_defaults(inputs, default_values, **kwargs)
+            except KeyError as ex:
+                logger.debug(ex)
 
         for name, df in sorted(inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
@@ -246,11 +260,9 @@ class WriteStrategy(Strategy):
                 except KeyError:
                     raise KeyError("Cannot find %s in input or results config", name)
 
-            if entity_type == "param":
+            if entity_type != "set":
                 default_value = default_values[name]
                 self._write_parameter(df, name, handle, default=default_value)
-            elif entity_type == "result":
-                self._write_parameter(df, name, handle, default=0)
             else:
                 self._write_set(df, name, handle)
 
@@ -258,6 +270,85 @@ class WriteStrategy(Strategy):
 
         if isinstance(handle, TextIO):
             handle.close()
+
+    def _expand_defaults(
+        self,
+        data_to_expand: Dict[str, pd.DataFrame],
+        default_values: Dict[str, float],
+        **kwargs,
+    ) -> Dict[str, pd.DataFrame]:
+        """Populates default value entry rows in dataframes
+
+        Parameters
+        ----------
+        input_data : Dict[str, pd.DataFrame],
+        default_values : Dict[str, float]
+
+        Returns
+        -------
+        results : Dict[str, pd.DataFrame]
+            Updated available reults dictionary
+
+        Raises
+        ------
+        KeyError
+            If set defenitons are not in input_data and input_data is not supplied
+        """
+
+        sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
+
+        # if expanding results, input data is needed for set defenitions
+        if "input_data" in kwargs:
+            model_data = kwargs["input_data"]
+        else:
+            model_data = data_to_expand
+
+        output = {}
+        for name, data in data_to_expand.items():
+            logger.info(f"Writing defaults for {name}")
+
+            # skip sets
+            if name in sets:
+                output[name] = data
+                continue
+
+            # TODO
+            # Issue with how otoole handles trade route right now.
+            # The double defenition of REGION throws an error.
+            if name == "TradeRoute":
+                output[name] = data
+                continue
+
+            # save set information for each parameter
+            index_data = {}
+            for index in data.index.names:
+                try:
+                    index_data[index] = model_data[index]["VALUE"].to_list()
+                except KeyError as ex:
+                    logger.info("Can not write default values. Supply input data")
+                    raise KeyError(ex)
+
+            # set index
+            if len(index_data) > 1:
+                new_index = pd.MultiIndex.from_product(
+                    list(index_data.values()), names=list(index_data.keys())
+                )
+            else:
+                new_index = pd.Index(
+                    list(index_data.values())[0], name=list(index_data.keys())[0]
+                )
+            df_default = pd.DataFrame(index=new_index)
+
+            # save default result value
+            df_default["VALUE"] = default_values[name]
+
+            # combine result and default value dataframe
+            df = pd.concat([data, df_default])
+            df = df[~df.index.duplicated(keep="first")]
+            df = df.sort_index()
+            output[name] = df
+
+        return output
 
 
 class ReadStrategy(Strategy):

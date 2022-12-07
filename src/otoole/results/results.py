@@ -33,17 +33,19 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
-            input_data = self._expand_defaults(input_data)
         else:
             input_data = None
 
         available_results = self.get_results_from_file(
             filepath, input_data
         )  # type: Dict[str, pd.DataFrame]
+
+        default_values = self._read_default_values(self.results_config)  # type: Dict
+
         results = self.calculate_results(
             available_results, input_data
         )  # type: Dict[str, pd.DataFrame]
-        default_values = self._read_default_values(self.results_config)  # type: Dict
+
         return results, default_values
 
     @abstractmethod
@@ -71,45 +73,6 @@ class ReadResults(ReadStrategy):
                 LOGGER.debug("Error calculating %s: %s", name, str(ex))
 
         return results
-
-    def _expand_defaults(
-        self, input_data: Dict[str, pd.DataFrame]
-    ) -> Dict[str, pd.DataFrame]:
-        """Populates an empty parameter dataframe with its default value.
-
-        Arguments
-        ---------
-        input_data: Dict[str, pd.DataFrame]
-            Dictionary of input data
-
-        Returns
-        -------
-        output_data: dict
-            Updated input_data dictionary
-        """
-
-        parameters = [x for x in input_data if input_data[x].empty]
-        output_data = input_data.copy()
-
-        for param in parameters:
-
-            # skip empty sets
-            if "indices" not in self.user_config[param]:
-                continue
-
-            indices = []
-            for index in self.user_config[param]["indices"]:
-                indices.append(input_data[index]["VALUE"].to_list())  # get set values
-
-            index = pd.MultiIndex.from_product(
-                indices, names=self.user_config[param]["indices"]
-            )
-
-            df = pd.DataFrame(index=index)
-            df["VALUE"] = self.user_config[param]["default"]
-            output_data[param] = df
-
-        return output_data
 
 
 class ReadResultsCBC(ReadResults):
