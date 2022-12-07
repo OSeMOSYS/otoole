@@ -249,6 +249,7 @@ TotalAnnualMaxCapacity:
     dtype: float
     default: -1
 TotalAnnualMaxCapacityInvestment:
+    short_name: TotalAnnualMaxCapacityInvestmen
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
@@ -259,26 +260,31 @@ TotalAnnualMinCapacity:
     dtype: float
     default: 0
 TotalAnnualMinCapacityInvestment:
+    short_name: TotalAnnualMinCapacityInvestmen
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
     default: 0
 TotalTechnologyAnnualActivityLowerLimit:
+    short_name: TotalTechnologyAnnualActivityLo
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
     default: 0
 TotalTechnologyAnnualActivityUpperLimit:
+    short_name: TotalTechnologyAnnualActivityUp
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
     default: -1
 TotalTechnologyModelPeriodActivityLowerLimit:
+    short_name: TotalTechnologyModelPeriodActLo
     indices: [REGION,TECHNOLOGY]
     type: param
     dtype: float
     default: 0
 TotalTechnologyModelPeriodActivityUpperLimit:
+    short_name: TotalTechnologyModelPeriodActUp
     indices: [REGION,TECHNOLOGY]
     type: param
     dtype: float
