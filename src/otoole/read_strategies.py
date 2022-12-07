@@ -7,6 +7,7 @@ from amply import Amply
 from flatten_dict import flatten
 from pandas_datapackage_reader import read_datapackage
 
+from otoole.exceptions import OtooleExcelNameMismatchError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 from otoole.utils import create_name_mappings, read_datapackage_schema_into_config
@@ -100,6 +101,8 @@ class ReadExcel(_ReadTabular):
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
 
+        self._check_input_sheet_names(xl.sheet_names)
+
         input_data = {}
 
         for name in xl.sheet_names:
@@ -125,6 +128,33 @@ class ReadExcel(_ReadTabular):
         input_data = self._check_index(input_data)
 
         return input_data, default_values
+
+    def _check_input_sheet_names(self, sheet_names: List[str]) -> None:
+        """Checks that excel sheet names are in the config file.
+
+        Arguments:
+        ---------
+        sheet_names: list[str]
+            Sheet names from the excel file
+
+        Raises:
+        -------
+        OtooleExcelNameMismatchError
+            If the sheet name is not found in the config files parameter or
+            'short_name' parameter
+        """
+        config = self.user_config
+        csv_to_excel = create_name_mappings(config)
+        config_param_names = []
+        for name in config:
+            try:
+                config_param_names.append(csv_to_excel[name])
+            except KeyError:
+                config_param_names.append(name)
+
+        for sheet_name in sheet_names:
+            if sheet_name not in config_param_names:
+                raise OtooleExcelNameMismatchError(excel_name=sheet_name)
 
 
 class ReadCsv(_ReadTabular):

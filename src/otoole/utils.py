@@ -105,10 +105,7 @@ def extract_config(
 def create_name_mappings(
     config: Dict[str, Dict[str, Union[str, List]]], map_full_to_short: bool = True
 ) -> Dict:
-    """Creates name mapping for full name to short name.
-
-    Also warns the user if the name is longer then 31 characters and does
-    not have a short name.
+    """Creates name mapping between full name and short name.
 
     Arguments
     ---------
@@ -128,17 +125,9 @@ def create_name_mappings(
     for name, params in config.items():
         try:
             csv_to_excel[name] = params["short_name"]
-            if len(csv_to_excel[name]) > 31:
-                logger.warning(
-                    f"The short_name, {csv_to_excel[name]} for parameter {name} "
-                    "is longer then 31 characters will not be read from excel."
-                )
         except KeyError:
             if len(name) > 31:
-                logger.warning(
-                    f"{name} is longer then 31 characters and does not have a "
-                    "'short_name' in the configuration file"
-                )
+                logger.info(f"{name} does not have a 'short_name'")
             continue
 
     if map_full_to_short:

@@ -5,6 +5,7 @@ from typing import TextIO
 import pandas as pd
 from frictionless import Package, Resource
 
+from otoole.exceptions import OtooleExcelNameLengthError
 from otoole.input import WriteStrategy
 from otoole.preprocess.create_datapackage import generate_package
 
@@ -76,6 +77,10 @@ class WriteExcel(WriteStrategy):
             name = self.user_config[parameter_name]["short_name"]
         except KeyError:
             name = parameter_name
+
+        if len(name) > 31:
+            raise OtooleExcelNameLengthError(name=name)
+
         df = self._form_parameter(df, parameter_name, default)
         if not df.empty:
             df.to_excel(handle, sheet_name=name, merge_cells=False, index=True)
