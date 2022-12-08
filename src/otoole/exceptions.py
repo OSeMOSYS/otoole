@@ -39,3 +39,13 @@ class OtooleRelationError(OtooleException):
         self.resource = resource
         self.foreign_resource = foreign_resource
         self.message = message
+
+
+class OtooleConfigFileError(OtooleException):
+    def __init__(self, param: str, message: str) -> None:
+        self.param = param
+        self.message = message
+        super().__init__(message)
+
+    def __str__(self):
+        return f"{self.param} -> {self.message}"
