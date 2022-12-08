@@ -133,5 +133,4 @@ def create_name_mappings(
     if map_full_to_short:
         return csv_to_excel
     else:
-        excel_to_csv = {v: k for k, v in csv_to_excel.items()}
-        return excel_to_csv
+        return {v: k for k, v in csv_to_excel.items()}

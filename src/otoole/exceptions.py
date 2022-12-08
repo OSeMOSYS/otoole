@@ -47,7 +47,7 @@ class OtooleExcelNameLengthError(OtooleException):
     def __init__(
         self,
         name: str,
-        message: str = "Parameter name must be less then 31 characters when writing to Excel",
+        message: str = "Parameter name must be less than 31 characters when writing to Excel",
     ) -> None:
         self.name = name
         self.message = message

@@ -143,10 +143,10 @@ class ReadExcel(_ReadTabular):
             If the sheet name is not found in the config files parameter or
             'short_name' parameter
         """
-        config = self.user_config
-        csv_to_excel = create_name_mappings(config)
+        user_config = self.user_config
+        csv_to_excel = create_name_mappings(user_config)
         config_param_names = []
-        for name in config:
+        for name in user_config:
             try:
                 config_param_names.append(csv_to_excel[name])
             except KeyError:
