@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Dict, List, Union
 
@@ -11,6 +12,8 @@ try:
 except ImportError:
     # Try backported to PY<37 `importlib_resources`.
     import importlib_resources as resources  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 def _read_file(open_file, ending):
@@ -97,3 +100,37 @@ def extract_config(
                 "default": default_values[name],
             }
     return config
+
+
+def create_name_mappings(
+    config: Dict[str, Dict[str, Union[str, List]]], map_full_to_short: bool = True
+) -> Dict:
+    """Creates name mapping between full name and short name.
+
+    Arguments
+    ---------
+    config : Dict[str, Dict[str, Union[str, List]]]
+        Parsed user configuration file
+    map_full_to_short: bool
+        Map full name to short name if true, else map short name to full name
+
+    Returns
+    -------
+    csv_to_excel Dict[str, str]
+        Mapping of full name to shortened name
+
+    """
+
+    csv_to_excel = {}
+    for name, params in config.items():
+        try:
+            csv_to_excel[name] = params["short_name"]
+        except KeyError:
+            if len(name) > 31:
+                logger.info(f"{name} does not have a 'short_name'")
+            continue
+
+    if map_full_to_short:
+        return csv_to_excel
+    else:
+        return {v: k for k, v in csv_to_excel.items()}
