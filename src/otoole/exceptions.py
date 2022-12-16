@@ -42,10 +42,17 @@ class OtooleRelationError(OtooleException):
 
 
 class OtooleConfigFileError(OtooleException):
-    def __init__(self, param: str, message: str) -> None:
-        self.param = param
+    """Config file validation error
+
+    Arguments
+    ---------
+    message: str
+        Message to display to users
+    """
+
+    def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(message)
 
     def __str__(self):
-        return f"{self.param} -> {self.message}"
+        return f"{self.message}"

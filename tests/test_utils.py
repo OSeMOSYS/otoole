@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 import pytest
 import yaml
 
-from otoole.exceptions import OtooleConfigFileError
 from otoole.utils import UniqueKeyLoader, extract_config, read_packaged_file
 
 
@@ -55,5 +54,5 @@ class TestYamlUniqueKeyReader:
         assert actual == expected
 
     def test_invalid_yaml(self, invalid_yaml):
-        with pytest.raises(OtooleConfigFileError):
+        with pytest.raises(ValueError):
             yaml.load(invalid_yaml, Loader=UniqueKeyLoader)

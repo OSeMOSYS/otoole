@@ -5,14 +5,14 @@ from typing import Dict, List, Union
 from datapackage import Package
 from pydantic import ValidationError
 from sqlalchemy import create_engine
-
-# from otoole.exceptions import OtooleConfigFileError
 from yaml import SafeLoader, load  # type: ignore
 
-from otoole.preprocess.validate_config_pydantic import (
+from otoole.exceptions import OtooleConfigFileError
+from otoole.preprocess.validate_config import (
     UserDefinedParameter,
     UserDefinedResult,
     UserDefinedSet,
+    UserDefinedValue,
 )
 
 try:
@@ -133,9 +133,12 @@ def validate_config(config: Dict) -> None:
     config_flattened = format_config_for_validation(config)
     user_defined_sets = get_all_sets(config)
 
-    try:
-        for input_data in config_flattened:
-            if input_data["type"] == "param":
+    errors = []
+    for input_data in config_flattened:
+        try:
+            if "type" not in input_data:
+                UserDefinedValue(**input_data)
+            elif input_data["type"] == "param":
                 input_data["defined_sets"] = user_defined_sets
                 UserDefinedParameter(**input_data)
             elif input_data["type"] == "result":
@@ -144,15 +147,19 @@ def validate_config(config: Dict) -> None:
             elif input_data["type"] == "set":
                 UserDefinedSet(**input_data)
             else:
-                # raise OtooleConfigFileError(
-                #     param=input_data['name'],
-                #     message=f"Type {input_data['type']} is not in the set ['parma','result',set']"
-                # )
-                raise ValueError(
-                    f"{input_data['name']} -> Type {input_data['type']} is not in the set ['parma','result',set']"
+                # have pydantic raise an error
+                UserDefinedValue(
+                    name=input_data["name"],
+                    type=input_data["type"],
+                    dtype=input_data["dtype"],
                 )
-    except ValidationError as ex:
-        print(ex)
+        except ValidationError as ex:
+            errors_caught = [x["msg"] for x in ex.errors()]
+            errors.extend(errors_caught)
+
+    if errors:
+        error_message = "\n".join(errors)
+        raise OtooleConfigFileError(message=error_message)
 
 
 def format_config_for_validation(config_in: Dict) -> List:
@@ -203,14 +210,10 @@ class UniqueKeyLoader(SafeLoader):
 
     def construct_mapping(self, node, deep=False):
         mapping = []
-        for key_node, value_node in node.value:
+        for key_node, _ in node.value:
             key = self.construct_object(key_node, deep=deep)
             if key in mapping:
-                # raise OtooleConfigFileError(
-                #     param=key,
-                #     message='Value defined more than once'
-                # )
-                raise ValueError()
+                raise ValueError(f"{key} -> defined more than once")
             mapping.append(key)
         return super().construct_mapping(node, deep)
 

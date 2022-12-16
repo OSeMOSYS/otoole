@@ -1,8 +1,7 @@
-# from pydantic import ValidationError
 from pytest import mark, raises
 from yaml import SafeLoader, load
 
-# from otoole.exceptions import OtooleConfigFileError
+from otoole.exceptions import OtooleConfigFileError
 from otoole.utils import UniqueKeyLoader, validate_config
 
 
@@ -171,7 +170,7 @@ class TestInvalidConfig:
     @mark.parametrize("config_data", config_data_invalid, ids=config_data_invalid_ids)
     def test_invalid_configs(self, config_data):
         config = load(config_data, Loader=UniqueKeyLoader)
-        with raises(ValueError):
+        with raises(OtooleConfigFileError):
             validate_config(config)
 
     @mark.parametrize(
@@ -222,7 +221,7 @@ class TestInvalidConfigSets:
     @mark.parametrize("config_data", config_data, ids=config_data_ids)
     def test_invalid_config_sets(self, config_data):
         config = load(config_data, Loader=UniqueKeyLoader)
-        with raises(ValueError):
+        with raises(OtooleConfigFileError):
             validate_config(config)
 
 
@@ -353,7 +352,7 @@ class TestInvalidConfigParams:
     @mark.parametrize("config_data", config_data, ids=config_data_ids)
     def test_invalid_config_params(self, config_data):
         config = load(config_data, Loader=UniqueKeyLoader)
-        with raises(ValueError):
+        with raises(OtooleConfigFileError):
             validate_config(config)
 
 
@@ -492,5 +491,5 @@ class TestInvalidConfigResults:
     @mark.parametrize("config_data", config_data, ids=config_data_ids)
     def test_invalid_config_results(self, config_data):
         config = load(config_data, Loader=UniqueKeyLoader)
-        with raises(ValueError):
+        with raises(OtooleConfigFileError):
             validate_config(config)
