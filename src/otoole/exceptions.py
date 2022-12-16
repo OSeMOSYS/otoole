@@ -56,3 +56,33 @@ class OtooleConfigFileError(OtooleException):
 
     def __str__(self):
         return f"{self.message}"
+
+
+class OtooleExcelNameLengthError(OtooleException):
+    """Invalid tab name for writing to Excel."""
+
+    def __init__(
+        self,
+        name: str,
+        message: str = "Parameter name must be less than 31 characters when writing to Excel",
+    ) -> None:
+        self.name = name
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"{self.name} -> {self.message}"
+
+
+class OtooleExcelNameMismatchError(OtooleException):
+    """Name mismatch between config and excel tabs."""
+
+    def __init__(
+        self, excel_name: str, message: str = "Excel tab name not found in config file"
+    ) -> None:
+        self.excel_name = excel_name
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"{self.excel_name} -> {self.message}"
