@@ -59,7 +59,7 @@ from otoole import (
     __version__,
 )
 from otoole.input import Context
-from otoole.utils import _read_file, read_packaged_file
+from otoole.utils import _read_file, read_packaged_file, validate_config
 from otoole.validate import main as validate
 from otoole.visualise import create_res
 
@@ -101,6 +101,8 @@ def result_matrix(args):
         with open(args.config, "r") as config_file:
             config = _read_file(config_file, ending)
         logger.info("Reading config from {}".format(args.config))
+        logger.info("Validating config from {}".format(args.config))
+        validate_config(config)
 
     # set read strategy
 
@@ -159,6 +161,8 @@ def conversion_matrix(args):
         with open(args.config, "r") as config_file:
             config = _read_file(config_file, ending)
         logger.info("Reading config from {}".format(args.config))
+        logger.info("Validating config from {}".format(args.config))
+        validate_config(config)
 
     # set read strategy
 
