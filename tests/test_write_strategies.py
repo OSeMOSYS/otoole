@@ -47,7 +47,7 @@ class TestWriteExcel:
         actual = convert._form_parameter(df, "test_parameter", 0)
         index = pd.Index(data=["SIMPLICITY", "UTOPIA"], name="REGION")
         expected = pd.DataFrame(data=[[0.10], [0.20]], columns=["VALUE"], index=index)
-        print(actual, expected)
+        # print(actual, expected)
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_form_one_columns(self, user_config):
@@ -59,7 +59,7 @@ class TestWriteExcel:
         df = pd.DataFrame(data=data, columns=["FUEL"])
         actual = convert._form_parameter(df, "test_set", 0)
         expected = pd.DataFrame(data=["A", "B", "C"], columns=["FUEL"])
-        print(actual, expected)
+        # print(actual, expected)
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_form_three_columns(self, user_config):

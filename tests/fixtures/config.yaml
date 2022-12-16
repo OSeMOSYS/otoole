@@ -362,6 +362,7 @@ DiscountedSalvageValue:
     default: 0
     calculated: False
 DiscountedTechnologyEmissionsPenalty:
+    short_name: DiscountedTechEmissionsPenalty
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
     dtype: float
@@ -410,6 +411,7 @@ RateOfProductionByTechnology:
     default: 0
     calculated: True
 RateOfProductionByTechnologyByMode:
+    short_name: RateOfProductionByTechByMode
     indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, FUEL, YEAR]
     type: result
     dtype: float
@@ -470,6 +472,7 @@ StorageLevelYearFinish:
     default: 0
     calculated: False
 TotalAnnualTechnologyActivityByMode:
+    short_name: TotalAnnualTechActivityByMode
     indices: [REGION, TECHNOLOGY, MODE_OF_OPERATION, YEAR]
     type: result
     dtype: float
@@ -494,6 +497,7 @@ TotalTechnologyAnnualActivity:
     default: 0
     calculated: True
 TotalTechnologyModelPeriodActivity:
+    short_name: TotalTechModelPeriodActivity
     indices: [REGION, TECHNOLOGY]
     type: result
     dtype: float

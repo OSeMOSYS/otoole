@@ -10,6 +10,7 @@ class TestValidConfigs:
         SET_NAME:
           dtype: str
           type: set
+          short_name: SET
     """
 
     valid_parameter = """
@@ -18,6 +19,7 @@ class TestValidConfigs:
           type: param
           dtype: float
           default: 0
+          short_name: Parameter
         SET:
           dtype: str
           type: set
@@ -30,6 +32,7 @@ class TestValidConfigs:
           dtype: float
           default: 0
           calculated: True
+          short_name: Result
         SET:
           dtype: str
           type: set
@@ -45,55 +48,7 @@ class TestValidConfigs:
         validate_config(config)
 
 
-class TestInvalidConfig:
-    invalid_type = """
-        SET:
-          dtype: str
-          type: not_valid_type
-    """
-
-    invalid_parameter_type = """
-        Parameter:
-          indices: [SET]
-          type: not_valid_type
-          dtype: float
-          default: 0
-        SET:
-          dtype: str
-          type: set
-    """
-
-    invalid_result_type = """
-        Result:
-          indices: [SET]
-          type: not_valid_type
-          dtype: float
-          default: 0
-          calculated: True
-        SET:
-          dtype: str
-          type: set
-    """
-
-    invalid_name_spaces = """
-        SET WITH SPACES:
-          dtype: str
-          type: set
-    """
-
-    invalid_name_numbers = """
-        SETWITHNUMBERS123:
-          dtype: str
-          type: set
-    """
-
-    # does not inlcude underscores
-    invalid_name_special_chars = """
-        SETWITHSPECIALCHARS!@?%:
-          dtype: str
-          type: set
-    """
-
+class TestInvalidConfigs:
     invalid_duplicate_set_names = """
         SET:
           dtype: float
@@ -137,41 +92,43 @@ class TestInvalidConfig:
           type: set
     """
 
+    invalid_duplicate_names_diff_types_1 = """
+        Parameter:
+          indices: [SET]
+          type: param
+          dtype: float
+          default: 0
+        Parameter:
+          dtype: str
+          type: set
+    """
+
+    invalid_duplicate_names_diff_types_2 = """
+        Parameter:
+          indices: [SET]
+          type: param
+          dtype: float
+          default: 0
+        PARAMETER:
+          dtype: str
+          type: set
+    """
+
     config_data_duplicates = [
         invalid_duplicate_set_names,
         invalid_duplicate_param_names,
         invalid_duplicate_result_names,
+        invalid_duplicate_names_diff_types_1,
+        invalid_duplicate_names_diff_types_2,
     ]
 
     config_data_duplicates_ids = [
         "invalid_duplicate_set_names",
         "invalid_duplicate_param_names",
         "invalid_duplicate_result_names",
+        "invalid_duplicate_names_diff_types_1",
+        "invalid_duplicate_names_diff_types_2",
     ]
-
-    config_data_invalid = [
-        invalid_type,
-        invalid_parameter_type,
-        invalid_result_type,
-        invalid_name_spaces,
-        invalid_name_numbers,
-        invalid_name_special_chars,
-    ]
-
-    config_data_invalid_ids = [
-        "invalid_type",
-        "invalid_parameter_type",
-        "invalid_result_type",
-        "invalid_name_spaces",
-        "invalid_name_numbers",
-        "invalid_name_special_chars",
-    ]
-
-    @mark.parametrize("config_data", config_data_invalid, ids=config_data_invalid_ids)
-    def test_invalid_configs(self, config_data):
-        config = load(config_data, Loader=UniqueKeyLoader)
-        with raises(OtooleConfigFileError):
-            validate_config(config)
 
     @mark.parametrize(
         "config_data", config_data_duplicates, ids=config_data_duplicates_ids
@@ -181,56 +138,64 @@ class TestInvalidConfig:
             load(config_data, Loader=UniqueKeyLoader)
 
 
-class TestInvalidConfigSets:
-    invalid_dtype = """
-        SET:
-          dtype: float
-          type: set
-    """
-
-    invalid_name_length = """
-        SETNAMEWITHMORETHANTHIRTYONECHARS:
-          dtype: str
-          type: set
-    """
-
-    invalid_unexpected_field = """
+class TestUserDefinedValue:
+    invalid_set_type = """
         SET:
           dtype: str
-          type: set
-          fieldnotexpected: True
+          type: not_valid_type
     """
 
-    invalid_missing_field = """
-        SET:
-          type: set
-    """
-
-    config_data = [
-        invalid_dtype,
-        invalid_name_length,
-        invalid_missing_field,
-    ]
-
-    config_data_ids = [
-        "invalid_dtype",
-        "invalid_name_length",
-        "invalid_missing_field",
-    ]
-
-    @mark.parametrize("config_data", config_data, ids=config_data_ids)
-    def test_invalid_config_sets(self, config_data):
-        config = load(config_data, Loader=UniqueKeyLoader)
-        with raises(OtooleConfigFileError):
-            validate_config(config)
-
-
-class TestInvalidConfigParams:
-    invalid_dtype = """
+    invalid_parameter_type = """
         Parameter:
           indices: [SET]
+          type: not_valid_type
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    invalid_result_type = """
+        Result:
+          indices: [SET]
+          type: not_valid_type
+          dtype: float
+          default: 0
+          calculated: True
+        SET:
+          dtype: str
+          type: set
+    """
+
+    invalid_name_spaces = """
+        Parameter With Spaces:
+          indices: [SET]
           type: param
-          dtype: dict
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    invalid_name_numbers = """
+        Parameter12345:
+          indices: [SET]
+          type: param
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    # does not inlcude underscores
+    invalid_name_special_chars = """
+        Parameter!@?%[):
+          indices: [SET]
+          type: param
+          dtype: float
           default: 0
         SET:
           dtype: str
@@ -248,8 +213,9 @@ class TestInvalidConfigParams:
           type: set
     """
 
-    invalid_name_spaces = """
-        Param Name With Spaces:
+    invalid_short_name_spaces = """
+        Parameter:
+          short_name: Parameter Short Name
           indices: [SET]
           type: param
           dtype: float
@@ -259,8 +225,9 @@ class TestInvalidConfigParams:
           type: set
     """
 
-    invalid_name_numbers = """
-        ParamNameWithNumbers123:
+    invalid_short_name_numbers = """
+        Parameter:
+          short_name: ParameterShortName12345
           indices: [SET]
           type: param
           dtype: float
@@ -271,11 +238,123 @@ class TestInvalidConfigParams:
     """
 
     # does not inlcude underscores
-    invalid_name_special_chars = """
-        ParamNameWithSpecialChars!@?%:
+    invalid_short_name_special_chars = """
+        Parameter:
+          short_name: ParameterShortName!@?%[)
           indices: [SET]
           type: param
           dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    invalid_short_name_length_1 = """
+        Parameter:
+          short_name: ParameterShortNameLongerThanThirtyOneChars
+          indices: [SET]
+          type: param
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    invalid_short_name_length_2 = """
+        ParameterNameLongerThanThirtyOneChars:
+          short_name: ParameterShortNameLongerThanThirtyOneChars
+          indices: [SET]
+          type: param
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    config_data_invalid = [
+        invalid_set_type,
+        invalid_parameter_type,
+        invalid_result_type,
+        invalid_name_spaces,
+        invalid_name_numbers,
+        invalid_name_special_chars,
+        invalid_name_length,
+        invalid_short_name_spaces,
+        invalid_short_name_numbers,
+        invalid_short_name_special_chars,
+        invalid_short_name_length_1,
+        invalid_short_name_length_2,
+    ]
+
+    config_data_invalid_ids = [
+        "invalid_set_type",
+        "invalid_parameter_type",
+        "invalid_result_type",
+        "invalid_name_spaces",
+        "invalid_name_numbers",
+        "invalid_name_special_chars",
+        "invalid_name_length",
+        "invalid_short_name_spaces",
+        "invalid_short_name_numbers",
+        "invalid_short_name_special_chars",
+        "invalid_short_name_length_1",
+        "invalid_short_name_length_2",
+    ]
+
+    @mark.parametrize("config_data", config_data_invalid, ids=config_data_invalid_ids)
+    def test_invalid_configs(self, config_data):
+        config = load(config_data, Loader=UniqueKeyLoader)
+        with raises(OtooleConfigFileError):
+            validate_config(config)
+
+
+class TestUserDefinedSet:
+    invalid_dtype = """
+        SET:
+          dtype: float
+          type: set
+    """
+
+    invalid_unexpected_field = """
+        SET:
+          dtype: str
+          type: set
+          fieldnotexpected: True
+    """
+
+    invalid_missing_field = """
+        SET:
+          type: set
+    """
+
+    config_data = [
+        invalid_dtype,
+        invalid_unexpected_field,
+        invalid_missing_field,
+    ]
+
+    config_data_ids = [
+        "invalid_dtype",
+        "invalid_unexpected_field",
+        "invalid_missing_field",
+    ]
+
+    @mark.parametrize("config_data", config_data, ids=config_data_ids)
+    def test_invalid_config_sets(self, config_data):
+        config = load(config_data, Loader=UniqueKeyLoader)
+        with raises(OtooleConfigFileError):
+            validate_config(config)
+
+
+class TestUserDefinedParameter:
+    invalid_dtype = """
+        Parameter:
+          indices: [SET]
+          type: param
+          dtype: dict
           default: 0
         SET:
           dtype: str
@@ -328,10 +407,6 @@ class TestInvalidConfigParams:
 
     config_data = [
         invalid_dtype,
-        invalid_name_length,
-        invalid_name_spaces,
-        invalid_name_numbers,
-        invalid_name_special_chars,
         invalid_unexpected_field,
         invalid_missing_field,
         invalid_missing_index,
@@ -339,10 +414,6 @@ class TestInvalidConfigParams:
     ]
     config_data_ids = [
         "invalid_dtype",
-        "invalid_name_length",
-        "invalid_name_spaces",
-        "invalid_name_numbers",
-        "invalid_name_special_chars",
         "invalid_unexpected_field",
         "invalid_missing_field",
         "invalid_missing_index",
@@ -368,55 +439,6 @@ class TestInvalidConfigResults:
           type: set
     """
 
-    invalid_name_length = """
-        ResultNameLongerThanThirtyOneChars:
-          indices: [SET]
-          type: result
-          dtype: float
-          default: 0
-          calculated: True
-        SET:
-          dtype: str
-          type: set
-    """
-
-    invalid_name_spaces = """
-        Result Name With Spaces:
-          indices: [SET]
-          type: result
-          dtype: float
-          default: 0
-          calculated: True
-        SET:
-          dtype: str
-          type: set
-    """
-
-    invalid_name_numbers = """
-        ResultNameWithNumbers123:
-          indices: [SET]
-          type: result
-          dtype: float
-          default: 0
-          calculated: True
-        SET:
-          dtype: str
-          type: set
-    """
-
-    # does not inlcude underscores
-    invalid_name_special_chars = """
-        ResultNameWithSpecialChars!@?%:
-          indices: [SET]
-          type: result
-          dtype: float
-          default: 0
-          calculated: True
-        SET:
-          dtype: str
-          type: set
-    """
-
     invalid_unexpected_field = """
         Result:
           indices: [SET]
@@ -467,10 +489,6 @@ class TestInvalidConfigResults:
 
     config_data = [
         invalid_dtype,
-        invalid_name_length,
-        invalid_name_spaces,
-        invalid_name_numbers,
-        invalid_name_special_chars,
         invalid_unexpected_field,
         invalid_missing_field,
         invalid_missing_index,
@@ -478,10 +496,6 @@ class TestInvalidConfigResults:
     ]
     config_data_ids = [
         "invalid_dtype",
-        "invalid_name_length",
-        "invalid_name_spaces",
-        "invalid_name_numbers",
-        "invalid_name_special_chars",
         "invalid_unexpected_field",
         "invalid_missing_field",
         "invalid_missing_index",

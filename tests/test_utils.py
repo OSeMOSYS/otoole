@@ -126,9 +126,7 @@ class TestYamlUniqueKeyReader:
             """
         return data
 
-    @pytest.fixture()
-    def invalid_yaml(self):
-        data = """
+    invalid_yaml_1 = """
             Key1:
               data1: valid data
               data2: 123
@@ -136,7 +134,15 @@ class TestYamlUniqueKeyReader:
               data1: valid data
               data2: 123
             """
-        return data
+
+    invalid_yaml_2 = """
+            Key1:
+              data1: valid data
+              data2: 123
+            KEY1:
+              data1: valid data
+              data2: 123
+            """
 
     def test_valid_yaml(self, valid_yaml):
         actual = yaml.load(valid_yaml, Loader=UniqueKeyLoader)
@@ -146,6 +152,10 @@ class TestYamlUniqueKeyReader:
         }
         assert actual == expected
 
+    invalid_yamls = [invalid_yaml_1, invalid_yaml_2]
+    invalid_yaml_ids = ["invalid_yaml_1", "invalid_yaml_2"]
+
+    @pytest.mark.parametrize("invalid_yaml", invalid_yamls, ids=invalid_yaml_ids)
     def test_invalid_yaml(self, invalid_yaml):
         with pytest.raises(ValueError):
             yaml.load(invalid_yaml, Loader=UniqueKeyLoader)

@@ -249,6 +249,7 @@ class UniqueKeyLoader(SafeLoader):
         mapping = []
         for key_node, _ in node.value:
             key = self.construct_object(key_node, deep=deep)
+            key = key.upper()
             if key in mapping:
                 raise ValueError(f"{key} -> defined more than once")
             mapping.append(key)
