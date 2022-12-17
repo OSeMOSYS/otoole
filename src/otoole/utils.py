@@ -196,7 +196,7 @@ def validate_config(config: Dict) -> None:
 
     if errors:
         error_message = "\n".join(errors)
-        raise OtooleConfigFileError(message=error_message)
+        raise OtooleConfigFileError(message=f"\n{error_message}")
 
 
 def format_config_for_validation(config_in: Dict) -> List:
@@ -240,6 +240,14 @@ def format_config_for_validation(config_in: Dict) -> List:
 
 class UniqueKeyLoader(SafeLoader):
     """YALM Loader to find duplicate keys
+
+    This loader will treat lowercase and uppercase keys as the same. Meaning,
+    the keys "SampleKey" and "SAMPLEKEY" are considered the same.
+
+    Raises
+    ------
+    ValueError
+        If a key is defined more than once.
 
     Adapted from:
     https://stackoverflow.com/a/63215043/14961492

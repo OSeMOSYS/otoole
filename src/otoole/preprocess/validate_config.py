@@ -22,9 +22,11 @@ class UserDefinedValue(BaseModel):
 
     @validator("type")
     @classmethod
-    def check_param_type(cls, value):
+    def check_param_type(cls, value, values):
         if value not in ["param", "result", "set"]:
-            raise ValueError(f"{value} -> Type must be 'param', 'result', or 'set'")
+            raise ValueError(
+                f"{values['name']} -> Type must be 'param', 'result', or 'set'"
+            )
         return value
 
     @validator("name", "short_name")
@@ -77,9 +79,9 @@ class UserDefinedSet(UserDefinedValue):
 
     @validator("dtype")
     @classmethod
-    def check_dtype(cls, value):
+    def check_dtype(cls, value, values):
         if value not in ["str", "int"]:
-            raise ValueError(f"{value} -> Value must be a 'str' or 'int'")
+            raise ValueError(f"{values['name']} -> Value must be a 'str' or 'int'")
         return value
 
 
@@ -88,9 +90,9 @@ class UserDefinedParameter(UserDefinedValue):
 
     @validator("dtype")
     @classmethod
-    def check_dtype(cls, value):
+    def check_dtype(cls, value, values):
         if value not in ["float", "int"]:
-            raise ValueError(f"{value} -> Value must be an 'int' or 'float'")
+            raise ValueError(f"{values['name']} -> Value must be an 'int' or 'float'")
         return value
 
     @root_validator(pre=True)
@@ -129,9 +131,9 @@ class UserDefinedResult(UserDefinedValue):
 
     @validator("dtype")
     @classmethod
-    def check_dtype(cls, value):
+    def check_dtype(cls, value, values):
         if value not in ["float", "int"]:
-            raise ValueError(f"{value} -> Value must be an 'int' or 'float'")
+            raise ValueError(f"{values['name']} -> Value must be an 'int' or 'float'")
         return value
 
     @root_validator(pre=True)
