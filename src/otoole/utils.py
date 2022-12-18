@@ -4,8 +4,17 @@ import os
 from typing import Dict, List, Union
 
 from datapackage import Package
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 from yaml import SafeLoader, load  # type: ignore
+
+from otoole.exceptions import OtooleConfigFileError
+from otoole.preprocess.validate_config import (
+    UserDefinedParameter,
+    UserDefinedResult,
+    UserDefinedSet,
+    UserDefinedValue,
+)
 
 try:
     import importlib.resources as resources
@@ -18,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def _read_file(open_file, ending):
     if ending == ".yaml" or ending == ".yml":
-        contents = load(open_file, Loader=SafeLoader)  # typing: Dict
+        contents = load(open_file, Loader=UniqueKeyLoader)  # typing: Dict
     elif ending == ".json":
         contents = json.load(open_file)  # typing: Dict
     else:
@@ -134,3 +143,127 @@ def create_name_mappings(
         return csv_to_excel
     else:
         return {v: k for k, v in csv_to_excel.items()}
+
+
+def validate_config(config: Dict) -> None:
+    """Validates user input data
+
+    Arguments
+    ---------
+    config: Dict
+        Read in user config yaml file
+
+    Raises
+    ------
+    ValidationError
+        If the user inputs are not valid
+    """
+
+    # For validating with json scheam
+    """
+    with open('src/otoole/preprocess/schema.json') as f:
+        schema = load(f, Loader=SafeLoader)
+    validate(config, schema=schema)
+    """
+
+    # For validating with pydantic
+    config_flattened = format_config_for_validation(config)
+    user_defined_sets = get_all_sets(config)
+
+    errors = []
+    for input_data in config_flattened:
+        try:
+            if "type" not in input_data:
+                UserDefinedValue(**input_data)
+            elif input_data["type"] == "param":
+                input_data["defined_sets"] = user_defined_sets
+                UserDefinedParameter(**input_data)
+            elif input_data["type"] == "result":
+                input_data["defined_sets"] = user_defined_sets
+                UserDefinedResult(**input_data)
+            elif input_data["type"] == "set":
+                UserDefinedSet(**input_data)
+            else:
+                # have pydantic raise an error
+                UserDefinedValue(
+                    name=input_data["name"],
+                    type=input_data["type"],
+                    dtype=input_data["dtype"],
+                )
+        except ValidationError as ex:
+            errors_caught = [x["msg"] for x in ex.errors()]
+            errors.extend(errors_caught)
+
+    if errors:
+        error_message = "\n".join(errors)
+        raise OtooleConfigFileError(message=f"\n{error_message}")
+
+
+def format_config_for_validation(config_in: Dict) -> List:
+    """Formats config for validation function.
+
+    Flattens dictionary to a list
+
+    Arguments
+    ---------
+    config_in: Dict
+        Read in user config yaml file
+
+    Returns
+    -------
+    config_out: List
+
+    Example
+    -------
+    >>> config_in
+    >>> AccumulatedAnnualDemand:
+          indices: [REGION,FUEL,YEAR]
+          type: param
+          dtype: float
+          default: 0
+
+    >>> config_out
+    >>> [{
+        name: AccumulatedAnnualDemand
+        indices: [REGION,FUEL,YEAR]
+        type: param
+        dtype: float
+        default: 0
+        }, ... ]
+    """
+    config_out = []
+    for name, data in config_in.items():
+        flattened_data = {"name": name, **data}
+        config_out.append(flattened_data)
+    return config_out
+
+
+class UniqueKeyLoader(SafeLoader):
+    """YALM Loader to find duplicate keys
+
+    This loader will treat lowercase and uppercase keys as the same. Meaning,
+    the keys "SampleKey" and "SAMPLEKEY" are considered the same.
+
+    Raises
+    ------
+    ValueError
+        If a key is defined more than once.
+
+    Adapted from:
+    https://stackoverflow.com/a/63215043/14961492
+    """
+
+    def construct_mapping(self, node, deep=False):
+        mapping = []
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            key = key.upper()
+            if key in mapping:
+                raise ValueError(f"{key} -> defined more than once")
+            mapping.append(key)
+        return super().construct_mapping(node, deep)
+
+
+def get_all_sets(config: Dict) -> List:
+    """Extracts user defined sets"""
+    return [x for x, y in config.items() if y["type"] == "set"]

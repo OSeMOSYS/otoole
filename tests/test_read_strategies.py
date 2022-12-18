@@ -251,7 +251,7 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
         reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
-        print(actual)
+        # print(actual)
         expected = pd.DataFrame(
             [
                 ["TotalDiscountedCost", "SIMPLICITY,2014", 1.9360385416218188e02],
@@ -273,7 +273,7 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
         reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
-        print(actual)
+        # print(actual)
         expected = (
             pd.DataFrame(
                 [

@@ -41,6 +41,23 @@ class OtooleRelationError(OtooleException):
         self.message = message
 
 
+class OtooleConfigFileError(OtooleException):
+    """Config file validation error
+
+    Arguments
+    ---------
+    message: str
+        Message to display to users
+    """
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+    def __str__(self):
+        return f"{self.message}"
+
+
 class OtooleExcelNameLengthError(OtooleException):
     """Invalid tab name for writing to Excel."""
 

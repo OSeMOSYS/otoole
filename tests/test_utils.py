@@ -3,10 +3,16 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
+import yaml
 
 from otoole.exceptions import OtooleExcelNameLengthError, OtooleExcelNameMismatchError
 from otoole.read_strategies import ReadExcel
-from otoole.utils import create_name_mappings, extract_config, read_packaged_file
+from otoole.utils import (
+    UniqueKeyLoader,
+    create_name_mappings,
+    extract_config,
+    read_packaged_file,
+)
 from otoole.write_strategies import WriteExcel
 
 
@@ -105,3 +111,51 @@ def test_excel_name_length_error(user_config_simple, request):
             handle=pd.ExcelWriter(handle),
             default=0,
         )
+
+
+class TestYamlUniqueKeyReader:
+    @pytest.fixture()
+    def valid_yaml(self):
+        data = """
+            Key1:
+              data1: valid data
+              data2: 123
+            Key2:
+              data1: valid data
+              data2: 123
+            """
+        return data
+
+    invalid_yaml_1 = """
+            Key1:
+              data1: valid data
+              data2: 123
+            Key1:
+              data1: valid data
+              data2: 123
+            """
+
+    invalid_yaml_2 = """
+            Key1:
+              data1: valid data
+              data2: 123
+            KEY1:
+              data1: valid data
+              data2: 123
+            """
+
+    def test_valid_yaml(self, valid_yaml):
+        actual = yaml.load(valid_yaml, Loader=UniqueKeyLoader)
+        expected = {
+            "Key1": {"data1": "valid data", "data2": 123},
+            "Key2": {"data1": "valid data", "data2": 123},
+        }
+        assert actual == expected
+
+    invalid_yamls = [invalid_yaml_1, invalid_yaml_2]
+    invalid_yaml_ids = ["invalid_yaml_1", "invalid_yaml_2"]
+
+    @pytest.mark.parametrize("invalid_yaml", invalid_yamls, ids=invalid_yaml_ids)
+    def test_invalid_yaml(self, invalid_yaml):
+        with pytest.raises(ValueError):
+            yaml.load(invalid_yaml, Loader=UniqueKeyLoader)
