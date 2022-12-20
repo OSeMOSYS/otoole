@@ -944,6 +944,22 @@ class TestReadExcel:
 
         assert (actual_data == expected).all()
 
+    def test_read_excel_discount_rate(self, user_config):
+        """Tests that parameters not in excel are saved in datastore"""
+
+        spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        xl = pd.ExcelFile(spreadsheet, engine="openpyxl")
+
+        # checks that fixture does not contian discount rate data
+        assert "DiscountRateIdv" not in xl.sheet_names
+
+        reader = ReadExcel(user_config=user_config)
+        actual, _ = reader.read(spreadsheet)
+
+        # checks that discount rate has data after reading in excel data
+        assert "DiscountRateIdv" in actual
+        assert actual["DiscountRateIdv"].empty
+
     def test_narrow_parameters(self, user_config):
         data = [
             ["IW0016", 0.238356164, 0.238356164, 0.238356164],
@@ -1000,3 +1016,20 @@ class TestReadExcel:
             ).set_index(["TIMESLICE", "YEAR"])
         }
         pd.testing.assert_frame_equal(actual["YearSplit"], expected["YearSplit"])
+
+    def test_get_missing_params(self, user_config):
+
+        # scenario where AccumulatedAnnualDemand is not provided in input excel file
+        params = [x for x, y in user_config.items() if y["type"] == "param"]
+        input_data = {x: pd.DataFrame() for x in params}
+        del input_data["AccumulatedAnnualDemand"]
+
+        indices = user_config["AccumulatedAnnualDemand"]["indices"]
+        columns = indices + ["VALUE"]
+        expected = pd.DataFrame(columns=columns)
+        expected.set_index(indices)
+
+        reader = ReadExcel(user_config=user_config)
+        actual = reader._get_missing_params(input_data=input_data)
+
+        pd.testing.assert_frame_equal(actual["AccumulatedAnnualDemand"], expected)

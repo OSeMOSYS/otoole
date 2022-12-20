@@ -125,6 +125,8 @@ class ReadExcel(_ReadTabular):
 
             input_data[mod_name] = narrow
 
+        input_data = self._get_missing_params(input_data)
+
         input_data = self._check_index(input_data)
 
         return input_data, default_values
@@ -155,6 +157,36 @@ class ReadExcel(_ReadTabular):
         for sheet_name in sheet_names:
             if sheet_name not in config_param_names:
                 raise OtooleExcelNameMismatchError(excel_name=sheet_name)
+
+    def _get_missing_params(
+        self, input_data: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
+        """Creates empty dataframes for missing parameters
+
+        Arguments:
+        ----------
+        input_data: Dict[str, pd.DataFrame]
+            Data read in from the excel notebook
+
+        Returns:
+        --------
+        all_params: Dict[str, pd.DataFrame]
+            Input data plus empty dataframes for data not included in excel notebook
+        """
+
+        all_parameters = [
+            param for param, data in self.user_config.items() if data["type"] == "param"
+        ]
+        missing_params = [x for x in all_parameters if x not in input_data]
+
+        for param in missing_params:
+            indices = self.user_config[param]["indices"]
+            df = pd.DataFrame(columns=indices)
+            df.set_index(indices)
+            df["VALUE"] = ""
+            input_data[param] = df
+
+        return input_data
 
 
 class ReadCsv(_ReadTabular):
