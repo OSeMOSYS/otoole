@@ -17,15 +17,12 @@ otoole : OSeMOSYS tools for energy work
 
 A Python toolkit to support use of OSeMOSYS
 
-
 Description
 ===========
 
 **otoole** is a Python package which provides a command-line interface
-for users of OSeMOSYS.
-
-The aim of the package is to provide commonly used pre- and post-processing steps
-for OSeMOSYS.
+for users of OSeMOSYS.The aim of the package is to provide commonly used pre-
+and post-processing steps for OSeMOSYS.
 
 .. image:: img/osemosys_dataflow.png
 
@@ -35,52 +32,28 @@ as well as different implementations of the OSeMOSYS model.
 This improves interoperability of analyses and
 generally makes life a little bit easier.
 
-Dependencies
-------------
-
-*otoole* requires a number of dependencies.
-The easiest way to install the dependencies is to use miniconda.
-
-1. Obtain the `miniconda package: <https://docs.conda.io/en/latest/miniconda.html>`_
-2. Add the **conda-forge** channel ``conda config --add channels conda-forge``
-3. Create a new Python environment
-   ``conda create -n otoole python=3.7 networkx datapackage
-   pandas graphviz=2.46.1 xlrd``
-4. Activate the new environment ``conda activate otoole``
-5. Use pip to install otoole ``pip install otoole``
-
-
 Installation
 ============
 
-Install **otoole** using pip::
+``otoole`` can be installed through ``pip``::
 
     pip install otoole
 
-
-To upgrade **otoole** using pip::
-
-    pip install otoole --upgrade
-
-
-Usage
-=====
-
-For detailed instructions of the use of the tool, run the command line
-help function::
+For instructions of the use of the tool, run the command line help function::
 
     otoole --help
 
 Documentation
 =============
-A more detailed documentation of otoole can be found here: https://otoole.readthedocs.io/en/stable/index.html
+A more detailed documentation of otoole can be found here:
+https://otoole.readthedocs.io/en/stable/index.html
 
 Contributing
 ============
 
-New ideas and bugs `should be submitted: <https://github.com/OSeMOSYS/otoole/issues/new>`_ to the repository Issue Tracker.
-Please do contribute by discussing and developing these ideas further,
-or by developing the codebase.
+New ideas and bugs `should be submitted: <https://github.com/OSeMOSYS/otoole/issues/new>`_
+to the repository Issue Tracker. Please do contribute by discussing and developing these
+ideas further, or by developing the codebase.
 
 To contribute directly to the documentation of code development, you
 first need to install the package in *develop mode*::
