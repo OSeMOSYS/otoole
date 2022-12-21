@@ -1066,7 +1066,7 @@ class TestReadCSV:
         expected = pd.DataFrame([["SIMPLICITY"]], columns=["VALUE"])
         pd.testing.assert_frame_equal(actual, expected)
 
-    def test_read_csvs_empty(self, simple_config, filepath):
+    def test_read_csvs_empty_param(self, simple_config, filepath):
         reader = ReadCsv(user_config=simple_config)
         data, _ = reader.read(filepath=filepath)
         actual = data["AvailabilityFactor"]
@@ -1083,6 +1083,14 @@ class TestReadCSV:
         )
         expected = expected.set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_read_csvs_empty_set(self, simple_config, filepath):
+        reader = ReadCsv(user_config=simple_config)
+        data, _ = reader.read(filepath=filepath)
+        actual = data["TECHNOLOGY"]
+        expected = pd.DataFrame(columns=["VALUE"])
+        expected = expected.astype({"VALUE": "str"})
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_read_csvs_default_values(self, simple_config, filepath):
