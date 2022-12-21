@@ -1000,3 +1000,11 @@ class TestReadExcel:
             ).set_index(["TIMESLICE", "YEAR"])
         }
         pd.testing.assert_frame_equal(actual["YearSplit"], expected["YearSplit"])
+
+
+class TestReadCSV:
+    def test_read_params_sets(self, user_config):
+        pass
+
+    def test_read_default_values(self, user_config):
+        pass

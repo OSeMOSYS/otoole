@@ -167,8 +167,11 @@ class ReadCsv(_ReadTabular):
         input_data = {}
 
         default_values = self._read_default_values(self.user_config)
+        input_params = [
+            x for x, y in self.user_config.items() if y["type"] in ["param", "set"]
+        ]
 
-        for parameter, details in self.user_config.items():
+        for parameter in input_params:
             logger.info("Looking for %s", parameter)
             config_details = self.user_config[parameter]
 
