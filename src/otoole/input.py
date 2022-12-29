@@ -215,7 +215,12 @@ class WriteStrategy(Strategy):
 
     @abstractmethod
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: TextIO,
+        default: float,
+        **kwargs,
     ) -> pd.DataFrame:
         """Write parameter data"""
         raise NotImplementedError()
@@ -262,7 +267,7 @@ class WriteStrategy(Strategy):
 
             if entity_type != "set":
                 default_value = default_values[name]
-                self._write_parameter(df, name, handle, default=default_value)
+                self._write_parameter(df, name, handle, default=default_value, **kwargs)
             else:
                 self._write_set(df, name, handle)
 
