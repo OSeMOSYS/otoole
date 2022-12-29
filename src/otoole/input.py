@@ -407,6 +407,46 @@ class ReadStrategy(Strategy):
 
         return input_data
 
+    def _get_missing_input_dataframes(
+        self, input_data: Dict[str, pd.DataFrame], config_type: str
+    ) -> Dict[str, pd.DataFrame]:
+        """Creates empty dataframes if user config data does not exist
+
+        Arguments:
+        ----------
+        input_data: Dict[str, pd.DataFrame]
+            Data read in from the excel notebook
+        config_type: str
+            Type of value. Must be "set", "param", or "result"
+
+        Returns:
+        --------
+        all_params: Dict[str, pd.DataFrame]
+            Input data plus empty dataframes
+        """
+
+        if config_type not in ["set", "param", "result"]:
+            raise ValueError(f"{config_type} not of type 'set', 'param', or 'result'")
+
+        all_values = [
+            value
+            for value, data in self.user_config.items()
+            if data["type"] == config_type
+        ]
+        missing_values = [x for x in all_values if x not in input_data]
+
+        for value in missing_values:
+            try:  # param and result condition
+                indices = self.user_config[value]["indices"]
+                df = pd.DataFrame(columns=indices)
+                df = df.set_index(indices)
+            except KeyError:  # set condition
+                df = pd.DataFrame()
+            df["VALUE"] = ""
+            input_data[value] = df
+
+        return input_data
+
     @abstractmethod
     def read(
         self, filepath: Union[str, TextIO], **kwargs
