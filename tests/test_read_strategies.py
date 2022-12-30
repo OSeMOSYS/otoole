@@ -4,9 +4,8 @@ from textwrap import dedent
 from typing import List
 
 import pandas as pd
-import yaml
 from amply import Amply
-from pytest import fixture, mark
+from pytest import mark
 
 from otoole import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
 from otoole.preprocess.longify_data import check_datatypes
@@ -1004,98 +1003,31 @@ class TestReadExcel:
 
 
 class TestReadCSV:
-    @fixture(scope="class")
-    def simple_config(self):
-        config = """
-            REGION:
-              dtype: str
-              type: set
-            FUEL:
-              dtype: str
-              type: set
-            TECHNOLOGY:
-              dtype: str
-              type: set
-            YEAR:
-              dtype: int
-              type: set
-            AccumulatedAnnualDemand:
-              indices: [REGION,FUEL,YEAR]
-              type: param
-              dtype: float
-              default: 0
-            AvailabilityFactor:
-              indices: [REGION,TECHNOLOGY,YEAR]
-              type: param
-              dtype: float
-              default: 1
-            AnnualEmissions:
-              indices: [REGION,EMISSION,YEAR]
-              type: result
-              dtype: float
-              default: 0
-              calculated: True
-            """
-        return yaml.load(config, Loader=yaml.SafeLoader)
+    accumulated_annual_demand_df = pd.DataFrame(
+        [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            ["SIMPLICITY", "RAWSUG", 2015, 0.51],
+            ["SIMPLICITY", "ETH", 2016, 1.061],
+            ["SIMPLICITY", "RAWSUG", 2016, 0.519],
+        ],
+        columns=["REGION", "FUEL", "YEAR", "VALUE"],
+    )
+    availability_factor_df = pd.DataFrame(
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+    )
 
-    @fixture(scope="class")
-    def filepath(self):
-        return os.path.join("tests", "fixtures", "data")
+    test_data = [
+        ("AccumulatedAnnualDemand", accumulated_annual_demand_df),
+        ("AvailabilityFactor", availability_factor_df),
+    ]
 
-    def test_read_csvs_full_param(self, simple_config, filepath):
-        reader = ReadCsv(user_config=simple_config)
-        data, _ = reader.read(filepath=filepath)
-        actual = data["AccumulatedAnnualDemand"]
-        expected = pd.DataFrame(
-            [
-                ["SIMPLICITY", "ETH", 2014, 1.0],
-                ["SIMPLICITY", "RAWSUG", 2014, 0.5],
-                ["SIMPLICITY", "ETH", 2015, 1.03],
-                ["SIMPLICITY", "RAWSUG", 2015, 0.51],
-                ["SIMPLICITY", "ETH", 2016, 1.061],
-                ["SIMPLICITY", "RAWSUG", 2016, 0.519],
-            ],
-            columns=["REGION", "FUEL", "YEAR", "VALUE"],
-        ).set_index(["REGION", "FUEL", "YEAR"])
-        pd.testing.assert_frame_equal(actual, expected)
-
-    def test_read_csvs_full_set(self, simple_config, filepath):
-        reader = ReadCsv(user_config=simple_config)
-        data, _ = reader.read(filepath=filepath)
-        actual = data["REGION"]
-        expected = pd.DataFrame([["SIMPLICITY"]], columns=["VALUE"])
-        pd.testing.assert_frame_equal(actual, expected)
-
-    def test_read_csvs_empty_param(self, simple_config, filepath):
-        reader = ReadCsv(user_config=simple_config)
-        data, _ = reader.read(filepath=filepath)
-        actual = data["AvailabilityFactor"]
-        expected = pd.DataFrame(columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"])
-
-        # empty dataframe can not infer datatypes
-        expected = expected.astype(
-            {
-                "REGION": "str",
-                "TECHNOLOGY": "str",
-                "YEAR": "int64",
-                "VALUE": "float64",
-            }
-        )
-        expected = expected.set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    @mark.parametrize("parameter, expected", test_data, ids=["full", "empty"])
+    def test_get_input_data_empty(self, user_config, parameter, expected):
+        reader = ReadCsv(user_config=user_config)
+        filepath = os.path.join("tests", "fixtures", "data")
+        details = user_config[parameter]
+        actual = reader._get_input_data(filepath, parameter, details)
 
         pd.testing.assert_frame_equal(actual, expected)
-
-    def test_read_csvs_empty_set(self, simple_config, filepath):
-        reader = ReadCsv(user_config=simple_config)
-        data, _ = reader.read(filepath=filepath)
-        actual = data["TECHNOLOGY"]
-        expected = pd.DataFrame(columns=["VALUE"])
-        expected = expected.astype({"VALUE": "str"})
-        pd.testing.assert_frame_equal(actual, expected)
-
-    def test_read_csvs_default_values(self, simple_config, filepath):
-        reader = ReadCsv(user_config=simple_config)
-        _, defaults = reader.read(filepath=filepath)
-
-        assert defaults["AccumulatedAnnualDemand"] == 0
-        assert defaults["AvailabilityFactor"] == 1

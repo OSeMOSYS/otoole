@@ -167,36 +167,25 @@ class ReadCsv(_ReadTabular):
         input_data = {}
 
         default_values = self._read_default_values(self.user_config)
-        input_params = [
-            x for x, y in self.user_config.items() if y["type"] in ["param", "set"]
-        ]
 
-        for parameter in input_params:
+        for parameter, details in self.user_config.items():
             logger.info("Looking for %s", parameter)
-            config_details = self.user_config[parameter]
 
-            csv_path = os.path.join(filepath, parameter + ".csv")
-
-            try:
-                df = pd.read_csv(csv_path)
-            except pd.errors.EmptyDataError:
-                logger.error("No data found in file for %s", parameter)
-                expected_columns = config_details["indices"]
-                default_columns = expected_columns + ["VALUE"]
-                df = pd.DataFrame(columns=default_columns)
-
-            entity_type = self.user_config[parameter]["type"]
+            entity_type = details["type"]
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details["indices"], parameter)
+                df = self._get_input_data(filepath, parameter, details)
+                narrow = self._check_parameter(df, details["indices"], parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
                         narrow, self.user_config, parameter
                     )
                 else:
                     narrow_checked = narrow
+
             elif entity_type == "set":
-                narrow = self._check_set(df, config_details, parameter)
+                df = self._get_input_data(filepath, parameter, details)
+                narrow = self._check_set(df, details, parameter)
                 if not narrow.empty:
                     narrow_checked = check_set_datatype(
                         narrow, self.user_config, parameter
@@ -209,6 +198,39 @@ class ReadCsv(_ReadTabular):
         input_data = self._check_index(input_data)
 
         return input_data, default_values
+
+    @staticmethod
+    def _get_input_data(
+        filepath: str,
+        parameter: str,
+        details: Dict,
+    ) -> pd.DataFrame:
+        """Reads in and checks CSV data format.
+
+        Arguments
+        ---------
+        filepath:str
+            Directory of csv files
+        parameter:str
+            parameter name
+        config_details: dict[str,Union[str,float,int]]
+            configuration data for the parameter being read in
+
+        Returns
+        -------
+        pd.DataFrame
+            CSV data as a dataframe
+        """
+        csv_path = os.path.join(filepath, parameter + ".csv")
+
+        try:
+            df = pd.read_csv(csv_path)
+        except pd.errors.EmptyDataError:
+            logger.error("No data found in file for %s", parameter)
+            expected_columns = details["indices"]
+            default_columns = expected_columns + ["VALUE"]
+            df = pd.DataFrame(columns=default_columns)
+        return df
 
 
 class ReadDatapackage(ReadStrategy):
