@@ -46,7 +46,12 @@ class DummyWriteStrategy(WriteStrategy):
         raise NotImplementedError()
 
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: TextIO,
+        default: float,
+        **kwargs
     ) -> pd.DataFrame:
         raise NotImplementedError()
 
