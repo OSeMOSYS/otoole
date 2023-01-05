@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy import create_engine
 from yaml import SafeLoader, load  # type: ignore
 
-from otoole.exceptions import OtooleConfigFileError
+from otoole.exceptions import OtooleConfigFileError, OtooleDeprecationError
 from otoole.preprocess.validate_config import (
     UserDefinedParameter,
     UserDefinedResult,
@@ -159,13 +159,6 @@ def validate_config(config: Dict) -> None:
         If the user inputs are not valid
     """
 
-    # For validating with json scheam
-    """
-    with open('src/otoole/preprocess/schema.json') as f:
-        schema = load(f, Loader=SafeLoader)
-    validate(config, schema=schema)
-    """
-
     # For validating with pydantic
     config_flattened = format_config_for_validation(config)
     user_defined_sets = get_all_sets(config)
@@ -236,6 +229,35 @@ def format_config_for_validation(config_in: Dict) -> List:
         flattened_data = {"name": name, **data}
         config_out.append(flattened_data)
     return config_out
+
+
+def read_deprecated_datapackage(input_datapackage: str) -> str:
+    """Checks filepath for CSVs if a datapackage is provided
+
+    Arguments
+    ---------
+    input_datapackage: str
+        Location of input datapackge
+
+    Returns
+    -------
+    input_csvs: str
+        Location of input csv files
+
+    Raises
+    ------
+    OtooleDeprecationError
+        If no 'data/' directory is found
+    """
+
+    input_csvs = os.path.join(os.path.dirname(input_datapackage), "data")
+    if os.path.exists(input_csvs):
+        return input_csvs
+    else:
+        raise OtooleDeprecationError(
+            resource="datapackage.json",
+            message="datapackage format no longer supported and no csv data found",
+        )
 
 
 class UniqueKeyLoader(SafeLoader):

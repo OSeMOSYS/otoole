@@ -5,12 +5,17 @@ import pandas as pd
 import pytest
 import yaml
 
-from otoole.exceptions import OtooleExcelNameLengthError, OtooleExcelNameMismatchError
+from otoole.exceptions import (
+    OtooleDeprecationError,
+    OtooleExcelNameLengthError,
+    OtooleExcelNameMismatchError,
+)
 from otoole.read_strategies import ReadExcel
 from otoole.utils import (
     UniqueKeyLoader,
     create_name_mappings,
     extract_config,
+    read_deprecated_datapackage,
     read_packaged_file,
 )
 from otoole.write_strategies import WriteExcel
@@ -159,3 +164,21 @@ class TestYamlUniqueKeyReader:
     def test_invalid_yaml(self, invalid_yaml):
         with pytest.raises(ValueError):
             yaml.load(invalid_yaml, Loader=UniqueKeyLoader)
+
+
+def test_successful_read_deprecated_datapackage(tmp_path):
+    f = tmp_path / "input/datapackage.json"
+    f.parent.mkdir()
+    f.touch()
+    csvs = tmp_path / "input/data"
+    csvs.mkdir()
+    actual = read_deprecated_datapackage(f)
+    assert actual == str(csvs)
+
+
+def test_unsuccessful_read_deprecated_datapackage(tmp_path):
+    f = tmp_path / "input/datapackage.json"
+    f.parent.mkdir()
+    f.touch()
+    with pytest.raises(OtooleDeprecationError):
+        read_deprecated_datapackage(f)

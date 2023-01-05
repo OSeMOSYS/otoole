@@ -49,17 +49,20 @@ from otoole import (
     ReadCplex,
     ReadCsv,
     ReadDatafile,
-    ReadDatapackage,
     ReadExcel,
     ReadGurobi,
     WriteCsv,
     WriteDatafile,
-    WriteDatapackage,
     WriteExcel,
     __version__,
 )
 from otoole.input import Context
-from otoole.utils import _read_file, read_packaged_file, validate_config
+from otoole.utils import (
+    _read_file,
+    read_deprecated_datapackage,
+    read_packaged_file,
+    validate_config,
+)
 from otoole.validate import main as validate
 from otoole.visualise import create_res
 
@@ -121,7 +124,11 @@ def result_matrix(args):
         write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
 
     if args.input_datapackage:
-        input_data, _ = ReadDatapackage(user_config=config).read(args.input_datapackage)
+        logger.warning(
+            "Reading from datapackage is deprecated, trying to read from CSVs"
+        )
+        input_csvs = read_deprecated_datapackage(args.input_datapackage)
+        input_data, _ = ReadCsv(user_config=config).read(input_csvs)
     elif args.input_datafile:
         input_data, _ = ReadDatafile(user_config=config).read(args.input_datafile)
     else:
@@ -143,7 +150,6 @@ def conversion_matrix(args):
         -----------------------
         excel       -- yy -- --
         csv         nn -- yy nn
-        datapackage yy -- -- yy
         datafile    nn -- yy --
 
     """
@@ -154,6 +160,9 @@ def conversion_matrix(args):
 
     read_strategy = None
     write_strategy = None
+
+    from_path = args.from_path
+    to_path = args.to_path
 
     config = None
     if args.config:
@@ -169,7 +178,11 @@ def conversion_matrix(args):
     if args.from_format == "datafile":
         read_strategy = ReadDatafile(user_config=config)
     elif args.from_format == "datapackage":
-        read_strategy = ReadDatapackage(user_config=config)
+        logger.warning(
+            "Reading from datapackage is deprecated, trying to read from CSVs"
+        )
+        from_path = read_deprecated_datapackage(from_path)
+        read_strategy = ReadCsv(user_config=config)
     elif args.from_format == "csv":
         read_strategy = ReadCsv(user_config=config)
     elif args.from_format == "excel":
@@ -180,9 +193,9 @@ def conversion_matrix(args):
     write_defaults = True if args.write_defaults else False
 
     if args.to_format == "datapackage":
-        write_strategy = WriteDatapackage(
-            user_config=config, write_defaults=write_defaults
-        )
+        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
+        to_path = os.path.join(os.path.dirname(to_path), "data")
+        write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
     elif args.to_format == "excel":
         write_strategy = WriteExcel(user_config=config, write_defaults=write_defaults)
     elif args.to_format == "datafile":
@@ -194,7 +207,7 @@ def conversion_matrix(args):
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
-        context.convert(args.from_path, args.to_path)
+        context.convert(from_path, to_path)
     else:
         raise NotImplementedError(msg)
 
