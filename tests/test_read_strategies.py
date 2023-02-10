@@ -7,7 +7,7 @@ import pandas as pd
 from amply import Amply
 from pytest import mark
 
-from otoole import ReadDatafile, ReadExcel, ReadMemory
+from otoole import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
 from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.results import (
     ReadCbc,
@@ -944,6 +944,22 @@ class TestReadExcel:
 
         assert (actual_data == expected).all()
 
+    def test_read_excel_discount_rate(self, user_config):
+        """Tests that parameters not in excel are saved in datastore"""
+
+        spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        xl = pd.ExcelFile(spreadsheet, engine="openpyxl")
+
+        # checks that fixture does not contian discount rate data
+        assert "DiscountRateIdv" not in xl.sheet_names
+
+        reader = ReadExcel(user_config=user_config)
+        actual, _ = reader.read(spreadsheet)
+
+        # checks that discount rate has data after reading in excel data
+        assert "DiscountRateIdv" in actual
+        assert actual["DiscountRateIdv"].empty
+
     def test_narrow_parameters(self, user_config):
         data = [
             ["IW0016", 0.238356164, 0.238356164, 0.238356164],
@@ -1000,3 +1016,34 @@ class TestReadExcel:
             ).set_index(["TIMESLICE", "YEAR"])
         }
         pd.testing.assert_frame_equal(actual["YearSplit"], expected["YearSplit"])
+
+
+class TestReadCSV:
+    accumulated_annual_demand_df = pd.DataFrame(
+        [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            ["SIMPLICITY", "RAWSUG", 2015, 0.51],
+            ["SIMPLICITY", "ETH", 2016, 1.061],
+            ["SIMPLICITY", "RAWSUG", 2016, 0.519],
+        ],
+        columns=["REGION", "FUEL", "YEAR", "VALUE"],
+    )
+    availability_factor_df = pd.DataFrame(
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+    )
+
+    test_data = [
+        ("AccumulatedAnnualDemand", accumulated_annual_demand_df),
+        ("AvailabilityFactor", availability_factor_df),
+    ]
+
+    @mark.parametrize("parameter, expected", test_data, ids=["full", "empty"])
+    def test_get_input_data_empty(self, user_config, parameter, expected):
+        reader = ReadCsv(user_config=user_config)
+        filepath = os.path.join("tests", "fixtures", "data")
+        details = user_config[parameter]
+        actual = reader._get_input_data(filepath, parameter, details)
+
+        pd.testing.assert_frame_equal(actual, expected)

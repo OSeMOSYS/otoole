@@ -32,39 +32,58 @@ class WriteExcel(WriteStrategy):
         pandas.DataFrame
         """
 
-        if not df.empty:
-
-            index_names = df.index.names
-            column_names = df.columns.to_list()
-            if index_names[0]:
-                names = index_names + column_names
-            else:
-                names = column_names
-            logger.debug(f"Identified {len(names)} names: {names}")
-
-            total_columns = len(names)
-
-            if total_columns > 3:
-                logger.debug(
-                    "More than 3 columns for {}: {}".format(parameter_name, names)
-                )
-                rows = names[0:-2]
-                columns = names[-2]
-                values = names[-1]
-                logger.debug(f"Rows: {rows}; columns: {columns}; values: {values}")
-                logger.debug("dtypes: {}".format(df.dtypes))
-                pivot = df.reset_index().pivot(
-                    index=rows, columns=columns, values=values
-                )
-            else:
-                logger.debug(f"One column for {parameter_name}: {names}")
-                pivot = df.copy()
-
+        index_names = df.index.names
+        column_names = df.columns.to_list()
+        if index_names[0]:
+            names = index_names + column_names
         else:
-            logger.debug(f"Dataframe {parameter_name} is empty")
+            names = column_names
+        logger.debug(f"Identified {len(names)} names: {names}")
+
+        total_columns = len(names)
+
+        if total_columns > 3:
+            logger.debug("More than 3 columns for {}: {}".format(parameter_name, names))
+            rows = names[0:-2]
+            columns = names[-2]
+            values = names[-1]
+            logger.debug(f"Rows: {rows}; columns: {columns}; values: {values}")
+            logger.debug("dtypes: {}".format(df.dtypes))
+            pivot = df.reset_index().pivot(index=rows, columns=columns, values=values)
+        else:
+            logger.debug(f"One column for {parameter_name}: {names}")
             pivot = df.copy()
 
         return pivot
+
+    def _form_parameter_template(self, parameter_name: str, **kwargs) -> pd.DataFrame:
+        """Creates wide format excel template
+
+        Arguments
+        ---------
+        parameter_name: str
+        input_data: dict[str, pd.DataFrame])
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+
+        if "input_data" not in kwargs:
+            logger.debug(f"Can not write excel template file for {parameter_name}")
+            return pd.DataFrame()
+        else:
+            input_data = kwargs["input_data"]
+
+        indices = self.user_config[parameter_name]["indices"]
+        if "YEAR" in indices:
+            years = input_data["YEAR"]["VALUE"].to_list()
+            indices.remove("YEAR")
+            indices.extend(years)
+        else:
+            indices.extend(["VALUE"])
+
+        return pd.DataFrame(columns=indices)
 
     def _write_parameter(
         self,
@@ -72,6 +91,7 @@ class WriteExcel(WriteStrategy):
         parameter_name: str,
         handle: pd.ExcelWriter,
         default: float,
+        **kwargs,
     ):
         try:
             name = self.user_config[parameter_name]["short_name"]
@@ -81,11 +101,13 @@ class WriteExcel(WriteStrategy):
         if len(name) > 31:
             raise OtooleExcelNameLengthError(name=name)
 
-        df = self._form_parameter(df, parameter_name, default)
         if not df.empty:
+            df = self._form_parameter(df, parameter_name, default)
             df.to_excel(handle, sheet_name=name, merge_cells=False, index=True)
         else:
-            logger.info(f"Skipped writing {parameter_name} as it is empty")
+            logger.debug(f"Dataframe {parameter_name} is empty")
+            df = self._form_parameter_template(parameter_name, **kwargs)
+            df.to_excel(handle, sheet_name=name, merge_cells=False, index=False)
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: pd.ExcelWriter):
         df.to_excel(handle, sheet_name=set_name, merge_cells=False, index=False)
@@ -108,7 +130,12 @@ class WriteDatafile(WriteStrategy):
         return df
 
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: TextIO,
+        default: float,
+        **kwargs,
     ):
         """Write parameter data to a GMPL datafile, omitting data with default value
 
@@ -185,7 +212,12 @@ class WriteCsv(WriteStrategy):
         return None
 
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: Package, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: Package,
+        default: float,
+        **kwargs,
     ) -> pd.DataFrame:
         """Write parameter data"""
         self._write_out_dataframe(self.filepath, parameter_name, df, index=True)
@@ -249,7 +281,12 @@ class WriteDatapackage(WriteStrategy):
         return resource
 
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: Package, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: Package,
+        default: float,
+        **kwargs,
     ) -> pd.DataFrame:
         """Write parameter data"""
         self._write_out_dataframe(self.filepath, parameter_name, df, index=True)

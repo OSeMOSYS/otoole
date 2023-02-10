@@ -188,6 +188,8 @@ def conversion_matrix(args):
     elif args.from_format == "excel":
         read_strategy = ReadExcel(user_config=config)
 
+    input_data, _ = read_strategy.read(args.from_path)
+
     # set write strategy
 
     write_defaults = True if args.write_defaults else False
