@@ -175,6 +175,8 @@ def conversion_matrix(args):
     elif args.from_format == "excel":
         read_strategy = ReadExcel(user_config=config)
 
+    input_data, _ = read_strategy.read(args.from_path)
+
     # set write strategy
 
     write_defaults = True if args.write_defaults else False
@@ -194,7 +196,7 @@ def conversion_matrix(args):
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
-        context.convert(args.from_path, args.to_path)
+        context.convert(args.from_path, args.to_path, input_data=input_data)
     else:
         raise NotImplementedError(msg)
 

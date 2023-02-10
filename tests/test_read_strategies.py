@@ -944,6 +944,22 @@ class TestReadExcel:
 
         assert (actual_data == expected).all()
 
+    def test_read_excel_discount_rate(self, user_config):
+        """Tests that parameters not in excel are saved in datastore"""
+
+        spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        xl = pd.ExcelFile(spreadsheet, engine="openpyxl")
+
+        # checks that fixture does not contian discount rate data
+        assert "DiscountRateIdv" not in xl.sheet_names
+
+        reader = ReadExcel(user_config=user_config)
+        actual, _ = reader.read(spreadsheet)
+
+        # checks that discount rate has data after reading in excel data
+        assert "DiscountRateIdv" in actual
+        assert actual["DiscountRateIdv"].empty
+
     def test_narrow_parameters(self, user_config):
         data = [
             ["IW0016", 0.238356164, 0.238356164, 0.238356164],

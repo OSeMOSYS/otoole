@@ -125,6 +125,11 @@ class ReadExcel(_ReadTabular):
 
             input_data[mod_name] = narrow
 
+        for config_type in ["param", "set"]:
+            input_data = self._get_missing_input_dataframes(
+                input_data, config_type=config_type
+            )
+
         input_data = self._check_index(input_data)
 
         return input_data, default_values
@@ -198,6 +203,11 @@ class ReadCsv(_ReadTabular):
 
             input_data[parameter] = narrow_checked
 
+        for config_type in ["param", "set"]:
+            input_data = self._get_missing_input_dataframes(
+                input_data, config_type=config_type
+            )
+
         input_data = self._check_index(input_data)
 
         return input_data, default_values
@@ -244,6 +254,8 @@ class ReadDatapackage(ReadStrategy):
         default_resource = inputs.pop("default_values").set_index("name").to_dict()
         default_values = default_resource["default_value"]
         self.user_config = read_datapackage_schema_into_config(filepath, default_values)
+        for config_type in ["param", "set"]:
+            inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
         inputs = self._check_index(inputs)
         return inputs, default_values
 
@@ -257,6 +269,8 @@ class ReadDatafile(ReadStrategy):
         default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)
+        for config_type in ["param", "set"]:
+            inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
         inputs = self._check_index(inputs)
         return inputs, default_values
 

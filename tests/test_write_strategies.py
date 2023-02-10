@@ -63,6 +63,18 @@ class TestWriteExcel:
         # print(actual, expected)
         pd.testing.assert_frame_equal(actual, expected)
 
+    def test_form_template_paramter(self, user_config):
+        input_data = {
+            "YEAR": pd.DataFrame(data=[[2015], [2016], [2017]], columns=["VALUE"])
+        }
+        convert = WriteExcel(user_config)
+        actual = convert._form_parameter_template(
+            "AccumulatedAnnualDemand", input_data=input_data
+        )
+        expected = pd.DataFrame(columns=["REGION", "FUEL", 2015, 2016, 2017])
+
+        pd.testing.assert_frame_equal(actual, expected)
+
     def test_form_three_columns(self, user_config):
 
         convert = WriteExcel(user_config)  # typing: WriteExcel
