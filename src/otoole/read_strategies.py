@@ -193,6 +193,9 @@ class ReadCsv(_ReadTabular):
                 else:
                     narrow_checked = narrow
 
+            else:  # results
+                continue
+
             input_data[parameter] = narrow_checked
 
         input_data = self._check_index(input_data)
