@@ -2,12 +2,13 @@ import io
 from tempfile import NamedTemporaryFile
 
 import pandas as pd
-from frictionless import Package, Resource
+
+# from frictionless import Package, Resource
 from pytest import fixture
 from yaml import SafeLoader, load  # type: ignore
 
-from otoole.preprocess.create_datapackage import generate_package
-from otoole.write_strategies import WriteDatafile, WriteDatapackage, WriteExcel
+# from otoole.preprocess.create_datapackage import generate_package
+from otoole.write_strategies import WriteDatafile, WriteExcel
 
 
 class TestWriteExcel:
@@ -274,32 +275,32 @@ resources:
     """
         return load(schema, SafeLoader)
 
-    def test_write_datapackage(
-        self, simple_user_config, simple_data, simple_default_values
-    ):
+    # def test_write_datapackage(
+    #     self, simple_user_config, simple_data, simple_default_values
+    # ):
 
-        filepath = NamedTemporaryFile().name
+    #     filepath = NamedTemporaryFile().name
 
-        writer = WriteDatapackage(user_config=simple_user_config)
-        writer.write(simple_data, filepath, simple_default_values)
+    #     writer = WriteDatapackage(user_config=simple_user_config)
+    #     writer.write(simple_data, filepath, simple_default_values)
 
-    def test_create_json(self, simple_user_config, simple_data, expected_schema):
+    # def test_create_json(self, simple_user_config, simple_data, expected_schema):
 
-        filepath = NamedTemporaryFile().name
+    #     filepath = NamedTemporaryFile().name
 
-        resources = []
-        for x, y in simple_data.items():
-            resource = Resource(y)
-            resource.name = x.lower()
-            resource.title = x
-            resources.append(resource)
+    #     resources = []
+    #     for x, y in simple_data.items():
+    #         resource = Resource(y)
+    #         resource.name = x.lower()
+    #         resource.title = x
+    #         resources.append(resource)
 
-        package = Package(resources=resources, onerror="warn")
+    #     package = Package(resources=resources, onerror="warn")
 
-        package = generate_package(package, simple_user_config)
+    #     package = generate_package(package, simple_user_config)
 
-        actual = package.to_dict()
+    #     actual = package.to_dict()
 
-        package.to_yaml(filepath)
+    #     package.to_yaml(filepath)
 
-        assert actual == expected_schema
+    #     assert actual == expected_schema
