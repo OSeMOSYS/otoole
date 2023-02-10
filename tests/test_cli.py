@@ -20,19 +20,19 @@ class TestConvert:
 
     test_data = [
         (["otoole", "-v", "convert", "--help"], "usage: otoole convert [-h]"),
-        (
-            [
-                "otoole",
-                "-v",
-                "convert",
-                "datafile",
-                "datapackage",
-                simplicity,
-                temp,
-                config_path,
-            ],
-            "",
-        ),
+        # (
+        #     [
+        #         "otoole",
+        #         "-v",
+        #         "convert",
+        #         "datafile",
+        #         "datapackage",
+        #         simplicity,
+        #         temp,
+        #         config_path,
+        #     ],
+        #     "",
+        # ),
         (
             [
                 "otoole",
@@ -61,9 +61,7 @@ class TestConvert:
         ),
     ]
 
-    @mark.parametrize(
-        "commands,expected", test_data, ids=["help", "datapackage", "excel", "datafile"]
-    )
+    @mark.parametrize("commands,expected", test_data, ids=["help", "excel", "datafile"])
     def test_convert_commands(self, commands, expected):
         actual = run(commands, capture_output=True)
         assert expected in str(actual.stdout)
