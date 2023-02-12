@@ -214,8 +214,35 @@ def conversion_matrix(args):
         raise NotImplementedError(msg)
 
 
-def datapackage2res(args):
-    create_res(args.datapackage, args.resfile)
+def data2res(args):
+    """Get input data and call res creation."""
+
+    data_format = args.data_format
+    data_path = args.data_path
+
+    _, ending = os.path.splitext(args.config)
+    with open(args.config, "r") as config_file:
+        config = _read_file(config_file, ending)
+    logger.info("Reading config from {}".format(args.config))
+    logger.info("Validating config from {}".format(args.config))
+    validate_config(config)
+
+    if data_format == "datafile":
+        read_strategy = ReadDatafile(user_config=config)
+    elif data_format == "datapackage":
+        logger.warning(
+            "Reading from datapackage is deprecated, trying to read from CSVs"
+        )
+        data_path = read_deprecated_datapackage(data_path)
+        read_strategy = ReadCsv(user_config=config)
+    elif data_format == "csv":
+        read_strategy = ReadCsv(user_config=config)
+    elif data_format == "excel":
+        read_strategy = ReadExcel(user_config=config)
+
+    input_data, _ = read_strategy.read(data_path)
+
+    create_res(input_data, args.resfile)
 
 
 def get_parser():
@@ -320,9 +347,15 @@ def get_parser():
     res_parser = viz_subparsers.add_parser(
         "res", help="Generate a reference energy system"
     )
-    res_parser.add_argument("datapackage", help="Path to model datapackage")
+    res_parser.add_argument(
+        "data_format",
+        help="Input data format",
+        choices=sorted(["datafile", "excel", "csv"]),
+    )
+    res_parser.add_argument("data_path", help="Input data path")
     res_parser.add_argument("resfile", help="Path to reference energy system")
-    res_parser.set_defaults(func=datapackage2res)
+    res_parser.add_argument("config", help="Path to config YAML file")
+    res_parser.set_defaults(func=data2res)
 
     return parser
 
