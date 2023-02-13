@@ -23,7 +23,7 @@ Configuration File
 
 When performing any operation with ``otoole``, the user must supply a configuration
 file. This file specifies what ``sets``, ``parameters``, and ``results`` are in the
-model. The configuration file allows modellers to eaisly switch between
+model. The configuration file allows modellers to easily switch between
 OSeMOSYS versions that may have different structures.
 
 .. TIP::
@@ -51,7 +51,7 @@ THe ``otoole convert``` command allows you to convert between various different
 input formats::
 
     $ otoole convert --help
-    usage: otoole convert [-h --write_defaults] {csv,datafile,excel} {csv,datafile,excel} from_path to_path config
+    usage: otoole convert [-h] [--write_defaults] {csv,datafile,excel} {csv,datafile,excel} from_path to_path config
 
     positional arguments:
     {csv,datafile,excel}  Input data format to convert from
@@ -61,8 +61,8 @@ input formats::
     config                Path to config YAML file
 
     optional arguments:
-    -h, --help            Show this help message and exit
-    --write_defaults      Write default parameters values from configuration file
+    -h, --help            show this help message and exit
+    --write_defaults      Writes default values
 
 .. NOTE::
     The ``config`` positional argument is required from version 1.0 and onwards
@@ -70,26 +70,6 @@ input formats::
 .. TIP::
     The :ref:`dataformats` page provides information on how to structure input data
 
-Examples
-~~~~~~~~
-
-The examples below showcase the ``convert`` functionality of ``otoole``. These are
-examples only, and users are able to freely convert between datafile, csv, and
-excel formats.
-
-1. Convert from an existing OSeMOSYS datafile (``simplicity.txt``) to an excel
-file (``simplicity.xlsx``)::
-
-    $ otoole convert datafile excel simplicity.txt simplicity.xlsx config.yaml
-
-2. Convert from a folder of csvs (``data``) to a datafile (``simplicity.txt``).
-Within the folder ``data`` are csvs that contain data for each parameter and set::
-
-    $ otoole convert csv datafile data simplicity.txt config.yaml
-
-3. Convert from an excel file (``simplicity.xlsx``) to a folder of csvs (``data``)::
-
-    $ otoole convert excel csv simplicity.xlsx data config.yaml
 
 Post-processing
 ---------------
@@ -122,34 +102,24 @@ The ``results`` command creates a folder of CSV result files from a CBC, CLP, Gu
 solution file::
 
     $ otoole results --help
-    usage: otoole results [-h, --write_defaults] [--input_datafile INPUT_DATAFILE] {cbc,cplex} {csv} from_path to_path
+    usage: otoole results [-h] [--input_datafile INPUT_DATAFILE] [--write_defaults] {cbc,cplex,gurobi} {csv} from_path to_path config
 
     positional arguments:
     {cbc,cplex,gurobi}    Result data format to convert from
     {csv}                 Result data format to convert to
     from_path             Path to file or folder to convert from
     to_path               Path to file or folder to convert to
+    config                Path to config YAML file
 
     optional arguments:
-    -h, --help            Show this help message and exit
+    -h, --help            show this help message and exit
     --input_datafile INPUT_DATAFILE
-                          Input GNUMathProg datafile required for OSeMOSYS short
-                          or fast results
-    --write_defaults      Write default result values from configuration file
-
-Examples
-~~~~~~~~
-
-The example below showcase the ``result`` functionality of ``otoole``.
-
-1. Generate a folder of CSV files from a CBC solution file::
-
-    otoole results cbc csv simplicity.sol ./results --input_datafile simplicity.txt
+                            Input GNUMathProg datafile required for OSeMOSYS short or fast results
+    --write_defaults      Writes default values
 
 .. WARNING::
     If using CPLEX_, note that you need to first sort the CPLEX file which you can do from
-    the command line e.g. ``sort cplex.sol > cplex_sorted.sol``. See the :ref:`examples`
-    page for a full CPLEX_ workflow
+    the command line. See the :ref:`examples` page for a full CPLEX_ workflow example.
 
 Visualization
 -------------
@@ -167,29 +137,47 @@ visualising the reference energy system through the ``vis res`` command is suppo
 
     $ otoole viz res --help
 
-    usage: otoole viz res [-h] datafile resfile
+    usage: otoole viz res [-h] {csv,datafile,excel} data_path resfile config
 
     positional arguments:
-    datafile  Path to model datafile
-    resfile   Path to reference energy system
+    {csv,datafile,excel}  Input data format
+    data_path             Input data path
+    resfile               Path to reference energy system
+    config                Path to config YAML file
 
     optional arguments:
-    -h, --help   show this help message and exit
+    -h, --help            show this help message and exit
 
 .. NOTE::
     The ``resfile`` command should include a file ending used for images,
-    including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The ``graphviz`` library used to layout the
-    reference energy system will interpret the file ending.
+    including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The ``graphviz`` library
+    used to layout the reference energy system will interpret the file ending.
 
-Examples
-~~~~~~~~
+Validation
+----------
+The validation module in ``otoole`` checks the technology and fuel names
+against a standard or user defined configuration file.
 
-1. Create a reference energy system of a model with an input datafile called
-``simplicity.txt``. Save the diagram as ``res.png``::
+``otoole validate``
+~~~~~~~~~~~~~~~~~~~
+The ``validate`` command allows you to identify any incorrectly named technologies
+or fuels, by comparing against a user defined validation configuration file.
+Moreover, ``otoole`` will check if any technology or fuel are unconnected from
+the rest of the model::
 
-    $ otoole viz res simplicity.txt res.png
+    $ otoole validate --help
 
-.. image:: _static/simplicity_res.png
+    usage: otoole validate [-h] [--validate_config VALIDATE_CONFIG] {csv,datafile,excel} data_file user_config
+
+    positional arguments:
+    {csv,datafile,excel}  Input data format
+    data_file             Path to the OSeMOSYS data file to validate
+    user_config           Path to config YAML file
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --validate_config VALIDATE_CONFIG
+                            Path to a user-defined validation-config file
 
 .. _GLPK: https://www.gnu.org/software/glpk/
 .. _CBC: https://github.com/coin-or/Cbc

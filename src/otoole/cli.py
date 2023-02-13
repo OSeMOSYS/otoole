@@ -10,7 +10,7 @@ The ``cplex`` command provides access to scripts which transform and process a C
 solution file into a format which is more readily processed - either to CBC or CSV
 format.
 
-The ``validate`` command checks the technology and fuel names of a tabular data package
+The ``validate`` command checks the technology and fuel names
 against a standard or user defined configuration file.
 
 The **viz** command allows you to produce a Reference Energy System diagram

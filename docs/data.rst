@@ -4,19 +4,19 @@
 Data Formats
 ============
 
-Configuration File
-------------------
+User Configuration File
+-----------------------
 
 Overview
 ~~~~~~~~
 
-All comands in ``otoole`` require the user to specify a configuration file that describes
+All commands in ``otoole`` require the user to specify a configuration file that describes
 the ``parameters``, ``sets``, and ``results`` in the model. This configuration file is
 written in ``yaml`` and is typically saved as ``config.yaml``. How to define the
 ``parameters``, ``sets``, and ``results`` in this file are highlighted below. If the user
 incorrectly enters data, validation checks in ``otoole`` should catch this.
 
-This section will cover
+This section will cover how to formate the user configuration file.
 
 Information Required
 ~~~~~~~~~~~~~~~~~~~~
@@ -128,7 +128,7 @@ Input Data
 Overview
 ~~~~~~~~
 
-This section will descibe how to format data for ``excel``, ``csv``, and ``datafile``
+This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
 
 .. NOTE::
@@ -137,7 +137,7 @@ formats.
 Excel
 ~~~~~
 
-Interfacing with ``otoole`` thorugh excel is a very user-friedly method to handle OSeMOSYS
+Interfacing with ``otoole`` through excel is a very user-friendly method to handle OSeMOSYS
 input data. In the excel workbook (an ``*.xlsx`` file), each sheet will correspond to a
 single parameter or set. Parameters that are indexed over years are pivoted on the ``YEAR``
 index. This creates a wide formatted dataset, where each year is the column header, with
@@ -160,6 +160,8 @@ data will be under the ``AccumulatedAnnualDemand`` sheet and contain the data
 | SIMPLICITY  | HYD1        | 4500    | 4500    | 4500    | 4500    | 4500    | 4500    | 4500    |
 +-------------+-------------+---------+---------+---------+---------+---------+---------+---------+
 | SIMPLICITY  | HYD2        | 3500    | 3500    | 3500    | 3500    | 3500    | 3500    | 3500    |
++-------------+-------------+---------+---------+---------+---------+---------+---------+---------+
+| ...         | ...         | ...     | ...     | ...     | ...     | ...     | ...     | ...     |
 +-------------+-------------+---------+---------+---------+---------+---------+---------+---------+
 
 Parameters that are not indexed over years will have an extra column titled ``VALUE``.
@@ -220,11 +222,11 @@ CSV
 Interfacing with ``otoole`` through a folder of CSV files is the most "computer friendly"
 way to handle input data. This is due to csv files being easy to read and write, and
 independent of the program, programming language, and operating system. This allows
-``otoole`` to integrate into workflows.
+``otoole`` to easily integrate into workflows.
 
 When working with CSV data, all parameters and sets are saved under their name given in the
-copnfiguration file, and nested in a single directory. CSV data will follow long formatting
-standards, where each column is the name of the index, and the final column is titiled
+configuration file, and nested in a single directory. CSV data will follow long formatting
+standards, where each column is the name of the index, and the final column is titled
 ``VALUE``.
 
 For example, the following data for ``AccumulatedAnnualDemand`` will be under
@@ -282,9 +284,9 @@ formatted as shown with a single ``VALUE`` column.
 Datafile
 ~~~~~~~~
 
-Datafiles are the least user-friedly method of handling data, however, they are required
+Datafiles are the least user-friendly method of handling data, however, they are required
 for the OSeMOSYS GNU MathProg version of OSeMOSYS. Datafiles are written in MathProg_, which
-shares sytax with the AMPL_ programming language.
+shares syntax with the AMPL_ programming language.
 
 Datafiles contain all model data in one file (often a ``*.txt`` file), and will follow
 a similar data standard to long formatted CSV data. However, the default value for the
@@ -325,6 +327,11 @@ And in the same ``data.txt`` file, the set ``TECHNOLOGY`` will be defined as fol
 
 .. TIP::
    For reading and writing between Python and AMPL_, see the amply_ Python package.
+
+Validation Configuration File
+-----------------------------
+To be done...
+
 
 .. _MathProg: https://en.wikibooks.org/wiki/GLPK/GMPL_(MathProg)
 .. _AMPL: https://ampl.com/

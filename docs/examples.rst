@@ -4,7 +4,7 @@
 Examples
 --------
 
-This page will present example to show the full functionality of ``otoole``.
+This page will present examples to show the full functionality of ``otoole``.
 To follow these examples, clone the Simplicity_ repository and run all commands
 from the ``simplicity/`` directory.
 
@@ -14,8 +14,8 @@ Example One
 Objective
 ~~~~~~~~~
 
-Use a folder of CSV data to build and solve an OSeMOSYS model with CBC. Generate the full
-suite of results and visualize the referecne energy system.
+Use a folder of CSV data to build and solve an OSeMOSYS model with CBC. Generate
+the full suite of OSeMOSYS results.
 
 Step One: ``otoole`` Convert
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,14 +49,6 @@ Use ``otoole``'s ``result`` package to generate the results file::
 
     $ otoole results cbc csv simplicity.sol results config.yaml
 
-Step Five: Visualise the Reference Energy System
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use ``otoole``'s ``vis`` package to generate the RES::
-
-    $ otoole vis res simplicity.txt res.png
-
-.. image:: _static/simplicity_res.png
-
 Example Two
 -----------
 
@@ -87,8 +79,8 @@ Use CPLEX_ to solve the model and save the solution file as ``simplicity.sol``::
 
 Step Four: Modify the Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Change the ``calcualted`` fields for the ``TotalDiscountedCost`` and ``TotalCapacityAnnual``
-values to ``True``, and set all other ``calcualted`` filds to ``False``::
+Change the ``calculated`` fields for the ``TotalDiscountedCost`` and ``TotalCapacityAnnual``
+values to ``True``, and set all other ``calculated`` fields to ``False``::
 
     TotalCapacityAnnual:
         indices: [REGION, TECHNOLOGY, YEAR]
@@ -103,13 +95,67 @@ Create a folder to hold the results::
 
     $ mkdir results
 
-Sort the solution file::
+Sort the solution file (only needed for CPLEX solution files)::
 
     $ simplicity.sol sort > simplicity_sorted.sol
 
 Use ``otoole``'s ``result`` package to generate the result CSVs::
 
     $ otoole results cplex csv simplicity_sorted.sol results config.yaml
+
+Example Three
+-------------
+
+Objective
+~~~~~~~~~
+
+Use ``otoole`` to visualize the reference energy system.
+
+Step One: ``otoole`` Visualise
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The visualization functionality of ``otoole`` will work with any supported
+input data format (``csv``, ``datafile``, or ``excel``). In this case, we will
+use the excel file, ``simplicity.xlsx``, to generate the RES.
+
+Run the following command, where the RES will be saved as the file ``res.png``::
+
+    $ otoole viz res excel simplicity.xlsx res.png config.yaml
+
+Step Two: View the RES
+~~~~~~~~~~~~~~~~~~~~~~
+Open the newly created file, ``res.png`` and the following image should be
+displayed
+
+.. image:: _static/simplicity_res.png
+
+Example Four
+------------
+
+Objective
+~~~~~~~~~
+
+Use ``otoole`` to validate the input data.
+
+Step One: Create the Validation File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Step Two: ``otoole`` Validate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The validation functionality of ``otoole`` will work with any supported
+input data format (``csv``, ``datafile``, or ``excel``). In this case, we will
+use the folder of csv data for validation.
+
+Run the following command, where the RES will be saved as the file ``res.png``::
+
+    $ otoole viz res excel simplicity.xlsx res.png config.yaml
+
+Step Two: View the RES
+~~~~~~~~~~~~~~~~~~~~~~
+Open the newly created file, ``res.png`` and the following image should be
+displayed
+
+.. image:: _static/simplicity_res.png
 
 .. _Simplicity: https://github.com/OSeMOSYS/simplicity
 .. _GLPK: https://www.gnu.org/software/glpk/
