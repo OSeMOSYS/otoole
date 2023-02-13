@@ -1,17 +1,19 @@
 from tempfile import NamedTemporaryFile
-from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
 import yaml
 
-from otoole.exceptions import OtooleExcelNameLengthError, OtooleExcelNameMismatchError
+from otoole.exceptions import (
+    OtooleDeprecationError,
+    OtooleExcelNameLengthError,
+    OtooleExcelNameMismatchError,
+)
 from otoole.read_strategies import ReadExcel
 from otoole.utils import (
     UniqueKeyLoader,
     create_name_mappings,
-    extract_config,
-    read_packaged_file,
+    read_deprecated_datapackage,
 )
 from otoole.write_strategies import WriteExcel
 
@@ -41,20 +43,6 @@ def user_config_long_short_name():
         "default": 0.05,
     }
     return config
-
-
-class TestDataPackageSchema:
-    @pytest.mark.xfail
-    def test_read_datapackage_schema_into_config(self):
-
-        schema = read_packaged_file("datapackage.json", "otoole.preprocess")
-        mock = MagicMock()
-        mock.__getitem__.return_value = 0
-
-        actual = extract_config(schema, mock)
-
-        expected = read_packaged_file("config.yaml", "otoole.preprocess")
-        assert actual == expected
 
 
 class TestCreateNameMappings:
@@ -159,3 +147,21 @@ class TestYamlUniqueKeyReader:
     def test_invalid_yaml(self, invalid_yaml):
         with pytest.raises(ValueError):
             yaml.load(invalid_yaml, Loader=UniqueKeyLoader)
+
+
+def test_successful_read_deprecated_datapackage(tmp_path):
+    f = tmp_path / "input/datapackage.json"
+    f.parent.mkdir()
+    f.touch()
+    csvs = tmp_path / "input/data"
+    csvs.mkdir()
+    actual = read_deprecated_datapackage(f)
+    assert actual == str(csvs)
+
+
+def test_unsuccessful_read_deprecated_datapackage(tmp_path):
+    f = tmp_path / "input/datapackage.json"
+    f.parent.mkdir()
+    f.touch()
+    with pytest.raises(OtooleDeprecationError):
+        read_deprecated_datapackage(f)

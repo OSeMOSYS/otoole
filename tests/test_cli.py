@@ -20,19 +20,6 @@ class TestConvert:
 
     test_data = [
         (["otoole", "-v", "convert", "--help"], "usage: otoole convert [-h]"),
-        # (
-        #     [
-        #         "otoole",
-        #         "-v",
-        #         "convert",
-        #         "datafile",
-        #         "datapackage",
-        #         simplicity,
-        #         temp,
-        #         config_path,
-        #     ],
-        #     "",
-        # ),
         (
             [
                 "otoole",

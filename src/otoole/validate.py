@@ -36,8 +36,9 @@ from collections import defaultdict
 from typing import Dict, List, Sequence
 
 import networkx.algorithms.isolate as isolate
+import pandas as pd
 
-from otoole.utils import read_datapackage, read_packaged_file
+from otoole.utils import get_packaged_resource, read_packaged_file
 from otoole.visualise.res import create_graph
 
 logger = logging.getLogger(__name__)
@@ -139,12 +140,15 @@ def validate(expression: str, name: str) -> bool:
     return valid
 
 
-def validate_resource(package, resource: str, schemas: List[Dict]):
-    """
+def validate_resource(
+    input_data: Dict[str, pd.DataFrame], resource: str, schemas: List[Dict]
+) -> None:
+    """Validates a single resource against the validation config.
 
     Arguments
     ---------
-    package
+    input_data: dict[str,pd.DataFrame]
+        otools internal datastore
     resource: str
     schemas : List[Dict]
         The schema from which to create a validation expression
@@ -159,7 +163,7 @@ def validate_resource(package, resource: str, schemas: List[Dict]):
     logger.debug(schemas)
 
     expression = compose_multi_expression(schemas)
-    resources = package.get_resource(resource).read(keyed=True)
+    resources = get_packaged_resource(input_data, resource)
 
     valid_names = []
     invalid_names = []
@@ -180,7 +184,9 @@ def validate_resource(package, resource: str, schemas: List[Dict]):
         print(msg.format(len(valid_names), ", ".join(valid_names)))
 
 
-def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
+def identify_orphaned_fuels_techs(
+    input_data: Dict[str, pd.DataFrame]
+) -> Dict[str, str]:
     """Returns a list of fuels and technologies which are unconnected
 
     Returns
@@ -188,7 +194,7 @@ def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
     dict
 
     """
-    graph = create_graph(package)
+    graph = create_graph(input_data)
 
     number_of_isolates = isolate.number_of_isolates(graph)
     logger.debug("There are {} isolated nodes in the graph".format(number_of_isolates))
@@ -202,32 +208,20 @@ def identify_orphaned_fuels_techs(package) -> Dict[str, str]:
     return isolated_nodes
 
 
-def main(file_format: str, filepath: str, config=None):
+def main(input_data: Dict[str, pd.DataFrame], config=None):
 
     print("\n***Beginning validation***\n")
-    if file_format == "datapackage":
-        package = read_datapackage(filepath)
-    elif file_format == "sql":
-        package = read_datapackage(filepath, sql=True)
-    else:
-        package = None
-
     schema = create_schema(config)
 
-    if package:
+    for resource, schemas in schema.items():
+        validate_resource(input_data, resource, schemas)
 
-        for resource, schemas in schema.items():
-            validate_resource(package, resource, schemas)
+    print("\n***Checking graph structure***")
+    isolated_nodes = identify_orphaned_fuels_techs(input_data)
 
-        print("\n***Checking graph structure***")
-        isolated_nodes = identify_orphaned_fuels_techs(package)
-
-        msg = ""
-        for node_type, node_names in isolated_nodes.items():
-            msg += "\n{} '{}' nodes are isolated:\n     {}\n".format(
-                len(node_names), node_type, ", ".join(node_names)
-            )
-        print(msg)
-
-    else:
-        raise ValueError("Unable to load the datapackage")
+    msg = ""
+    for node_type, node_names in isolated_nodes.items():
+        msg += "\n{} '{}' nodes are isolated:\n     {}\n".format(
+            len(node_names), node_type, ", ".join(node_names)
+        )
+    print(msg)

@@ -58,7 +58,6 @@ class UserDefinedValue(BaseModel):
     @classmethod
     def check_name_length(cls, values):
         if len(values["name"]) > 31:
-            logger.info(f"{values['name']} is longer than 31 characters")
             if "short_name" not in values:
                 raise ValueError(
                     f"{values['name']} -> Name is longer than 31 characters and no 'short_name' field provided"

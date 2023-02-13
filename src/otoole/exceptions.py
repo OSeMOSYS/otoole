@@ -86,3 +86,23 @@ class OtooleExcelNameMismatchError(OtooleException):
 
     def __str__(self):
         return f"{self.excel_name} -> {self.message}"
+
+
+class OtooleDeprecationError(OtooleException):
+    """New version of otoole does drops this feature support
+
+    Arguments
+    ---------
+    resource : str
+        Name of the resource which is invalid
+    message : str
+        Error message
+
+    """
+
+    def __init__(self, resource, message):
+        self.resource = resource
+        self.message = message
+
+    def __str__(self):
+        return f"{self.resource} -> {self.message}"

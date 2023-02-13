@@ -1,13 +1,11 @@
 import logging
 import os
-from typing import TextIO
+from typing import Any, TextIO
 
 import pandas as pd
-from frictionless import Package, Resource
 
 from otoole.exceptions import OtooleExcelNameLengthError
 from otoole.input import WriteStrategy
-from otoole.preprocess.create_datapackage import generate_package
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +187,7 @@ class WriteCsv(WriteStrategy):
 
     @staticmethod
     def _write_out_dataframe(folder, parameter, df, index=False):
-        """Writes out a dataframe as a csv into the data subfolder of a datapackage
+        """Writes out a dataframe as a csv into a data subfolder
 
         Arguments
         ---------
@@ -207,7 +205,7 @@ class WriteCsv(WriteStrategy):
             )
             df.to_csv(csvfile, index=index)
 
-    def _header(self) -> Package:
+    def _header(self) -> Any:
         os.makedirs(os.path.join(self.filepath), exist_ok=True)
         return None
 
@@ -215,7 +213,7 @@ class WriteCsv(WriteStrategy):
         self,
         df: pd.DataFrame,
         parameter_name: str,
-        handle: Package,
+        handle: TextIO,
         default: float,
         **kwargs,
     ) -> pd.DataFrame:
@@ -234,77 +232,3 @@ class WriteCsv(WriteStrategy):
             )
             df = df.reset_index().rename({"index": "name"}, axis=1)
             self._write_out_dataframe(self.filepath, "default_values", df, index=False)
-
-
-class WriteDatapackage(WriteStrategy):
-    def _write_out_dataframe(self, folder, parameter, df, index=False):
-        """Writes out a dataframe as a csv into the data subfolder of a datapackage
-
-        Arguments
-        ---------
-        folder : str
-        parameter : str
-        df : pandas.DataFrame
-
-        """
-        filepath = os.path.join(folder, "data", parameter + ".csv")
-        with open(filepath, "w", newline="") as csvfile:
-            logger.info(
-                "Writing %s rows into narrow file for %s", df.shape[0], parameter
-            )
-            df.to_csv(csvfile, index=index)
-
-    def _write_default_values(self, handle):
-
-        default_values_path = os.path.join(self.filepath, "data", "default_values.csv")
-        with open(default_values_path, "w", newline="") as csv_file:
-
-            csv_file.write("name,default_value\n")
-
-            rows = []
-            for name, contents in self.user_config.items():
-                if contents["type"] == "param":
-                    csv_file.write("{},{}\n".format(name, contents["default"]))
-                    rows.append([name, contents["default"]])
-
-        df = pd.DataFrame(rows, columns=["name", "default_value"])
-        self._add_resource("default_values", df)
-
-    def _header(self) -> Package:
-        os.makedirs(os.path.join(self.filepath, "data"), exist_ok=True)
-        return Package()
-
-    def _add_resource(self, parameter_name: str, df: pd.DataFrame) -> Resource:
-        resource = Resource(df)
-        resource.name = parameter_name.lower()
-        resource.title = parameter_name
-        return resource
-
-    def _write_parameter(
-        self,
-        df: pd.DataFrame,
-        parameter_name: str,
-        handle: Package,
-        default: float,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Write parameter data"""
-        self._write_out_dataframe(self.filepath, parameter_name, df, index=True)
-
-        resource = self._add_resource(parameter_name, df)
-        handle.add_resource(resource)
-
-    def _write_set(self, df: pd.DataFrame, set_name, handle: Package) -> pd.DataFrame:
-        """Write set data"""
-        self._write_out_dataframe(self.filepath, set_name, df, index=False)
-
-        resource = self._add_resource(set_name, df)
-        handle.add_resource(resource)
-
-    def _footer(self, handle: Package):
-
-        self._write_default_values(handle)
-        package = generate_package(handle, self.user_config)
-
-        filepath = os.path.join(self.filepath, "datapackage.yaml")
-        package.to_yaml(filepath)
