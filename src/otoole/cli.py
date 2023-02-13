@@ -3,7 +3,7 @@
 The key functions are **convert**, **cplex** and **viz**.
 
 The ``convert`` command allows convertion of multiple different OSeMOSYS input formats
-including from/to csv, an AMPL format datafile, a Tabular Data Package, a folder of
+including from/to csv, an AMPL format datafile, a folder of
 CSVs, an Excel workbook with one tab per parameter, an SQLite database
 
 The ``cplex`` command provides access to scripts which transform and process a CPLEX
@@ -13,8 +13,7 @@ format.
 The ``validate`` command checks the technology and fuel names of a tabular data package
 against a standard or user defined configuration file.
 
-The **viz** command allows you to produce a Reference Energy System diagram from a
-Tabular Data Package.
+The **viz** command allows you to produce a Reference Energy System diagram
 
 Example
 -------
@@ -300,11 +299,6 @@ def get_parser():
     )
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
     result_parser.add_argument(
-        "--input_datapackage",
-        help="Input data package required for OSeMOSYS short or fast results",
-        default=None,
-    )
-    result_parser.add_argument(
         "--input_datafile",
         help="Input GNUMathProg datafile required for OSeMOSYS short or fast results",
         default=None,
@@ -325,12 +319,12 @@ def get_parser():
     convert_parser.add_argument(
         "from_format",
         help="Input data format to convert from",
-        choices=sorted(["datafile", "datapackage", "excel", "csv"]),
+        choices=sorted(["datafile", "excel", "csv"]),
     )
     convert_parser.add_argument(
         "to_format",
         help="Input data format to convert to",
-        choices=sorted(["datafile", "datapackage", "csv", "excel"]),
+        choices=sorted(["datafile", "csv", "excel"]),
     )
     convert_parser.add_argument(
         "from_path", help="Path to file or folder to convert from"

@@ -128,7 +128,8 @@ def create_graph(input_data: Dict[str, pd.DataFrame]):
 
     Arguments
     ---------
-    datapackage : datapackage.Package
+    input_data : Dict[str, pd.DataFrame]
+        Internal datastore for otoole input data
 
     Returns
     -------
@@ -196,7 +197,7 @@ def create_graph(input_data: Dict[str, pd.DataFrame]):
 
 
 def create_res(input_data: Dict[str, pd.DataFrame], path_to_resfile: str):
-    """Create a reference energy system diagram from a Tabular Data Package
+    """Create a reference energy system diagram
 
     Arguments
     ---------

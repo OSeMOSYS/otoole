@@ -1,5 +1,4 @@
 from tempfile import NamedTemporaryFile
-from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -14,9 +13,7 @@ from otoole.read_strategies import ReadExcel
 from otoole.utils import (
     UniqueKeyLoader,
     create_name_mappings,
-    extract_config,
     read_deprecated_datapackage,
-    read_packaged_file,
 )
 from otoole.write_strategies import WriteExcel
 
@@ -46,20 +43,6 @@ def user_config_long_short_name():
         "default": 0.05,
     }
     return config
-
-
-class TestDataPackageSchema:
-    @pytest.mark.xfail
-    def test_read_datapackage_schema_into_config(self):
-
-        schema = read_packaged_file("datapackage.json", "otoole.preprocess")
-        mock = MagicMock()
-        mock.__getitem__.return_value = 0
-
-        actual = extract_config(schema, mock)
-
-        expected = read_packaged_file("config.yaml", "otoole.preprocess")
-        assert actual == expected
 
 
 class TestCreateNameMappings:

@@ -2,20 +2,9 @@
 import sys
 
 from otoole.input import Context
-from otoole.read_strategies import (
-    ReadCsv,
-    ReadDatafile,
-    ReadDatapackage,
-    ReadExcel,
-    ReadMemory,
-)
+from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
 from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi
-from otoole.write_strategies import (
-    WriteCsv,
-    WriteDatafile,
-    WriteDatapackage,
-    WriteExcel,
-)
+from otoole.write_strategies import WriteCsv, WriteDatafile, WriteExcel
 
 if sys.version_info[:2] >= (3, 8):
     # TODO: Import directly (no need for conditional) when `python_requires = >= 3.8`
@@ -39,12 +28,10 @@ __all__ = [
     "ReadCsv",
     "ReadCplex",
     "ReadDatafile",
-    "ReadDatapackage",
     "ReadExcel",
     "ReadGurobi",
     "ReadMemory",
     "WriteCsv",
     "WriteDatafile",
-    "WriteDatapackage",
     "WriteExcel",
 ]

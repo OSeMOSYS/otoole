@@ -611,7 +611,7 @@ class TestReadCbc:
 
 
 class TestCleanOnRead:
-    """Tests that a datapackage is cleaned and indexed upon reading"""
+    """Tests that a data is cleaned and indexed upon reading"""
 
     def test_index_dtypes_available(self, user_config):
         reader = ReadMemory({}, user_config=user_config)

@@ -5,12 +5,11 @@ from typing import Any, Dict, List, TextIO, Tuple, Union
 import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
-from pandas_datapackage_reader import read_datapackage
 
 from otoole.exceptions import OtooleExcelNameMismatchError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
-from otoole.utils import create_name_mappings, read_datapackage_schema_into_config
+from otoole.utils import create_name_mappings
 
 logger = logging.getLogger(__name__)
 
@@ -244,20 +243,6 @@ class ReadCsv(_ReadTabular):
             default_columns = expected_columns + ["VALUE"]
             df = pd.DataFrame(columns=default_columns)
         return df
-
-
-class ReadDatapackage(ReadStrategy):
-    def read(
-        self, filepath, **kwargs
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        inputs = read_datapackage(filepath)
-        default_resource = inputs.pop("default_values").set_index("name").to_dict()
-        default_values = default_resource["default_value"]
-        self.user_config = read_datapackage_schema_into_config(filepath, default_values)
-        for config_type in ["param", "set"]:
-            inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
-        inputs = self._check_index(inputs)
-        return inputs, default_values
 
 
 class ReadDatafile(ReadStrategy):
