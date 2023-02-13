@@ -27,16 +27,6 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
 >>> converter.convert('my_datafile.txt', 'folder_of_csv_files')
 
-Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
-
->>> from otoole import ReadDataFile
->>> from otoole import WriteDatapackage
->>> from otoole import Context
->>> reader = ReadDataFile()
->>> writer = WriteDatapackage()
->>> converter = Context(read_strategy=reader, write_strategy=writer)
->>> converter.convert('my_datafile.txt', 'my_datapackage')
-
 """
 from __future__ import annotations
 
@@ -215,7 +205,12 @@ class WriteStrategy(Strategy):
 
     @abstractmethod
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: TextIO,
+        default: float,
+        **kwargs,
     ) -> pd.DataFrame:
         """Write parameter data"""
         raise NotImplementedError()
@@ -262,7 +257,7 @@ class WriteStrategy(Strategy):
 
             if entity_type != "set":
                 default_value = default_values[name]
-                self._write_parameter(df, name, handle, default=default_value)
+                self._write_parameter(df, name, handle, default=default_value, **kwargs)
             else:
                 self._write_set(df, name, handle)
 
@@ -404,6 +399,46 @@ class ReadStrategy(Strategy):
                 df = df.astype(details["dtype"])
 
             input_data[name] = df
+
+        return input_data
+
+    def _get_missing_input_dataframes(
+        self, input_data: Dict[str, pd.DataFrame], config_type: str
+    ) -> Dict[str, pd.DataFrame]:
+        """Creates empty dataframes if user config data does not exist
+
+        Arguments:
+        ----------
+        input_data: Dict[str, pd.DataFrame]
+            Data read in from the excel notebook
+        config_type: str
+            Type of value. Must be "set", "param", or "result"
+
+        Returns:
+        --------
+        all_params: Dict[str, pd.DataFrame]
+            Input data plus empty dataframes
+        """
+
+        if config_type not in ["set", "param", "result"]:
+            raise ValueError(f"{config_type} not of type 'set', 'param', or 'result'")
+
+        all_values = [
+            value
+            for value, data in self.user_config.items()
+            if data["type"] == config_type
+        ]
+        missing_values = [x for x in all_values if x not in input_data]
+
+        for value in missing_values:
+            try:  # param and result condition
+                indices = self.user_config[value]["indices"]
+                df = pd.DataFrame(columns=indices)
+                df = df.set_index(indices)
+            except KeyError:  # set condition
+                df = pd.DataFrame()
+            df["VALUE"] = ""
+            input_data[value] = df
 
         return input_data
 

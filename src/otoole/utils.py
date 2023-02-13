@@ -1,14 +1,13 @@
 import json
 import logging
 import os
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
-from datapackage import Package
+import pandas as pd
 from pydantic import ValidationError
-from sqlalchemy import create_engine
 from yaml import SafeLoader, load  # type: ignore
 
-from otoole.exceptions import OtooleConfigFileError
+from otoole.exceptions import OtooleConfigFileError, OtooleDeprecationError
 from otoole.preprocess.validate_config import (
     UserDefinedParameter,
     UserDefinedResult,
@@ -47,33 +46,6 @@ def read_packaged_file(filename: str, module_name: str = None):
             contents = _read_file(open_file, ending)
 
     return contents
-
-
-def read_datapackage(filepath: str, sql: bool = False):
-    """Open an OSeMOSYS datapackage
-
-    Arguments
-    ---------
-    filepath : str
-    sql : bool, default=False
-    """
-    if sql:
-        engine = create_engine("sqlite:///{}".format(filepath))
-        package = Package(storage="sql", engine=engine)
-        package.infer()
-    else:
-        package = Package(filepath)
-
-    return package
-
-
-def read_datapackage_schema_into_config(
-    filepath: str, default_values: Dict
-) -> Dict[str, Dict[str, Union[str, List]]]:
-    with open(filepath, "r") as json_file:
-        _, ending = os.path.splitext(filepath)
-        schema = _read_file(json_file, ending)
-    return extract_config(schema, default_values)
 
 
 def extract_config(
@@ -159,13 +131,6 @@ def validate_config(config: Dict) -> None:
         If the user inputs are not valid
     """
 
-    # For validating with json scheam
-    """
-    with open('src/otoole/preprocess/schema.json') as f:
-        schema = load(f, Loader=SafeLoader)
-    validate(config, schema=schema)
-    """
-
     # For validating with pydantic
     config_flattened = format_config_for_validation(config)
     user_defined_sets = get_all_sets(config)
@@ -236,6 +201,66 @@ def format_config_for_validation(config_in: Dict) -> List:
         flattened_data = {"name": name, **data}
         config_out.append(flattened_data)
     return config_out
+
+
+def read_deprecated_datapackage(datapackage: str) -> str:
+    """Checks filepath for CSVs if a datapackage is provided
+
+    Arguments
+    ---------
+    datapackage: str
+        Location of input datapackge
+
+    Returns
+    -------
+    input_csvs: str
+        Location of input csv files
+
+    Raises
+    ------
+    OtooleDeprecationError
+        If no 'data/' directory is found
+    """
+
+    input_csvs = os.path.join(os.path.dirname(datapackage), "data")
+    if os.path.exists(input_csvs):
+        return input_csvs
+    else:
+        raise OtooleDeprecationError(
+            resource="datapackage.json",
+            message="datapackage format no longer supported and no csv data found",
+        )
+
+
+def get_packaged_resource(
+    input_data: Dict[str, pd.DataFrame], param: str
+) -> List[Dict[str, Any]]:
+    """Gets input parameter data and formats it as a dictionary
+
+    Arguments
+    ---------
+    input_data : Dict[str, pd.DataFrame]
+        Internal datastore for otoole input data
+    param : str
+        Name of OSeMOSYS parameter
+
+    Returns
+    -------
+    List[Dict[str,any]]
+        List of all rows in the df, where each dictionary is the column
+        name, followed by the value in that row
+
+    Example
+    -------
+    >>> get_packaged_resource(input_data, "InputActivityRatio")
+    >>> [{'REGION': 'SIMPLICITY',
+        'TECHNOLOGY': 'RIVWATAGR',
+        'FUEL': 'WATIN',
+        'MODE_OF_OPERATION': 1,
+        'YEAR': 2020,
+        'VALUE': 1.0}]
+    """
+    return input_data[param].reset_index().to_dict(orient="records")
 
 
 class UniqueKeyLoader(SafeLoader):

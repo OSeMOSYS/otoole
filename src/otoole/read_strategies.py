@@ -5,12 +5,11 @@ from typing import Any, Dict, List, TextIO, Tuple, Union
 import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
-from pandas_datapackage_reader import read_datapackage
 
-from otoole.exceptions import OtooleExcelNameMismatchError
+from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameMismatchError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
-from otoole.utils import create_name_mappings, read_datapackage_schema_into_config
+from otoole.utils import create_name_mappings
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +124,11 @@ class ReadExcel(_ReadTabular):
 
             input_data[mod_name] = narrow
 
+        for config_type in ["param", "set"]:
+            input_data = self._get_missing_input_dataframes(
+                input_data, config_type=config_type
+            )
+
         input_data = self._check_index(input_data)
 
         return input_data, default_values
@@ -166,34 +170,27 @@ class ReadCsv(_ReadTabular):
 
         input_data = {}
 
+        self._check_for_default_values_csv(filepath)
         default_values = self._read_default_values(self.user_config)
 
         for parameter, details in self.user_config.items():
             logger.info("Looking for %s", parameter)
-            config_details = self.user_config[parameter]
 
-            csv_path = os.path.join(filepath, parameter + ".csv")
-
-            try:
-                df = pd.read_csv(csv_path)
-            except pd.errors.EmptyDataError:
-                logger.error("No data found in file for %s", parameter)
-                expected_columns = config_details["indices"]
-                default_columns = expected_columns + ["VALUE"]
-                df = pd.DataFrame(columns=default_columns)
-
-            entity_type = self.user_config[parameter]["type"]
+            entity_type = details["type"]
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details["indices"], parameter)
+                df = self._get_input_data(filepath, parameter, details)
+                narrow = self._check_parameter(df, details["indices"], parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
                         narrow, self.user_config, parameter
                     )
                 else:
                     narrow_checked = narrow
+
             elif entity_type == "set":
-                narrow = self._check_set(df, config_details, parameter)
+                df = self._get_input_data(filepath, parameter, details)
+                narrow = self._check_set(df, details, parameter)
                 if not narrow.empty:
                     narrow_checked = check_set_datatype(
                         narrow, self.user_config, parameter
@@ -201,23 +198,76 @@ class ReadCsv(_ReadTabular):
                 else:
                     narrow_checked = narrow
 
+            else:  # results
+                continue
+
             input_data[parameter] = narrow_checked
+
+        for config_type in ["param", "set"]:
+            input_data = self._get_missing_input_dataframes(
+                input_data, config_type=config_type
+            )
 
         input_data = self._check_index(input_data)
 
         return input_data, default_values
 
+    @staticmethod
+    def _get_input_data(
+        filepath: str,
+        parameter: str,
+        details: Dict,
+    ) -> pd.DataFrame:
+        """Reads in and checks CSV data format.
 
-class ReadDatapackage(ReadStrategy):
-    def read(
-        self, filepath, **kwargs
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        inputs = read_datapackage(filepath)
-        default_resource = inputs.pop("default_values").set_index("name").to_dict()
-        default_values = default_resource["default_value"]
-        self.user_config = read_datapackage_schema_into_config(filepath, default_values)
-        inputs = self._check_index(inputs)
-        return inputs, default_values
+        Arguments
+        ---------
+        filepath:str
+            Directory of csv files
+        parameter:str
+            parameter name
+        config_details: dict[str,Union[str,float,int]]
+            configuration data for the parameter being read in
+
+        Returns
+        -------
+        pd.DataFrame
+            CSV data as a dataframe
+        """
+        csv_path = os.path.join(filepath, parameter + ".csv")
+
+        try:
+            df = pd.read_csv(csv_path)
+        except pd.errors.EmptyDataError:
+            logger.error("No data found in file for %s", parameter)
+            expected_columns = details["indices"]
+            default_columns = expected_columns + ["VALUE"]
+            df = pd.DataFrame(columns=default_columns)
+        return df
+
+    @staticmethod
+    def _check_for_default_values_csv(filepath: str) -> None:
+        """Checks for a default values csv, which has been deprecated.
+
+        Arguments
+        ---------
+        filepath:str
+            Directory of csv files
+
+        Raises
+        ------
+        OtooleDeprecationError
+            If a default_values.csv is found in input data
+        """
+
+        default_values_csv_path = os.path.join(
+            os.path.dirname(filepath), "default_values.csv"
+        )
+        if os.path.exists(default_values_csv_path):
+            raise OtooleDeprecationError(
+                resource="data/default_values.csv",
+                message="Remove default_values.csv and define all default values in the configuration file",
+            )
 
 
 class ReadDatafile(ReadStrategy):
@@ -229,6 +279,8 @@ class ReadDatafile(ReadStrategy):
         default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)
+        for config_type in ["param", "set"]:
+            inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
         inputs = self._check_index(inputs)
         return inputs, default_values
 

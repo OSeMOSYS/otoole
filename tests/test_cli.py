@@ -26,19 +26,6 @@ class TestConvert:
                 "-v",
                 "convert",
                 "datafile",
-                "datapackage",
-                simplicity,
-                temp,
-                config_path,
-            ],
-            "",
-        ),
-        (
-            [
-                "otoole",
-                "-v",
-                "convert",
-                "datafile",
                 "excel",
                 simplicity,
                 temp_excel.name,
@@ -61,9 +48,7 @@ class TestConvert:
         ),
     ]
 
-    @mark.parametrize(
-        "commands,expected", test_data, ids=["help", "datapackage", "excel", "datafile"]
-    )
+    @mark.parametrize("commands,expected", test_data, ids=["help", "excel", "datafile"])
     def test_convert_commands(self, commands, expected):
         actual = run(commands, capture_output=True)
         assert expected in str(actual.stdout)

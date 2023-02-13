@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Usher
+    given-names: Will
+    orcid: https://orcid.org/0000-0001-9367-1791
+  - family-names: Henke
+    given-names: Hauke
+    orcid: https://orcid.org/0000-0003-0098-8701
+  - family-names: Muschner
+    given-names: Christoph
+    orcid: https://orcid.org/0000-0001-8144-5260
+title: "otoole: OSeMOSYS tools for energy work"
+version: 0.10.0
+doi: 10.5281/zenodo.4730003
+date-released: 2021-04-30

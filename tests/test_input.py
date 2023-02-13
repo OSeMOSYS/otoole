@@ -1,10 +1,10 @@
-from typing import Any, TextIO, Union
+from typing import Any, Dict, TextIO, Tuple, Union
 
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from pytest import fixture, mark, raises
 
-from otoole.input import WriteStrategy
+from otoole.input import ReadStrategy, WriteStrategy
 
 
 @fixture
@@ -40,13 +40,18 @@ def simple_input_data(region, year, technology):
     }
 
 
-# To instantiate abstract class WriteStrategy with abstract methods
+# To instantiate abstract class WriteStrategy
 class DummyWriteStrategy(WriteStrategy):
     def _header(self) -> Union[TextIO, Any]:
         raise NotImplementedError()
 
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: TextIO,
+        default: float,
+        **kwargs
     ) -> pd.DataFrame:
         raise NotImplementedError()
 
@@ -54,6 +59,14 @@ class DummyWriteStrategy(WriteStrategy):
         raise NotImplementedError()
 
     def _footer(self, handle: TextIO):
+        raise NotImplementedError()
+
+
+# To instantiate abstract class ReadStrategy
+class DummyReadStrategy(ReadStrategy):
+    def read(
+        self, filepath: Union[str, TextIO], **kwargs
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         raise NotImplementedError()
 
 
@@ -254,25 +267,35 @@ class TestExpandDefaults:
                 result_data[0], write_strategy.default_values
             )
 
-    # TODO
-    # idk how to parameterize the test function to work with fixtures. Tried
-    # making all input data fixtures, then passing in the commented code,
-    # but you get an error of indexing over a fuction (ie. the fixture)
 
-    # @fixture(params=[
-    #     input_data_multi_index_no_defaults,
-    #     input_data_multi_index,
-    #     input_data_multi_index_empty,
-    #     input_data_single_index,
-    #     input_data_single_index_empty,
-    # ],
-    # ids=[
-    #     "multi_index_no_defaluts",
-    #     "multi_index",
-    #     "multi_index_empty",
-    #     "single_index",
-    #     "single_index_empty",
-    # ])
-    # def parameter_test_data(self, request):
-    #     return request.param
-    # def test_expand_parmaters_defaults(self, user_config, simple_default_values, parameter_test_data):
+class TestReadStrategy:
+    missing_input_test_data = (
+        (
+            "param",
+            "AccumulatedAnnualDemand",
+            pd.DataFrame(columns=["REGION", "FUEL", "YEAR", "VALUE"]).set_index(
+                ["REGION", "FUEL", "YEAR"]
+            ),
+        ),
+        ("set", "REGION", pd.DataFrame(columns=["VALUE"])),
+    )
+
+    @mark.parametrize(
+        "config_type, test_value, expected",
+        missing_input_test_data,
+        ids=["param", "set"],
+    )
+    def test_get_missing_input_dataframes(
+        self, user_config, config_type, test_value, expected
+    ):
+        input_data = {}
+        reader = DummyReadStrategy(user_config)
+        input_data = reader._get_missing_input_dataframes(input_data, config_type)
+        actual = input_data[test_value]
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_get_missing_input_dataframes_excpetion(self, user_config):
+        input_data = {}
+        reader = DummyReadStrategy(user_config)
+        with raises(ValueError):
+            reader._get_missing_input_dataframes(input_data, config_type="not_valid")
