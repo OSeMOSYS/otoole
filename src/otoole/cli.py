@@ -70,13 +70,35 @@ logger = logging.getLogger(__name__)
 
 
 def validate_model(args):
-    file_format = args.format
+    data_format = args.data_format
+    data_file = args.data_file
+    user_config = args.user_config
 
-    if args.config:
-        config = read_packaged_file(args.config)
-        validate(file_format, args.filepath, config)
+    _, ending = os.path.splitext(user_config)
+    with open(user_config, "r") as user_config_file:
+        config = _read_file(user_config_file, ending)
+    validate_config(config)
+
+    if data_format == "datafile":
+        read_strategy = ReadDatafile(user_config=config)
+    elif data_format == "datapackage":
+        logger.warning(
+            "Reading from datapackage is deprecated, trying to read from CSVs"
+        )
+        data_file = read_deprecated_datapackage(data_file)
+        read_strategy = ReadCsv(user_config=config)
+    elif data_format == "csv":
+        read_strategy = ReadCsv(user_config=config)
+    elif data_format == "excel":
+        read_strategy = ReadExcel(user_config=config)
+
+    input_data, _ = read_strategy.read(data_file)
+
+    if args.validate_config:
+        validation_config = read_packaged_file(args.validate_config)
+        validate(input_data, validation_config)
     else:
-        validate(file_format, args.filepath)
+        validate(input_data)
 
 
 def cplex2cbc(args):
@@ -223,8 +245,6 @@ def data2res(args):
     _, ending = os.path.splitext(args.config)
     with open(args.config, "r") as config_file:
         config = _read_file(config_file, ending)
-    logger.info("Reading config from {}".format(args.config))
-    logger.info("Validating config from {}".format(args.config))
     validate_config(config)
 
     if data_format == "datafile":
@@ -328,15 +348,16 @@ def get_parser():
     # Parser for validation
     valid_parser = subparsers.add_parser("validate", help="Validate an OSeMOSYS model")
     valid_parser.add_argument(
-        "format",
-        help="The format of the OSeMOSYS model to validate",
-        choices=["datapackage", "sql"],
+        "data_format",
+        help="Input data format",
+        choices=sorted(["datafile", "excel", "csv"]),
     )
     valid_parser.add_argument(
-        "filepath", help="Path to the OSeMOSYS datapackage.json file to validate"
+        "data_file", help="Path to the OSeMOSYS data file to validate"
     )
+    valid_parser.add_argument("user_config", help="Path to config YAML file")
     valid_parser.add_argument(
-        "--config", help="Path to a user-defined validation-config file"
+        "--validate_config", help="Path to a user-defined validation-config file"
     )
     valid_parser.set_defaults(func=validate_model)
 

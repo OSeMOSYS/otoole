@@ -1,8 +1,9 @@
 import json
 import logging
 import os
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
+import pandas as pd
 from datapackage import Package
 from pydantic import ValidationError
 from sqlalchemy import create_engine
@@ -258,6 +259,37 @@ def read_deprecated_datapackage(input_datapackage: str) -> str:
             resource="datapackage.json",
             message="datapackage format no longer supported and no csv data found",
         )
+
+
+def get_packaged_resource(
+    input_data: Dict[str, pd.DataFrame], param: str
+) -> List[Dict[str, Any]]:
+    """Gets input parameter data and formats it as a dictionary
+
+    Arguments
+    ---------
+    input_data : Dict[str, pd.DataFrame]
+        Internal datastore for otoole input data
+    param : str
+        Name of OSeMOSYS parameter
+
+    Returns
+    -------
+    List[Dict[str,any]]
+        List of all rows in the df, where each dictionary is the column
+        name, followed by the value in that row
+
+    Example
+    -------
+    >>> get_packaged_resource(input_data, "InputActivityRatio")
+    >>> [{'REGION': 'SIMPLICITY',
+        'TECHNOLOGY': 'RIVWATAGR',
+        'FUEL': 'WATIN',
+        'MODE_OF_OPERATION': 1,
+        'YEAR': 2020,
+        'VALUE': 1.0}]
+    """
+    return input_data[param].reset_index().to_dict(orient="records")
 
 
 class UniqueKeyLoader(SafeLoader):

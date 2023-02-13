@@ -2,10 +2,12 @@
 """
 import logging
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import networkx as nx  # mypy: ignore
 import pandas as pd
+
+from otoole.utils import get_packaged_resource
 
 logger = logging.getLogger(__name__)
 
@@ -157,13 +159,13 @@ def create_graph(input_data: Dict[str, pd.DataFrame]):
         )
     ]
 
-    input_activity = get_resource(input_data, "InputActivityRatio")
-    output_activity = get_resource(input_data, "OutputActivityRatio")
-    emission_activity = get_resource(input_data, "EmissionActivityRatio")
-    tech2storage = get_resource(input_data, "TechnologyToStorage")
-    techfromstorage = get_resource(input_data, "TechnologyFromStorage")
-    acc_demand = get_resource(input_data, "AccumulatedAnnualDemand")
-    spec_demand = get_resource(input_data, "SpecifiedAnnualDemand")
+    input_activity = get_packaged_resource(input_data, "InputActivityRatio")
+    output_activity = get_packaged_resource(input_data, "OutputActivityRatio")
+    emission_activity = get_packaged_resource(input_data, "EmissionActivityRatio")
+    tech2storage = get_packaged_resource(input_data, "TechnologyToStorage")
+    techfromstorage = get_packaged_resource(input_data, "TechnologyFromStorage")
+    acc_demand = get_packaged_resource(input_data, "AccumulatedAnnualDemand")
+    spec_demand = get_packaged_resource(input_data, "SpecifiedAnnualDemand")
 
     edges = extract_edges(
         input_activity, "FUEL", "TECHNOLOGY", "input_ratio", directed=False
@@ -260,24 +262,3 @@ def build_graph(
     graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)
     return graph
-
-
-def get_resource(
-    input_data: Dict[str, pd.DataFrame], param: str
-) -> List[Dict[str, Any]]:
-    """Gets input parameter data and formats it for network graph.
-
-    Arguments
-    ---------
-    input_data : Dict[str, pd.DataFrame]
-        Internal datastore for otoole input data
-    param : str
-        Name of OSeMOSYS parameter
-
-    Returns
-    -------
-    List[Dict[str,any]]
-        List of all rows in the df, where each dictionary is the column
-        name, followed by the value in that row
-    """
-    return input_data[param].reset_index().to_dict(orient="records")
