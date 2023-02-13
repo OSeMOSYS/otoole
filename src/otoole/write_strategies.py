@@ -225,10 +225,4 @@ class WriteCsv(WriteStrategy):
         self._write_out_dataframe(self.filepath, set_name, df, index=False)
 
     def _footer(self, handle: TextIO):
-        # writes out default_values.csv
-        if self.default_values:
-            df = pd.DataFrame().from_dict(
-                self.default_values, orient="index", columns=["default_value"]
-            )
-            df = df.reset_index().rename({"index": "name"}, axis=1)
-            self._write_out_dataframe(self.filepath, "default_values", df, index=False)
+        pass
