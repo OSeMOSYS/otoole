@@ -5,9 +5,10 @@ from typing import List
 
 import pandas as pd
 from amply import Amply
-from pytest import mark
+from pytest import mark, raises
 
 from otoole import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
+from otoole.exceptions import OtooleDeprecationError
 from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.results import (
     ReadCbc,
@@ -1047,3 +1048,21 @@ class TestReadCSV:
         actual = reader._get_input_data(filepath, parameter, details)
 
         pd.testing.assert_frame_equal(actual, expected)
+
+    def test_read_default_values_csv_fails(self, user_config, tmp_path):
+        f = tmp_path / "input/default_values.csv"
+        f.parent.mkdir()
+        f.touch()
+
+        reader = ReadCsv(user_config=user_config)
+        with raises(OtooleDeprecationError):
+            reader._check_for_default_values_csv(f)
+
+    def test_read_default_values_csv(self, user_config):
+        filepath = os.path.join(
+            "tests", "fixtures", "data", "AccumulatedAnnualDemand.csv"
+        )
+        reader = ReadCsv(user_config=user_config)
+        actual = reader._check_for_default_values_csv(filepath)
+        expected = None
+        assert actual == expected

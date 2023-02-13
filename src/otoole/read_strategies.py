@@ -6,7 +6,7 @@ import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 
-from otoole.exceptions import OtooleExcelNameMismatchError
+from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameMismatchError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 from otoole.utils import create_name_mappings
@@ -170,6 +170,7 @@ class ReadCsv(_ReadTabular):
 
         input_data = {}
 
+        self._check_for_default_values_csv(filepath)
         default_values = self._read_default_values(self.user_config)
 
         for parameter, details in self.user_config.items():
@@ -243,6 +244,30 @@ class ReadCsv(_ReadTabular):
             default_columns = expected_columns + ["VALUE"]
             df = pd.DataFrame(columns=default_columns)
         return df
+
+    @staticmethod
+    def _check_for_default_values_csv(filepath: str) -> None:
+        """Checks for a default values csv, which has been deprecated.
+
+        Arguments
+        ---------
+        filepath:str
+            Directory of csv files
+
+        Raises
+        ------
+        OtooleDeprecationError
+            If a default_values.csv is found in input data
+        """
+
+        default_values_csv_path = os.path.join(
+            os.path.dirname(filepath), "default_values.csv"
+        )
+        if os.path.exists(default_values_csv_path):
+            raise OtooleDeprecationError(
+                resource="data/default_values.csv",
+                message="Remove default_values.csv and define all default values in the configuration file",
+            )
 
 
 class ReadDatafile(ReadStrategy):
