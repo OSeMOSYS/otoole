@@ -13,7 +13,6 @@ class OtooleValidationError(OtooleException):
         Name of the resource which is invalid
     message : str
         Error message
-
     """
 
     def __init__(self, resource, message):
@@ -32,7 +31,6 @@ class OtooleRelationError(OtooleException):
         Name of the resource which is invalid
     message : str
         Error message
-
     """
 
     def __init__(self, resource, foreign_resource, message):
@@ -97,10 +95,32 @@ class OtooleDeprecationError(OtooleException):
         Name of the resource which is invalid
     message : str
         Error message
-
     """
 
     def __init__(self, resource, message):
+        self.resource = resource
+        self.message = message
+
+    def __str__(self):
+        return f"{self.resource} -> {self.message}"
+
+
+class OtooleSetupError(OtooleException):
+    """Setup data already exists
+
+    Arguments
+    ---------
+    resource : str
+        Name of the resource which is invalid
+    message : str
+        Error message
+    """
+
+    def __init__(
+        self,
+        resource,
+        message="Data already exists. Delete file/directory or pass the --overwrite flag",
+    ):
         self.resource = resource
         self.message = message
 

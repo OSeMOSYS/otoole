@@ -196,7 +196,6 @@ class WriteCsv(WriteStrategy):
         df : pandas.DataFrame
         index : bool, default=False
             Write the index to CSV
-
         """
         filepath = os.path.join(folder, parameter + ".csv")
         with open(filepath, "w", newline="") as csvfile:
