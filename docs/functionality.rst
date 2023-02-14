@@ -16,7 +16,7 @@ pre-processing. Anything that happens with the immediate outputs of a solver, su
 the recommended open-source solvers GLPK_, CBC_, or the proprietary solvers CPLEX_ and
 Gurobi_, is called results and post-processing.
 
-.. image:: _static/osemosys_dataflow.png
+.. image:: _static/workflow.png
 
 Configuration File
 ------------------

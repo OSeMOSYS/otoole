@@ -10,7 +10,7 @@ to provide commonly used pre- and post-processing steps when  working with OSeMO
 Specifically, ``otoole`` allows the user to convert between data formats, process solutions,
 and visualise the reference energy system.
 
-.. image:: _static/overview.png
+.. image:: _static/overview_v2.png
 
 Currently, ``otoole`` only supports the GNU MathProg version of OSeMOSYS. We hope to build
 support for other implementations of OSeMOSYS soon. In fact, this is one of the key aims

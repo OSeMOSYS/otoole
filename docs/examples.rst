@@ -138,24 +138,16 @@ Use ``otoole`` to validate the input data.
 
 Step One: Create the Validation File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+To be done
 
 Step Two: ``otoole`` Validate
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The validation functionality of ``otoole`` will work with any supported
-input data format (``csv``, ``datafile``, or ``excel``). In this case, we will
-use the folder of csv data for validation.
+To be done
 
-Run the following command, where the RES will be saved as the file ``res.png``::
+Step Three: Validation Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To be done
 
-    $ otoole viz res excel simplicity.xlsx res.png config.yaml
-
-Step Two: View the RES
-~~~~~~~~~~~~~~~~~~~~~~
-Open the newly created file, ``res.png`` and the following image should be
-displayed
-
-.. image:: _static/simplicity_res.png
 
 .. _Simplicity: https://github.com/OSeMOSYS/simplicity
 .. _GLPK: https://www.gnu.org/software/glpk/
