@@ -115,3 +115,41 @@ class TestConvert:
         ]
         actual = run(commands, capture_output=True)
         assert actual.returncode == 0
+
+
+class TestSetup:
+
+    temp = mkdtemp()
+    temp_config = NamedTemporaryFile(suffix=".yaml")
+
+    test_data = [
+        (
+            [
+                "otoole",
+                "-v",
+                "setup",
+                "config",
+                NamedTemporaryFile(suffix=".yaml").name,
+            ],
+            "",
+        ),
+        (["otoole", "-v", "setup", "config", temp_config.name, "--overwrite"], ""),
+    ]
+
+    @mark.parametrize(
+        "commands,expected", test_data, ids=["setup", "setup_with_overwrite"]
+    )
+    def test_setup_commands(self, commands, expected):
+        actual = run(commands, capture_output=True)
+        assert expected in str(actual.stdout)
+        print(" ".join(commands))
+        assert actual.returncode == 0, print(actual.stdout)
+
+    test_errors = [
+        (["otoole", "-v", "setup", "config", temp_config.name], "OtooleSetupError"),
+    ]
+
+    @mark.parametrize("commands,expected", test_errors, ids=["setup_fails"])
+    def test_setup_error(self, commands, expected):
+        actual = run(commands, capture_output=True)
+        assert expected in str(actual.stderr)
