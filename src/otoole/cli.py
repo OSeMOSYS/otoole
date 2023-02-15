@@ -279,7 +279,10 @@ def setup(args):
         raise OtooleSetupError(resource=data_path)
 
     if data_type == "config":
-        shutil.copyfile(os.path.join("config.yaml"), data_path)
+        shutil.copyfile(
+            os.path.join(os.path.dirname(__file__), "preprocess", "config.yaml"),
+            data_path,
+        )
     elif data_type == "csv":
         config = get_config_setup_data()
         input_data, default_values = get_csv_setup_data(config)
