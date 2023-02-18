@@ -170,11 +170,11 @@ def conversion_matrix(args):
 
     Implemented conversion functions::
 
-        from\to     ex cs dp df
-        -----------------------
-        excel       -- yy -- --
-        csv         nn -- yy nn
-        datafile    nn -- yy --
+        from\to     ex cs df
+        --------------------
+        excel       -- yy --
+        csv         nn -- nn
+        datafile    nn -- --
 
     """
 
@@ -223,7 +223,9 @@ def conversion_matrix(args):
         to_path = os.path.join(os.path.dirname(to_path), "data")
         write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
     elif args.to_format == "excel":
-        write_strategy = WriteExcel(user_config=config, write_defaults=write_defaults)
+        write_strategy = WriteExcel(
+            user_config=config, write_defaults=write_defaults, input_data=input_data
+        )
     elif args.to_format == "datafile":
         write_strategy = WriteDatafile(
             user_config=config, write_defaults=write_defaults
