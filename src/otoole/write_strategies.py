@@ -67,13 +67,14 @@ class WriteExcel(WriteStrategy):
         pd.DataFrame
         """
 
+        indices = self.user_config[parameter_name]["indices"]
+
         if "input_data" not in kwargs:
-            logger.debug(f"Can not write excel template file for {parameter_name}")
-            return pd.DataFrame()
+            logger.debug(f"Can not pivot excel template for {parameter_name}")
+            return pd.DataFrame(columns=indices)
         else:
             input_data = kwargs["input_data"]
 
-        indices = self.user_config[parameter_name]["indices"]
         if "YEAR" in indices:
             years = input_data["YEAR"]["VALUE"].to_list()
             indices.remove("YEAR")

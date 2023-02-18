@@ -185,6 +185,7 @@ class WriteStrategy(Strategy):
         filepath: Optional[str] = None,
         default_values: Optional[Dict] = None,
         write_defaults: bool = False,
+        input_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         super().__init__(user_config=user_config)
         if filepath:
@@ -196,6 +197,11 @@ class WriteStrategy(Strategy):
             self.default_values = default_values
         else:
             self.default_values = {}
+
+        if input_data:
+            self.input_data = input_data
+        else:
+            self.input_data = {}
 
         self.write_defaults = write_defaults
 
@@ -257,7 +263,9 @@ class WriteStrategy(Strategy):
 
             if entity_type != "set":
                 default_value = default_values[name]
-                self._write_parameter(df, name, handle, default=default_value, **kwargs)
+                self._write_parameter(
+                    df, name, handle, default=default_value, input_data=self.input_data
+                )
             else:
                 self._write_set(df, name, handle)
 
