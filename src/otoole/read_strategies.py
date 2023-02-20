@@ -235,9 +235,13 @@ class ReadCsv(_ReadTabular):
             CSV data as a dataframe
         """
         csv_path = os.path.join(filepath, parameter + ".csv")
+        if details["type"] == "param":
+            converter = {x: str.strip for x in details["indices"]}
+        else:
+            converter = {}
 
         try:
-            df = pd.read_csv(csv_path)
+            df = pd.read_csv(csv_path, converters=converter)
         except pd.errors.EmptyDataError:
             logger.error("No data found in file for %s", parameter)
             expected_columns = details["indices"]
