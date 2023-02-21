@@ -123,9 +123,7 @@ called ``config.yaml``::
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ``otoole`` will only generate template CSV data, however, we want to input
 data in Excel format. Therefore, we will first generate CSV data and convert
-it to Excel format.
-
-First generate the CSV data through the command:
+it to Excel format.::
 
     $ otoole setup csv data
 
@@ -139,9 +137,13 @@ horizon. For example, if the model horizon is from 2020 to 2050, the
 | VALUE |
 +=======+
 | 2020  |
+|-------|
 | 2021  |
+|-------|
 | 2022  |
+|-------|
 | ...   |
+|-------|
 | 2050  |
 +-------+
 
