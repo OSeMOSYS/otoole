@@ -271,14 +271,6 @@ on PyPI_, the following steps can be used to release a new version for
 #. Run ``tox -e publish -- --repository pypi`` and check that everything was
    uploaded to PyPI_ correctly.
 
-
-
-.. [#contrib1] Even though, these resources focus on open source projects and
-   communities, the general ideas behind collaborating with other developers
-   to collectively create software are general and can be applied to all sorts
-   of environments, including private companies and proprietary code bases.
-
-
 .. <-- strart -->
 .. |the repository service| replace:: GitHub
 .. |contribute button| replace:: "Create pull request"
