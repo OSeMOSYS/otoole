@@ -179,6 +179,32 @@ the rest of the model::
     --validate_config VALIDATE_CONFIG
                             Path to a user-defined validation-config file
 
+Setup
+-----
+The ``setup`` module in ``otoole`` allows you to generate template files to
+quickly get up and running with ``otoole``.
+
+``otoole setup``
+~~~~~~~~~~~~~~~~
+The ``setup``command allows you to generate a template user configuration file,
+useful for ``conversion`` and ``result`` commands, and template input ``csv``
+data. **Note:** the data generated based on a specific version of OSeMOSYS,
+users will need to adapt the template data for their own needs::
+
+    $ otoole setup --help
+
+    usage: otoole setup [-h] [--write_defaults] [--overwrite] {config,csv} data_path
+
+    positional arguments:
+    {config,csv}      Type of file to setup
+    data_path         Path to file or folder to save to
+
+    optional arguments:
+    -h, --help        show this help message and exit
+    --write_defaults  Writes default values
+    --overwrite       Overwrites existing data
+
+
 .. _GLPK: https://www.gnu.org/software/glpk/
 .. _CBC: https://github.com/coin-or/Cbc
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer

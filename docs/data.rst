@@ -328,11 +328,6 @@ And in the same ``data.txt`` file, the set ``TECHNOLOGY`` will be defined as fol
 .. TIP::
    For reading and writing between Python and AMPL_, see the amply_ Python package.
 
-Validation Configuration File
------------------------------
-To be done...
-
-
 .. _MathProg: https://en.wikibooks.org/wiki/GLPK/GMPL_(MathProg)
 .. _AMPL: https://ampl.com/
 .. _amply: https://github.com/willu47/amply
