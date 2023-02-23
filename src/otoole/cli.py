@@ -199,6 +199,8 @@ def conversion_matrix(args):
 
     # set read strategy
 
+    keep_whitespace = True if args.keep_whitespace else False
+
     if args.from_format == "datafile":
         read_strategy = ReadDatafile(user_config=config)
     elif args.from_format == "datapackage":
@@ -206,11 +208,11 @@ def conversion_matrix(args):
             "Reading from datapackage is deprecated, trying to read from CSVs"
         )
         from_path = read_deprecated_datapackage(from_path)
-        read_strategy = ReadCsv(user_config=config)
+        read_strategy = ReadCsv(user_config=config, keep_whitespace=keep_whitespace)
     elif args.from_format == "csv":
-        read_strategy = ReadCsv(user_config=config)
+        read_strategy = ReadCsv(user_config=config, keep_whitespace=keep_whitespace)
     elif args.from_format == "excel":
-        read_strategy = ReadExcel(user_config=config)
+        read_strategy = ReadExcel(user_config=config, keep_whitespace=keep_whitespace)
 
     input_data, _ = read_strategy.read(args.from_path)
 
@@ -363,6 +365,12 @@ def get_parser():
     convert_parser.add_argument(
         "--write_defaults",
         help="Writes default values",
+        default=False,
+        action="store_true",
+    )
+    convert_parser.add_argument(
+        "--keep_whitespace",
+        help="Keeps leading/trailing whitespace in CSV files",
         default=False,
         action="store_true",
     )

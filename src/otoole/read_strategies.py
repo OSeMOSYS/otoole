@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, List, TextIO, Tuple, Union
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 from amply import Amply
@@ -34,6 +34,10 @@ class ReadMemory(ReadStrategy):
 
 
 class _ReadTabular(ReadStrategy):
+    def __init__(self, user_config: Dict[str, Dict], keep_whitespace: bool = False):
+        super().__init__(user_config)
+        self.keep_whitespace = keep_whitespace
+
     def _check_set(self, df: pd.DataFrame, config_details: Dict, name: str):
 
         logger.info("Checking set %s", name)
@@ -85,6 +89,24 @@ class _ReadTabular(ReadStrategy):
         logger.debug("Final all headers for %s: %s", name, all_headers)
 
         return narrow[all_headers].set_index(expected_headers)
+
+    def _whitespace_converter(self, indices: List[str]) -> Dict[str, Any]:
+        """Creates converter for striping whitespace in dataframe
+
+        Arguments
+        ---------
+        indicies: List[str]
+            Column headers of dataframe
+
+        Returns
+        -------
+        Dict[str,Any]
+            Converter dictionary
+        """
+        if self.keep_whitespace:
+            return {}
+        else:
+            return {x: str.strip for x in indices}
 
 
 class ReadExcel(_ReadTabular):
@@ -177,9 +199,13 @@ class ReadCsv(_ReadTabular):
             logger.info("Looking for %s", parameter)
 
             entity_type = details["type"]
+            try:
+                converter = self._whitespace_converter(details["indices"])
+            except KeyError:  # sets don't have indices def
+                converter = self._whitespace_converter(["VALUE"])
 
             if entity_type == "param":
-                df = self._get_input_data(filepath, parameter, details)
+                df = self._get_input_data(filepath, parameter, details, converter)
                 narrow = self._check_parameter(df, details["indices"], parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
@@ -189,7 +215,7 @@ class ReadCsv(_ReadTabular):
                     narrow_checked = narrow
 
             elif entity_type == "set":
-                df = self._get_input_data(filepath, parameter, details)
+                df = self._get_input_data(filepath, parameter, details, converter)
                 narrow = self._check_set(df, details, parameter)
                 if not narrow.empty:
                     narrow_checked = check_set_datatype(
@@ -214,9 +240,7 @@ class ReadCsv(_ReadTabular):
 
     @staticmethod
     def _get_input_data(
-        filepath: str,
-        parameter: str,
-        details: Dict,
+        filepath: str, parameter: str, details: Dict, converter: Optional[Dict] = None
     ) -> pd.DataFrame:
         """Reads in and checks CSV data format.
 
@@ -234,10 +258,10 @@ class ReadCsv(_ReadTabular):
         pd.DataFrame
             CSV data as a dataframe
         """
+        converter = {} if not converter else converter
         csv_path = os.path.join(filepath, parameter + ".csv")
-
         try:
-            df = pd.read_csv(csv_path)
+            df = pd.read_csv(csv_path, converters=converter)
         except pd.errors.EmptyDataError:
             logger.error("No data found in file for %s", parameter)
             expected_columns = details["indices"]

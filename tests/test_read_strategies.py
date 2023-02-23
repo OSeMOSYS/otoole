@@ -1066,3 +1066,28 @@ class TestReadCSV:
         actual = reader._check_for_default_values_csv(filepath)
         expected = None
         assert actual == expected
+
+
+class TestReadTabular:
+    """Methods shared for csv and excel"""
+
+    test_data = [
+        (True, ["REGION", "TECHNOLOGY"], {}),
+        (
+            False,
+            ["REGION", "TECHNOLOGY"],
+            {"REGION": str.strip, "TECHNOLOGY": str.strip},
+        ),
+    ]
+
+    @mark.parametrize(
+        "keep_whitespace, indices, expected",
+        test_data,
+        ids=["create_empty", "create_full"],
+    )
+    def test_whitespace_converter(
+        self, user_config, keep_whitespace, indices, expected
+    ):
+        reader = ReadCsv(user_config=user_config, keep_whitespace=keep_whitespace)
+        actual = reader._whitespace_converter(indices)
+        assert actual == expected
