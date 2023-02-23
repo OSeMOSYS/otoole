@@ -34,7 +34,7 @@ class ReadMemory(ReadStrategy):
 
 
 class _ReadTabular(ReadStrategy):
-    def __init__(self, user_config: Dict[str, Dict], keep_whitespace: bool = True):
+    def __init__(self, user_config: Dict[str, Dict], keep_whitespace: bool = False):
         super().__init__(user_config)
         self.keep_whitespace = keep_whitespace
 
