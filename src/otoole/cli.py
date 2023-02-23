@@ -88,6 +88,7 @@ def validate_model(args):
             "Reading from datapackage is deprecated, trying to read from CSVs"
         )
         data_file = read_deprecated_datapackage(data_file)
+        logger.info("Successfully read folder of CSVs")
         read_strategy = ReadCsv(user_config=config)
     elif data_format == "csv":
         read_strategy = ReadCsv(user_config=config)
@@ -152,6 +153,7 @@ def result_matrix(args):
             "Reading from datapackage is deprecated, trying to read from CSVs"
         )
         input_csvs = read_deprecated_datapackage(args.input_datapackage)
+        logger.info("Successfully read folder of CSVs")
         input_data, _ = ReadCsv(user_config=config).read(input_csvs)
     elif args.input_datafile:
         input_data, _ = ReadDatafile(user_config=config).read(args.input_datafile)
@@ -208,6 +210,7 @@ def conversion_matrix(args):
             "Reading from datapackage is deprecated, trying to read from CSVs"
         )
         from_path = read_deprecated_datapackage(from_path)
+        logger.info("Successfully read folder of CSVs")
         read_strategy = ReadCsv(user_config=config, keep_whitespace=keep_whitespace)
     elif args.from_format == "csv":
         read_strategy = ReadCsv(user_config=config, keep_whitespace=keep_whitespace)
@@ -334,6 +337,11 @@ def get_parser():
         help="Input GNUMathProg datafile required for OSeMOSYS short or fast results",
         default=None,
     )
+    result_parser.add_argument(
+        "--input_datapackage",
+        help="Deprecated",
+        default=None,
+    )
     result_parser.add_argument("config", help="Path to config YAML file")
     result_parser.add_argument(
         "--write_defaults",
@@ -430,6 +438,12 @@ def get_parser():
     setup_parser.set_defaults(func=setup)
 
     return parser
+
+
+class DeprecateAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        logger.warning(f"Argument {self.option_strings} is deprecated and is ignored.")
+        delattr(namespace, self.dest)
 
 
 def main():
