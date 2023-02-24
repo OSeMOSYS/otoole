@@ -24,12 +24,11 @@ Description
 for users of OSeMOSYS.The aim of the package is to provide commonly used pre-
 and post-processing steps for OSeMOSYS.
 
-.. image:: img/osemosys_dataflow.png
+.. image:: docs/_static/workflow.png
 
 **otoole** aims to support different ways of storing input data and results,
-including csv files, databases, datapackages and Excel workbooks,
-as well as different implementations of the OSeMOSYS model.
-This improves interoperability of analyses and
+including csv files, databases and Excel workbooks,as well as different implementations
+of the OSeMOSYS model. This improves interoperability of analyses and
 generally makes life a little bit easier.
 
 Installation
@@ -51,22 +50,9 @@ https://otoole.readthedocs.io/en/stable/index.html
 Contributing
 ============
 
-New ideas and bugs `should be submitted: <https://github.com/OSeMOSYS/otoole/issues/new>`_
+New ideas and bugs `should be submitted <https://github.com/OSeMOSYS/otoole/issues/new>`_
 to the repository Issue Tracker. Please do contribute by discussing and developing these
 ideas further, or by developing the codebase.
 
-To contribute directly to the documentation of code development, you
-first need to install the package in *develop mode*::
-
-    git clone http://github.com/OSeMOSYS/otoole
-    cd otoole
-    git checkout <branch you wish to use>
-    python setup.py develop
-
-Alternatively, use pip to install otoole from git in editable mode
-
-    pip install -e git+http://github.com/OSeMOSYS/otoole@master#egg=otoole
-
-Now, all changes made in the codebase will automatically be reflected
-in the installed Python version accessible on the command line or from
-importing otoole modules into other Python packages.
+To contribute directly to the documentation of code development, please see
+the contribution guidelines document.

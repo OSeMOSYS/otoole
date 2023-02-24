@@ -378,7 +378,7 @@ def get_parser():
     )
     convert_parser.add_argument(
         "--keep_whitespace",
-        help="Keeps leading/trailing whitespace in CSV files",
+        help="Keeps leading/trailing whitespace",
         default=False,
         action="store_true",
     )

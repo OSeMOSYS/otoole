@@ -2,7 +2,7 @@
 Contributing
 ============
 
-Welcome to ``otoole`` contributor's guide.
+Welcome to ``otoole`` contributor's guide!
 
 This document focuses on getting any potential contributor familiarized
 with the development processes, but `other kinds of contributions`_ are also
@@ -78,15 +78,14 @@ Code Contributions
 ==================
 
 ``otoole`` is built around a command line tool which is written
-using the Python argparse library. The otoole.cli module is a useful
+using the Python argparse library. The ``otoole.cli`` module is a useful
 place to start when trying to understand how each command works.
 
 The ``otoole convert`` and ``otoole results`` commands both
-use classes which inherit the otoole.Strategy class.
-An ``otoole.ReadStrategy`` implements functionality which returns a
-dictionary of pandas.DataFrame objects.
-An ``otoole.WriteStrategy`` takes a dictionary of pandas.DataFrames
-as an argument and writes out the target file format.
+use classes which inherit the ``otoole.Strategy`` class.
+An ``otoole.ReadStrategy`` implements functionality to read in data, while an
+``otoole.WriteStrategy`` writes out the target file format. The internal datastore
+format in ``otool`` is a dictionary of ``pandas.DataFrames``.
 
 Comprehensive unit tests in the ``tests`` folder provide another way to
 understand what each of the components does.
@@ -224,7 +223,7 @@ package:
     tox -r -e docs
 
 #. Make sure to have a reliable |tox|_ installation that uses the correct
-   Python version (e.g., 3.7+). When in doubt you can run::
+   Python version (e.g., 3.8+). When in doubt you can run::
 
     tox --version
     # OR

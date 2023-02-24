@@ -4,9 +4,18 @@
 Examples
 --------
 
-This page will present examples to show the full functionality of ``otoole``.
-To follow these examples, clone the Simplicity_ repository and run all commands
-from the ``simplicity/`` directory.
+This page will present examples to show the full functionality of ``otoole``. It will
+walk through the ``convert``, ``results``, ``setup``, ``viz`` and ``validate``
+functionality in seperate simple use cases.
+
+.. NOTE::
+    To follow these examples, clone the Simplicity_ repository and run all commands
+    from the ``simplicity/`` directory.
+
+.. CAUTION::
+    While ``otoole`` does not require any solver, these examples will use the
+    free and open-source tools GLPK_ and CBC_ to build and solve example
+    models.
 
 Data Conversion
 ---------------
@@ -55,7 +64,7 @@ Result Processing
 Objective
 ~~~~~~~~~
 
-Use an excel worksheet to build and solve an OSeMOSYS model with CPLEX. Only
+Use an excel worksheet to build and solve an OSeMOSYS model with CBC. Only
 generate the results for ``TotalDiscountedCost`` and ``TotalCapacityAnnual``.
 
 1. ``otoole`` Convert
@@ -73,9 +82,9 @@ Use GLPK_ to build the model and save it as ``simplicity.lp``::
 
 3. Solve the Model
 ~~~~~~~~~~~~~~~~~~
-Use CPLEX_ to solve the model and save the solution file as ``simplicity.sol``::
+Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
 
-    $ cplex -c "read simplicity.sol" "optimize" "write simplicity.sol"
+    $ cbc simplicity.sol solve -solu simplicity.sol
 
 4. Modify the Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,16 +104,12 @@ Create a folder to hold the results::
 
     $ mkdir results
 
-Sort the solution file (only needed for CPLEX solution files)::
-
-    $ simplicity.sol sort > simplicity_sorted.sol
-
 Use ``otoole``'s ``result`` package to generate the result CSVs::
 
-    $ otoole results cplex csv simplicity_sorted.sol results config.yaml
+    $ otoole results cbc csv simplicity.sol results config.yaml
 
-Input Data Template Setup
--------------------------
+Template Setup
+--------------
 
 Objective
 ~~~~~~~~~
@@ -114,7 +119,7 @@ Generate a template configuration file and excel input file to use with
 
 1. Create the Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Run the following command, wto create a template configuration file
+Run the following command, to create a template configuration file
 called ``config.yaml``::
 
     $ otoole setup config config.yaml
@@ -123,7 +128,7 @@ called ``config.yaml``::
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ``otoole`` will only generate template CSV data, however, we want to input
 data in Excel format. Therefore, we will first generate CSV data and convert
-it to Excel format.::
+it to Excel format::
 
     $ otoole setup csv data
 
@@ -133,25 +138,24 @@ Open up the the file ``data/YEARS.csv`` and add all the years over the model
 horizon. For example, if the model horizon is from 2020 to 2050, the
 ``data/YEARS.csv`` file should be formatted as follows:
 
-+-------+
-| VALUE |
-+=======+
-| 2020  |
-|-------|
-| 2021  |
-|-------|
-| 2022  |
-|-------|
-| ...   |
-|-------|
-| 2050  |
-+-------+
++---------+
+| VALUE   |
++=========+
+| 2020    |
++---------+
+| 2021    |
++---------+
+| 2022    |
++---------+
+| ...     |
++---------+
+| 2050    |
++---------+
 
 .. NOTE::
    While this step in not technically required, by filling out the years in
    CSV format, ``otoole`` will pivot all the Excel sheets on the years
-   you input during the conversion process. This will save significant
-   formatting time!
+   during the conversion process. This will save significant formatting time!
 
 4. Convert the CSV Template Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,11 +197,15 @@ displayed
 Model Validation
 ----------------
 
+.. NOTE::
+    In this example, we will use a very simple model instead of the
+    Simplicity_ demonstration model. This way the user does not need to be
+    familar with the naming convenations of the model.
+
 Objective
 ~~~~~~~~~
 
-Use ``otoole`` to validate an input data file. In this example, we will use a
-very simple model instead of the Simplicity_ demonstration model. The model
+Use ``otoole`` to validate an input data file. The model
 we are going to validate is shown below, where the fuel and technology
 codes are shown in bold face.
 

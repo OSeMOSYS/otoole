@@ -7,22 +7,24 @@ Data Formats
 User Configuration File
 -----------------------
 
+.. versionadded:: v1.0.0
+    The user configuration file
+
 Overview
 ~~~~~~~~
 
-All commands in ``otoole`` require the user to specify a configuration file that describes
+Most commands in ``otoole`` require the user to specify a configuration file that describes
 the ``parameters``, ``sets``, and ``results`` in the model. This configuration file is
-written in ``yaml`` and is typically saved as ``config.yaml``. How to define the
-``parameters``, ``sets``, and ``results`` in this file are highlighted below. If the user
-incorrectly enters data, validation checks in ``otoole`` should catch this.
-
-This section will cover how to formate the user configuration file.
+written in ``yaml`` and is typically saved as ``config.yaml``. This section will cover how to
+format the user configuration file. If the user incorrectly enters data, validation checks in
+``otoole`` should catch this.
 
 Information Required
 ~~~~~~~~~~~~~~~~~~~~
 
-The table below highlights what information is required for each value type.
-Required values are given by ``X``, optional values are given by ``(X)``.
+The table below highlights what information is required for each ``Set``,
+``Parameter`` and ``Result`` definition in the configuration file. Required values are
+given by **X**, while optional values are given by **(X)**.
 
 +-------------+------+------------+---------+
 |             | Set  | Parameter  | Result  |
@@ -41,12 +43,12 @@ Required values are given by ``X``, optional values are given by ``(X)``.
 +-------------+------+------------+---------+
 
 .. WARNING::
-   Names that are longer than 31 characters require a ``short_name`` field. This is due
+   Names longer than 31 characters require a ``short_name`` field. This is due
    to character limits on excel sheet names. ``otoole`` will raise an error if a
    ``short_name`` is not provided in these instances.
 
-Sets
-~~~~
+Sets Format
+~~~~~~~~~~~
 
 Sets are defined as follows::
 
@@ -56,12 +58,12 @@ Sets are defined as follows::
         type: set
 
 .. NOTE::
-   It's convention in OSeMOSYS to give sets uppercase names
+   It's convention in OSeMOSYS to capitalize set names
 
-Parmaters
-~~~~~~~~~
+Parmaters Foramt
+~~~~~~~~~~~~~~~~
 
-Parameters are defined as follows. When referencing set indices, use the full
+Parameters are defined as follows. When referencing set indices use the full
 name, **not** the ``short_name``::
 
     ParameterName:
@@ -72,12 +74,12 @@ name, **not** the ``short_name``::
         default: 0
 
 .. NOTE::
-   It's convention in OSeMOSYS to use Pascal case for parameters
+   It's convention in OSeMOSYS to use Pascal case for parameter names
 
-Results
-~~~~~~~
+Results Format
+~~~~~~~~~~~~~~
 
-Results are defined as follows. When referencing set indices, use the full
+Results are defined as follows. When referencing set indices use the full
 name, **not** the ``short_name``::
 
     AnnualEmissions:
@@ -89,13 +91,12 @@ name, **not** the ``short_name``::
         calculated: "True" or "False"
 
 .. NOTE::
-   It's convention in OSeMOSYS to use Pascal case for results
-
+   It's convention in OSeMOSYS to use Pascal case for result names
 
 Examples
 ~~~~~~~~
 
-Below are examples of correctly formatted configuration file values. See the Simplicity
+Below are examples of correctly formatted configuration file values. See the Simplicity_
 repository for a complete example.
 
 1. Set definition of ``TECHNOLOGY``::
@@ -131,8 +132,11 @@ Overview
 This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
 
-.. NOTE::
-   See the Simplicity_ repository for a full example of all these formats.
+.. deprecated:: v1.0.0
+    The ``datapackage`` format is no longer supported
+
+.. SEEALSO::
+   See the Simplicity_ repository for a full example of these formats
 
 Excel
 ~~~~~
@@ -325,7 +329,7 @@ And in the same ``data.txt`` file, the set ``TECHNOLOGY`` will be defined as fol
         HYD2
         ...
 
-.. TIP::
+.. SEEALSO::
    For reading and writing between Python and AMPL_, see the amply_ Python package.
 
 .. _MathProg: https://en.wikibooks.org/wiki/GLPK/GMPL_(MathProg)

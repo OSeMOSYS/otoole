@@ -9,5 +9,6 @@ pandas
 pandas_datapackage_reader
 pydantic
 pydot
+python>=3.8
 pyyaml
 xlrd

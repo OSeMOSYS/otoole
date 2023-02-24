@@ -4,9 +4,11 @@ Changelog
 Version 1.0
 ===========
 - Requires explicit provision of a user-defined configuration file for otoole to workbook
-- Reads in a model configuration from a datapackage
-- Fixed issue #114 so that conversion to Excel workbooks is now operating
+- Deprecates datapackage fuctionality
+- Adds setup command to generate template config.yaml and csv files
+- Documentation update
 - Bumped pyscaffold to 4.2
+- Otoole now requires Python 3.8 or later
 
 Version 0.9
 ===========

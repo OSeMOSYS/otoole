@@ -5,10 +5,8 @@ Core Functionality
 ==================
 
 ``otoole``'s functionality includes converting between data formats, processing
-solution files, and visualising the model. These core functions are described on the page.
-``otoole`` is a command-line tool. By writing commands in a terminal window,
-you can tell ``otoole`` to perform certain tedious tasks for you to turbo-charge
-your OSeMOSYS modelling.
+solution files, and visualising the model. These core functions, which provide a method
+to turbo-charge your modelling, are described on this page!
 
 As shown in the diagram, ``otoole`` deals primarily with data before and after OSeMOSYS.
 Data work prior to the generation of a datafile, which is read in by GLPK_, is called
@@ -18,19 +16,12 @@ Gurobi_, is called results and post-processing.
 
 .. image:: _static/workflow.png
 
-Configuration File
-------------------
+.. NOTE::
+    While ``otoole`` is targetted at OSeMOSYS users, the functionality can eaisly be extended
+    to work with any workflow that involves the use of a MathProg file!
 
-When performing any operation with ``otoole``, the user must supply a configuration
-file. This file specifies what ``sets``, ``parameters``, and ``results`` are in the
-model. The configuration file allows modellers to easily switch between
-OSeMOSYS versions that may have different structures.
-
-.. TIP::
-    The :ref:`dataformats` page provides information on how to format the configuration file
-
-Pre-processing
---------------
+Data Conversion
+---------------
 
 Overview
 ~~~~~~~~
@@ -43,6 +34,9 @@ conversion between the following formats:
 - Excel
 - A folder of CSV files
 - GNU MathProg datafile
+
+.. deprecated:: v1.0.0
+    The ``datapackage`` format is no longer supported
 
 ``otoole convert``
 ~~~~~~~~~~~~~~~~~~
@@ -63,16 +57,13 @@ input formats::
     optional arguments:
     -h, --help            show this help message and exit
     --write_defaults      Writes default values
+    --keep_whitespace     Keeps leading/trailing whitespace
 
-.. NOTE::
-    The ``config`` positional argument is required from version 1.0 and onwards
+.. versionadded:: v1.0.0
+    The ``config`` positional argument is now required
 
-.. TIP::
-    The :ref:`dataformats` page provides information on how to structure input data
-
-
-Post-processing
----------------
+Result Processing
+-----------------
 
 Overview
 ~~~~~~~~
@@ -98,11 +89,11 @@ so as to speed up the model matrix generation and solution times.
 ``otoole results``
 ~~~~~~~~~~~~~~~~~~
 
-The ``results`` command creates a folder of CSV result files from a CBC, CLP, Gurobi or CPLEX
-solution file::
+The ``results`` command creates a folder of CSV result files from a CBC_, CLP_,
+Gurobi_ or CPLEX_ solution file::
 
     $ otoole results --help
-    usage: otoole results [-h] [--input_datafile INPUT_DATAFILE] [--write_defaults] {cbc,cplex,gurobi} {csv} from_path to_path config
+    usage: otoole results [-h] [--input_datafile INPUT_DATAFILE] [--input_datapackage INPUT_DATAPACKAGE] [--write_defaults] {cbc,cplex,gurobi} {csv} from_path to_path config
 
     positional arguments:
     {cbc,cplex,gurobi}    Result data format to convert from
@@ -112,14 +103,52 @@ solution file::
     config                Path to config YAML file
 
     optional arguments:
-    -h, --help            show this help message and exit
-    --input_datafile INPUT_DATAFILE
-                            Input GNUMathProg datafile required for OSeMOSYS short or fast results
-    --write_defaults      Writes default values
+        -h, --help            show this help message and exit
+        --input_datafile INPUT_DATAFILE
+                                Input GNUMathProg datafile required for OSeMOSYS short or fast results
+        --input_datapackage INPUT_DATAPACKAGE
+                                Deprecated
+        --write_defaults      Writes default values
+
+.. versionadded:: v1.0.0
+    The ``config`` positional argument is now required
+
+.. deprecated:: v1.0.0
+    The ``--input_datapackage`` flag is no longer supported
 
 .. WARNING::
-    If using CPLEX_, note that you need to first sort the CPLEX file which you can do from
-    the command line. See the :ref:`examples` page for a full CPLEX_ workflow example.
+    If using CPLEX_, you will need to transform and sort the solution file before
+    processing it with ``otoole``. Instructions on how to run the transformation
+    script are on the `OSeMOSYS Repository`_. After transformation, sort the file
+    with the command ``sort <solution_file> > <sorted_file>``.
+
+Setup
+-----
+The ``setup`` module in ``otoole`` allows you to generate template files to
+quickly get up and running.
+
+``otoole setup``
+~~~~~~~~~~~~~~~~
+The ``setup``command allows you to generate a template user configuration file,
+useful for ``conversion`` and ``result`` commands, and template input ``csv``
+data::
+
+    $ otoole setup --help
+
+    usage: otoole setup [-h] [--write_defaults] [--overwrite] {config,csv} data_path
+
+    positional arguments:
+    {config,csv}      Type of file to setup
+    data_path         Path to file or folder to save to
+
+    optional arguments:
+    -h, --help        show this help message and exit
+    --write_defaults  Writes default values
+    --overwrite       Overwrites existing data
+
+.. WARNING::
+    The template files are generated based on a specific version of OSeMOSYS, users will
+    need to adapt the template data for their own needs
 
 Visualization
 -------------
@@ -150,13 +179,13 @@ visualising the reference energy system through the ``vis res`` command is suppo
 
 .. NOTE::
     The ``resfile`` command should include a file ending used for images,
-    including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The ``graphviz`` library
+    including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The graphviz_ library
     used to layout the reference energy system will interpret the file ending.
 
 Validation
 ----------
-The validation module in ``otoole`` checks the technology and fuel names
-against a standard or user defined configuration file.
+The validation module in ``otoole`` checks technology and fuel names against a
+standard or user defined configuration file.
 
 ``otoole validate``
 ~~~~~~~~~~~~~~~~~~~
@@ -179,33 +208,11 @@ the rest of the model::
     --validate_config VALIDATE_CONFIG
                             Path to a user-defined validation-config file
 
-Setup
------
-The ``setup`` module in ``otoole`` allows you to generate template files to
-quickly get up and running with ``otoole``.
-
-``otoole setup``
-~~~~~~~~~~~~~~~~
-The ``setup``command allows you to generate a template user configuration file,
-useful for ``conversion`` and ``result`` commands, and template input ``csv``
-data. **Note:** the data generated based on a specific version of OSeMOSYS,
-users will need to adapt the template data for their own needs::
-
-    $ otoole setup --help
-
-    usage: otoole setup [-h] [--write_defaults] [--overwrite] {config,csv} data_path
-
-    positional arguments:
-    {config,csv}      Type of file to setup
-    data_path         Path to file or folder to save to
-
-    optional arguments:
-    -h, --help        show this help message and exit
-    --write_defaults  Writes default values
-    --overwrite       Overwrites existing data
-
 
 .. _GLPK: https://www.gnu.org/software/glpk/
 .. _CBC: https://github.com/coin-or/Cbc
+.. _CLP: https://github.com/coin-or/Clp
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
-.. _Gurobi: https://www.gurobi.com/"
+.. _Gurobi: https://www.gurobi.com/
+.. _`OSeMOSYS Repository`: https://github.com/OSeMOSYS/OSeMOSYS_GNU_MathProg/tree/master/scripts
+.. _graphviz: https://graphviz.org/
