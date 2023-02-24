@@ -2,9 +2,6 @@
 otoole : OSeMOSYS tools for energy work
 =======================================
 
-.. image:: https://travis-ci.com/OSeMOSYS/otoole.svg?branch=master
-    :target: https://travis-ci.com/OSeMOSYS/otoole
-
 .. image:: https://coveralls.io/repos/github/OSeMOSYS/otoole/badge.svg?branch=master
     :target: https://coveralls.io/github/OSeMOSYS/otoole?branch=master
 
