@@ -153,14 +153,30 @@ todo_emit_warnings = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "alabaster"
+html_theme = "sphinx_book_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
+# html_theme_options = {
+#     "sidebar_width": "300px",
+#     "page_width": "1200px"
+# }
+html_logo = "_static/logo.png"
+html_title = ""
 html_theme_options = {
-    "sidebar_width": "300px",
-    "page_width": "1200px"
+    "home_page_in_toc": True,
+    "github_url": "https://github.com/OSeMOSYS/otoole",
+    "repository_url": "https://github.com/OSeMOSYS/otoole",
+    "repository_branch": "master",
+    "path_to_docs": "docs",
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "extra_navbar":
+        """
+        <p>Theme by the <a href="https://executablebooks.org/en/latest/">Executable Book Project</a></p>
+        <p>Logo by <a href="https://looka.com/">looka.com</a></p>
+        """,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.

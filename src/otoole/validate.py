@@ -148,7 +148,7 @@ def validate_resource(
     Arguments
     ---------
     input_data: dict[str,pd.DataFrame]
-        otools internal datastore
+        otoole internal datastore
     resource: str
     schemas : List[Dict]
         The schema from which to create a validation expression

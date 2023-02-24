@@ -1,7 +1,6 @@
 amply
 datapackage
 flatten_dict
-frictionless
 importlib_resources; python_version<'3.7'
 networkx
 openpyxl
