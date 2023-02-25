@@ -84,11 +84,6 @@ DiscountRate:
     type: param
     dtype: float
     default: 0.05
-DiscountRateIdv:
-    indices: [REGION,TECHNOLOGY]
-    type: param
-    dtype: float
-    default: 0.05
 DiscountRateStorage:
     indices: [REGION,STORAGE]
     type: param
