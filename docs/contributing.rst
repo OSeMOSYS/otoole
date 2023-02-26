@@ -250,9 +250,6 @@ Maintainer tasks
 Releases
 --------
 
-   If instead you are using a different/private package index, please update
-   the instructions accordingly.
-
 If you are part of the group of maintainers and have correct user permissions
 on PyPI_, the following steps can be used to release a new version for
 ``otoole``:
