@@ -21,12 +21,13 @@ Description
 for users of OSeMOSYS.The aim of the package is to provide commonly used pre-
 and post-processing steps for OSeMOSYS.
 
-.. image:: docs/_static/workflow.png
-
 **otoole** aims to support different ways of storing input data and results,
 including csv files, databases and Excel workbooks,as well as different implementations
 of the OSeMOSYS model. This improves interoperability of analyses and
 generally makes life a little bit easier.
+
+.. image:: docs/_static/workflow.png
+    :scale: 75%
 
 Installation
 ============
