@@ -1,9 +1,17 @@
 =========
 Changelog
 =========
+Version 1.0
+===========
+- Requires explicit provision of a user-defined configuration file for otoole to workbook
+- Deprecates datapackage fuctionality
+- Adds setup command to generate template config.yaml and csv files
+- Documentation update
+- Bumped pyscaffold to 4.2
+- Otoole now requires Python 3.8 or later
 
 Version 0.9
-==========
+===========
 - Adds support for processing Gurobi solution files
 - Better handling of datatypes when converting datapackages
 - Fixing bugs on Windows where empty lines were written out during conversion to datapackage

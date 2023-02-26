@@ -5,33 +5,20 @@ from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
-from pandas_datapackage_reader import read_datapackage
 
+from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameMismatchError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
-from otoole.utils import read_datapackage_schema_into_config
+from otoole.utils import create_name_mappings
 
 logger = logging.getLogger(__name__)
 
 
-EXCEL_TO_CSV = {
-    "TotalAnnualMaxCapacityInvestmen": "TotalAnnualMaxCapacityInvestment",
-    "TotalAnnualMinCapacityInvestmen": "TotalAnnualMinCapacityInvestment",
-    "TotalTechnologyAnnualActivityLo": "TotalTechnologyAnnualActivityLowerLimit",
-    "TotalTechnologyAnnualActivityUp": "TotalTechnologyAnnualActivityUpperLimit",
-    "TotalTechnologyModelPeriodActLo": "TotalTechnologyModelPeriodActivityLowerLimit",
-    "TotalTechnologyModelPeriodActUp": "TotalTechnologyModelPeriodActivityUpperLimit",
-}
-
-CSV_TO_EXCEL = {v: k for k, v in EXCEL_TO_CSV.items()}
-
-
 class ReadMemory(ReadStrategy):
-    """Read a dict of OSeMOSYS parameters from memory
-    """
+    """Read a dict of OSeMOSYS parameters from memory"""
 
     def __init__(
-        self, parameters: Dict[str, pd.DataFrame], user_config: Optional[Dict] = None
+        self, parameters: Dict[str, pd.DataFrame], user_config: Dict[str, Dict]
     ):
         super().__init__(user_config)
         self._parameters = parameters
@@ -40,13 +27,17 @@ class ReadMemory(ReadStrategy):
         self, filepath: Union[str, TextIO] = None, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.input_config
+        config = self.user_config
         default_values = self._read_default_values(config)
         self._parameters = self._check_index(self._parameters)
         return self._parameters, default_values
 
 
 class _ReadTabular(ReadStrategy):
+    def __init__(self, user_config: Dict[str, Dict], keep_whitespace: bool = False):
+        super().__init__(user_config)
+        self.keep_whitespace = keep_whitespace
+
     def _check_set(self, df: pd.DataFrame, config_details: Dict, name: str):
 
         logger.info("Checking set %s", name)
@@ -99,26 +90,46 @@ class _ReadTabular(ReadStrategy):
 
         return narrow[all_headers].set_index(expected_headers)
 
+    def _whitespace_converter(self, indices: List[str]) -> Dict[str, Any]:
+        """Creates converter for striping whitespace in dataframe
+
+        Arguments
+        ---------
+        indicies: List[str]
+            Column headers of dataframe
+
+        Returns
+        -------
+        Dict[str,Any]
+            Converter dictionary
+        """
+        if self.keep_whitespace:
+            return {}
+        else:
+            return {x: str.strip for x in indices}
+
 
 class ReadExcel(_ReadTabular):
-    """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames
-    """
+    """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames"""
 
     def read(
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.input_config
+        config = self.user_config
         default_values = self._read_default_values(config)
+        excel_to_csv = create_name_mappings(config, map_full_to_short=False)
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
+
+        self._check_input_sheet_names(xl.sheet_names)
 
         input_data = {}
 
         for name in xl.sheet_names:
 
             try:
-                mod_name = EXCEL_TO_CSV[name]
+                mod_name = excel_to_csv[name]
             except KeyError:
                 mod_name = name
 
@@ -135,9 +146,41 @@ class ReadExcel(_ReadTabular):
 
             input_data[mod_name] = narrow
 
+        for config_type in ["param", "set"]:
+            input_data = self._get_missing_input_dataframes(
+                input_data, config_type=config_type
+            )
+
         input_data = self._check_index(input_data)
 
         return input_data, default_values
+
+    def _check_input_sheet_names(self, sheet_names: List[str]) -> None:
+        """Checks that excel sheet names are in the config file.
+
+        Arguments:
+        ---------
+        sheet_names: list[str]
+            Sheet names from the excel file
+
+        Raises:
+        -------
+        OtooleExcelNameMismatchError
+            If the sheet name is not found in the config files parameter or
+            'short_name' parameter
+        """
+        user_config = self.user_config
+        csv_to_excel = create_name_mappings(user_config)
+        config_param_names = []
+        for name in user_config:
+            try:
+                config_param_names.append(csv_to_excel[name])
+            except KeyError:
+                config_param_names.append(name)
+
+        for sheet_name in sheet_names:
+            if sheet_name not in config_param_names:
+                raise OtooleExcelNameMismatchError(excel_name=sheet_name)
 
 
 class ReadCsv(_ReadTabular):
@@ -149,60 +192,106 @@ class ReadCsv(_ReadTabular):
 
         input_data = {}
 
-        default_values = self._read_default_values(self.input_config)
+        self._check_for_default_values_csv(filepath)
+        default_values = self._read_default_values(self.user_config)
 
-        for parameter, details in self.input_config.items():
+        for parameter, details in self.user_config.items():
             logger.info("Looking for %s", parameter)
-            config_details = self.input_config[parameter]
 
-            csv_path = os.path.join(filepath, parameter + ".csv")
-
+            entity_type = details["type"]
             try:
-                df = pd.read_csv(csv_path)
-            except pd.errors.EmptyDataError:
-                logger.error("No data found in file for %s", parameter)
-                expected_columns = config_details["indices"]
-                default_columns = expected_columns + ["VALUE"]
-                df = pd.DataFrame(columns=default_columns)
-
-            entity_type = self.input_config[parameter]["type"]
+                converter = self._whitespace_converter(details["indices"])
+            except KeyError:  # sets don't have indices def
+                converter = self._whitespace_converter(["VALUE"])
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details["indices"], parameter)
+                df = self._get_input_data(filepath, parameter, details, converter)
+                narrow = self._check_parameter(df, details["indices"], parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
-                        narrow, self.input_config, parameter
-                    )
-                else:
-                    narrow_checked = narrow
-            elif entity_type == "set":
-                narrow = self._check_set(df, config_details, parameter)
-                if not narrow.empty:
-                    narrow_checked = check_set_datatype(
-                        narrow, self.input_config, parameter
+                        narrow, self.user_config, parameter
                     )
                 else:
                     narrow_checked = narrow
 
+            elif entity_type == "set":
+                df = self._get_input_data(filepath, parameter, details, converter)
+                narrow = self._check_set(df, details, parameter)
+                if not narrow.empty:
+                    narrow_checked = check_set_datatype(
+                        narrow, self.user_config, parameter
+                    )
+                else:
+                    narrow_checked = narrow
+
+            else:  # results
+                continue
+
             input_data[parameter] = narrow_checked
+
+        for config_type in ["param", "set"]:
+            input_data = self._get_missing_input_dataframes(
+                input_data, config_type=config_type
+            )
 
         input_data = self._check_index(input_data)
 
         return input_data, default_values
 
+    @staticmethod
+    def _get_input_data(
+        filepath: str, parameter: str, details: Dict, converter: Optional[Dict] = None
+    ) -> pd.DataFrame:
+        """Reads in and checks CSV data format.
 
-class ReadDatapackage(ReadStrategy):
-    def read(
-        self, filepath, **kwargs
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        inputs = read_datapackage(filepath)
-        default_resource = inputs.pop("default_values").set_index("name").to_dict()
-        default_values = default_resource["default_value"]
-        self.input_config = read_datapackage_schema_into_config(
-            filepath, default_values
+        Arguments
+        ---------
+        filepath:str
+            Directory of csv files
+        parameter:str
+            parameter name
+        config_details: dict[str,Union[str,float,int]]
+            configuration data for the parameter being read in
+
+        Returns
+        -------
+        pd.DataFrame
+            CSV data as a dataframe
+        """
+        converter = {} if not converter else converter
+        csv_path = os.path.join(filepath, parameter + ".csv")
+        try:
+            df = pd.read_csv(csv_path, converters=converter)
+        except pd.errors.EmptyDataError:
+            logger.error("No data found in file for %s", parameter)
+            expected_columns = details["indices"]
+            default_columns = expected_columns + ["VALUE"]
+            df = pd.DataFrame(columns=default_columns)
+        return df
+
+    @staticmethod
+    def _check_for_default_values_csv(filepath: str) -> None:
+        """Checks for a default values csv, which has been deprecated.
+
+        Arguments
+        ---------
+        filepath:str
+            Directory of csv files
+
+        Raises
+        ------
+        OtooleDeprecationError
+            If a default_values.csv is found in input data
+        """
+
+        default_values_csv_path = os.path.join(
+            os.path.dirname(filepath), "default_values.csv"
         )
-        inputs = self._check_index(inputs)
-        return inputs, default_values
+        if os.path.exists(default_values_csv_path):
+            raise OtooleDeprecationError(
+                resource="data/default_values.csv",
+                message="Remove default_values.csv and define all default values in the configuration file",
+            )
 
 
 class ReadDatafile(ReadStrategy):
@@ -210,10 +299,12 @@ class ReadDatafile(ReadStrategy):
         self, filepath, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
-        config = self.input_config
+        config = self.user_config
         default_values = self._read_default_values(config)
         amply_datafile = self.read_in_datafile(filepath, config)
         inputs = self._convert_amply_to_dataframe(amply_datafile, config)
+        for config_type in ["param", "set"]:
+            inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
         inputs = self._check_index(inputs)
         return inputs, default_values
 

@@ -2,9 +2,9 @@
 
 Provides the following commands::
 
-    otoole viz res <path_to_datapackage.json> <path_to_res_image>
+    otoole viz res <input_data_format> <path_to_input_data> <path_to_res_image> <path_to_user_config>
 
-``otoole viz res`` generates an image of the reference energy system in a datapackage
+``otoole viz res`` generates an image of the reference energy system
 
 """
 from .res import create_res

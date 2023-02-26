@@ -6,6 +6,7 @@ networkx
 openpyxl
 pandas
 pandas_datapackage_reader
+pydantic
 pydot
 pyyaml
 xlrd

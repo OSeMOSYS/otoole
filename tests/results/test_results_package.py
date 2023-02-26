@@ -1,9 +1,14 @@
-from pytest import fixture, raises
-
 import pandas as pd
 from pandas.testing import assert_frame_equal
+from pytest import fixture, raises
 
-from otoole.results.result_package import ResultsPackage, capital_recovery_factor
+from otoole.results.result_package import (
+    ResultsPackage,
+    capital_recovery_factor,
+    discount_factor,
+    discount_factor_storage,
+    pv_annuity,
+)
 
 
 @fixture
@@ -252,16 +257,14 @@ def two_tech_emission_activity(
 
 class TestCalculateAnnualEmissions:
     def test_null(self, null: ResultsPackage):
-        """
-        """
+        """ """
         package = null
         with raises(KeyError) as ex:
             package.annual_emissions()
         assert "Cannot calculate AnnualEmissions due to missing data" in str(ex.value)
 
     def test_minimal(self, minimal: ResultsPackage):
-        """
-        """
+        """ """
         package = minimal
         actual = package.annual_emissions()
 
@@ -273,8 +276,7 @@ class TestCalculateAnnualEmissions:
         assert_frame_equal(actual, expected)
 
     def test_missing_tech(self, two_tech):
-        """
-        """
+        """ """
         package = two_tech
         actual = package.annual_emissions()
 
@@ -287,8 +289,7 @@ class TestCalculateAnnualEmissions:
 
 class TestCalculateAnnualTechnologyEmissions:
     def test_null(self, null: ResultsPackage):
-        """
-        """
+        """ """
         package = null
         with raises(KeyError) as ex:
             package.annual_technology_emissions()
@@ -297,8 +298,7 @@ class TestCalculateAnnualTechnologyEmissions:
         )
 
     def test_minimal(self, two_tech):
-        """
-        """
+        """ """
         package = two_tech
         actual = package.annual_technology_emissions()
 
@@ -310,8 +310,7 @@ class TestCalculateAnnualTechnologyEmissions:
         assert_frame_equal(actual, expected)
 
     def test_no_zeros(self, two_tech_emission_activity):
-        """
-        """
+        """ """
         package = two_tech_emission_activity
         actual = package.annual_technology_emissions()
 
@@ -325,8 +324,7 @@ class TestCalculateAnnualTechnologyEmissions:
 
 class TestCalculateAnnualTechnologyEmissionsByMode:
     def test_null(self, null):
-        """
-        """
+        """ """
         package = null
 
         with raises(KeyError) as ex:
@@ -337,8 +335,7 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
         )
 
     def test_minimal(self, two_tech):
-        """
-        """
+        """ """
         package = two_tech
         actual = package.annual_technology_emission_by_mode()
         expected = pd.DataFrame(
@@ -356,8 +353,7 @@ class TestCalculateAnnualTechnologyEmissionsByMode:
         assert_frame_equal(actual, expected)
 
     def test_no_zeros(self, two_tech_emission_activity):
-        """
-        """
+        """ """
         package = two_tech_emission_activity
         actual = package.annual_technology_emission_by_mode()
 
@@ -626,34 +622,222 @@ class TestComputeTotalAnnualCapacity:
 
 
 class TestCapitalRecoveryFactor:
-    def test_crf(self, discount_rate):
+    def test_crf(self, region, discount_rate_idv, operational_life):
 
-        regions = ["SIMPLICITY"]
-        technologies = ["GAS_EXTRACTION"]
-        years = [2010, 2011, 2012, 2013, 2014, 2015]
-        actual = capital_recovery_factor(regions, technologies, years, discount_rate)
+        technologies = ["GAS_EXTRACTION", "DUMMY"]
+        regions = region["VALUE"].to_list()
+        actual = capital_recovery_factor(
+            regions, technologies, discount_rate_idv, operational_life
+        )
 
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", "GAS_EXTRACTION", 2010, 1.0],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2011, 1.05],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2012, 1.1025],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2013, 1.1576250000000001],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.2155062500000002],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1.2762815625000004],
+                ["SIMPLICITY", "GAS_EXTRACTION", 0.512195121],
+                ["SIMPLICITY", "DUMMY", 0.349722442],
             ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
 
         assert_frame_equal(actual, expected)
 
-    def test_crf_null(self, discount_rate):
+    def test_crf_null(self, discount_rate_idv, operational_life):
 
-        actual = capital_recovery_factor([], [], [], discount_rate)
+        actual = capital_recovery_factor([], [], discount_rate_idv, operational_life)
 
         expected = pd.DataFrame(
-            data=[], columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+            data=[],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestPvAnnuity:
+    def test_pva(self, region, discount_rate, operational_life):
+
+        technologies = ["GAS_EXTRACTION", "DUMMY"]
+        regions = region["VALUE"].to_list()
+        actual = pv_annuity(regions, technologies, discount_rate, operational_life)
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "GAS_EXTRACTION", 1.952380952],
+                ["SIMPLICITY", "DUMMY", 2.859410430],
+            ],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_pva_null(self, discount_rate):
+
+        actual = pv_annuity([], [], discount_rate, operational_life)
+
+        expected = pd.DataFrame(
+            data=[],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestDiscountFactor:
+    def test_df_start(self, region, year, discount_rate):
+
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor(regions, years, discount_rate, 0.0)
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 1],
+                ["SIMPLICITY", 2015, 1.05],
+                ["SIMPLICITY", 2016, 1.1025],
+                ["SIMPLICITY", 2017, 1.157625],
+                ["SIMPLICITY", 2018, 1.21550625],
+                ["SIMPLICITY", 2019, 1.276281562],
+                ["SIMPLICITY", 2020, 1.340095640],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_df_mid(self, region, year, discount_rate):
+
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor(regions, years, discount_rate, 0.5)
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 1.024695076],
+                ["SIMPLICITY", 2015, 1.075929830],
+                ["SIMPLICITY", 2016, 1.129726321],
+                ["SIMPLICITY", 2017, 1.186212638],
+                ["SIMPLICITY", 2018, 1.245523269],
+                ["SIMPLICITY", 2019, 1.307799433],
+                ["SIMPLICITY", 2020, 1.373189405],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_df_end(self, region, year, discount_rate):
+
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor(regions, years, discount_rate, 1.0)
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 1.05],
+                ["SIMPLICITY", 2015, 1.1025],
+                ["SIMPLICITY", 2016, 1.157625],
+                ["SIMPLICITY", 2017, 1.21550625],
+                ["SIMPLICITY", 2018, 1.276281562],
+                ["SIMPLICITY", 2019, 1.340095640],
+                ["SIMPLICITY", 2020, 1.407100422],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_df_null(self, discount_rate):
+
+        actual = discount_factor([], [], discount_rate, 0.0)
+
+        expected = pd.DataFrame(
+            data=[],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestDiscountFactorStorage:
+    def test_dfs_start(self, region, year, discount_rate_storage):
+
+        storages = ["DAM"]
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor_storage(
+            regions, storages, years, discount_rate_storage, 0.0
+        )
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DAM", 2014, 1],
+                ["SIMPLICITY", "DAM", 2015, 1.05],
+                ["SIMPLICITY", "DAM", 2016, 1.1025],
+                ["SIMPLICITY", "DAM", 2017, 1.157625],
+                ["SIMPLICITY", "DAM", 2018, 1.21550625],
+                ["SIMPLICITY", "DAM", 2019, 1.276281562],
+                ["SIMPLICITY", "DAM", 2020, 1.340095640],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_dfs_mid(self, region, year, discount_rate_storage):
+
+        storages = ["DAM"]
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor_storage(
+            regions, storages, years, discount_rate_storage, 0.5
+        )
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DAM", 2014, 1.024695076],
+                ["SIMPLICITY", "DAM", 2015, 1.075929830],
+                ["SIMPLICITY", "DAM", 2016, 1.129726321],
+                ["SIMPLICITY", "DAM", 2017, 1.186212638],
+                ["SIMPLICITY", "DAM", 2018, 1.245523269],
+                ["SIMPLICITY", "DAM", 2019, 1.307799433],
+                ["SIMPLICITY", "DAM", 2020, 1.373189405],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_dfs_end(self, region, year, discount_rate_storage):
+
+        storages = ["DAM"]
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor_storage(
+            regions, storages, years, discount_rate_storage, 1.0
+        )
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DAM", 2014, 1.05],
+                ["SIMPLICITY", "DAM", 2015, 1.1025],
+                ["SIMPLICITY", "DAM", 2016, 1.157625],
+                ["SIMPLICITY", "DAM", 2017, 1.21550625],
+                ["SIMPLICITY", "DAM", 2018, 1.276281562],
+                ["SIMPLICITY", "DAM", 2019, 1.340095640],
+                ["SIMPLICITY", "DAM", 2020, 1.407100422],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_df_null(self, discount_rate_storage):
+
+        actual = discount_factor_storage([], [], [], discount_rate_storage, 0.0)
+
+        expected = pd.DataFrame(
+            data=[],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
@@ -667,9 +851,7 @@ class TestResultsPackage:
             package["BlaBla"]
 
     def test_results_package_dummy_results(self):
-        """Access results using dictionary keys
-
-        """
+        """Access results using dictionary keys"""
         package = ResultsPackage({"BlaBla": pd.DataFrame()})
 
         pd.testing.assert_frame_equal(package["BlaBla"], pd.DataFrame())

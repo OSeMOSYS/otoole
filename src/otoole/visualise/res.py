@@ -2,20 +2,14 @@
 """
 import logging
 import os
-import sys
 from typing import Dict, List, Tuple
 
 import networkx as nx  # mypy: ignore
-from datapackage import Package
+import pandas as pd
+
+from otoole.utils import get_packaged_resource
 
 logger = logging.getLogger(__name__)
-
-
-def load_datapackage(path_to_datapackage: str) -> Package:
-
-    package = Package(path_to_datapackage)
-
-    return package
 
 
 def extract_nodes(
@@ -129,12 +123,13 @@ def extract_edges(
     return edges
 
 
-def create_graph(datapackage: Package):
+def create_graph(input_data: Dict[str, pd.DataFrame]):
     """Creates a graph of technologies and fuels
 
     Arguments
     ---------
-    datapackage : datapackage.Package
+    input_data : Dict[str, pd.DataFrame]
+        Internal datastore for otoole input data
 
     Returns
     -------
@@ -142,10 +137,10 @@ def create_graph(datapackage: Package):
         networkx.DiGraph
     """
 
-    technologies = datapackage.get_resource("TECHNOLOGY").read()
-    storage = datapackage.get_resource("STORAGE").read()
-    fuel = datapackage.get_resource("FUEL").read()
-    emission = datapackage.get_resource("EMISSION").read()
+    technologies = [[x] for x in input_data["TECHNOLOGY"]["VALUE"]]
+    storage = [[x] for x in input_data["STORAGE"]["VALUE"]]
+    fuel = [[x] for x in input_data["FUEL"]["VALUE"]]
+    emission = [[x] for x in input_data["EMISSION"]["VALUE"]]
 
     nodes = extract_nodes(technologies, shape="rectangle", color="yellow")
     nodes += extract_nodes(
@@ -165,15 +160,13 @@ def create_graph(datapackage: Package):
         )
     ]
 
-    input_activity = datapackage.get_resource("InputActivityRatio").read(keyed=True)
-    output_activity = datapackage.get_resource("OutputActivityRatio").read(keyed=True)
-    emission_activity = datapackage.get_resource("EmissionActivityRatio").read(
-        keyed=True
-    )
-    tech2storage = datapackage.get_resource("TechnologyToStorage").read(keyed=True)
-    techfromstorage = datapackage.get_resource("TechnologyFromStorage").read(keyed=True)
-    acc_demand = datapackage.get_resource("AccumulatedAnnualDemand").read(keyed=True)
-    spec_demand = datapackage.get_resource("SpecifiedAnnualDemand").read(keyed=True)
+    input_activity = get_packaged_resource(input_data, "InputActivityRatio")
+    output_activity = get_packaged_resource(input_data, "OutputActivityRatio")
+    emission_activity = get_packaged_resource(input_data, "EmissionActivityRatio")
+    tech2storage = get_packaged_resource(input_data, "TechnologyToStorage")
+    techfromstorage = get_packaged_resource(input_data, "TechnologyFromStorage")
+    acc_demand = get_packaged_resource(input_data, "AccumulatedAnnualDemand")
+    spec_demand = get_packaged_resource(input_data, "SpecifiedAnnualDemand")
 
     edges = extract_edges(
         input_activity, "FUEL", "TECHNOLOGY", "input_ratio", directed=False
@@ -203,19 +196,18 @@ def create_graph(datapackage: Package):
     return graph
 
 
-def create_res(path_to_datapackage: str, path_to_resfile: str):
-    """Create a reference energy system diagram from a Tabular Data Package
+def create_res(input_data: Dict[str, pd.DataFrame], path_to_resfile: str):
+    """Create a reference energy system diagram
 
     Arguments
     ---------
-    path_to_datapackage : str
-        The path to the ``datapackage.json``
+    input_data : Dict[str, pd.DataFrame]
+        Internal datastore for otoole input data
     path_to_resfile : str
         The path to the image file to be created
     """
-    package = load_datapackage(path_to_datapackage)
 
-    graph = create_graph(package)
+    graph = create_graph(input_data)
     draw_graph(graph, path_to_resfile)
 
 
@@ -271,11 +263,3 @@ def build_graph(
     graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)
     return graph
-
-
-if __name__ == "__main__":
-
-    logging.basicConfig(level=logging.DEBUG)
-    path_to_datapackage = sys.argv[1]
-    path_to_resfile = sys.argv[2]
-    create_res(path_to_datapackage, path_to_resfile)

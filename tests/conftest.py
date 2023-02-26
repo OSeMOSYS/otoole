@@ -7,9 +7,37 @@
     https://pytest.org/latest/plugins.html
 """
 
-from pytest import fixture
+import os
+from typing import Dict
 
 import pandas as pd
+from pytest import fixture
+
+from otoole.utils import _read_file
+
+
+@fixture
+def user_config() -> Dict:
+    """Reads in an example user config
+
+    Read in an example user config file which can be passed into all
+    Read and Write strategies for testing
+
+    Returns
+    -------
+    Dict
+    """
+    file_path = os.path.join("tests", "fixtures", "config.yaml")
+    with open(file_path, "r") as config_file:
+        config = _read_file(config_file, ".yaml")  # typing: Dict
+
+    file_path = os.path.join("tests", "fixtures", "config_r.yaml")
+    with open(file_path, "r") as config_file:
+        results = _read_file(config_file, ".yaml")  # typing: Dict
+
+    config.update(results)
+
+    return config
 
 
 @fixture
@@ -31,10 +59,27 @@ def annual_technology_emissions_by_mode():
 @fixture
 def discount_rate():
     df = pd.DataFrame(
-        data=[["SIMPLICITY", "GAS_EXTRACTION", 0.05]],
+        data=[["SIMPLICITY", 0.05]],
+        columns=["REGION", "VALUE"],
+    ).set_index(["REGION"])
+    return df
+
+
+@fixture
+def discount_rate_idv():
+    df = pd.DataFrame(
+        data=[["SIMPLICITY", "GAS_EXTRACTION", 0.05], ["SIMPLICITY", "DUMMY", 0.05]],
         columns=["REGION", "TECHNOLOGY", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY"])
+    return df
 
+
+@fixture
+def discount_rate_storage():
+    df = pd.DataFrame(
+        data=[["SIMPLICITY", "DAM", 0.05]],
+        columns=["REGION", "STORAGE", "VALUE"],
+    ).set_index(["REGION", "STORAGE"])
     return df
 
 

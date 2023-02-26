@@ -5,16 +5,12 @@ write_strategy = None
 
 if args.from_format == "datafile":
     read_strategy = ReadDatafile()
-elif args.from_format == "datapackage":
-    read_strategy = ReadDatapackage()
 elif args.from_format == "csv":
     read_strategy = ReadCsv()
 elif args.from_format == "excel":
     read_strategy = ReadExcel()
 
-if args.to_format == "datapackage":
-    write_strategy = WriteDatapackage()
-elif args.to_format == "excel":
+if args.to_format == "excel":
     write_strategy = WriteExcel()
 elif args.to_format == "datafile":
     write_strategy = WriteDatafile()
@@ -35,10 +31,10 @@ from otoole import Context, ReadExcel, WriteCsv, WriteDatafile
 
 
 class TestConvert:
-    def test_convert_excel_to_datafile(self):
+    def test_convert_excel_to_datafile(self, user_config):
 
-        read_strategy = ReadExcel()
-        write_strategy = WriteDatafile()
+        read_strategy = ReadExcel(user_config)
+        write_strategy = WriteDatafile(user_config)
         context = Context(read_strategy, write_strategy)
 
         tmpfile = NamedTemporaryFile()
@@ -55,10 +51,10 @@ class TestConvert:
         assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.8921\n"
         assert actual[8996] == b"param default 1 : DepreciationMethod :=\n"
 
-    def test_convert_excel_to_csv(self):
+    def test_convert_excel_to_csv(self, user_config):
 
-        read_strategy = ReadExcel()
-        write_strategy = WriteCsv()
+        read_strategy = ReadExcel(user_config)
+        write_strategy = WriteCsv(user_config)
         context = Context(read_strategy, write_strategy)
 
         tmpfile = TemporaryDirectory()

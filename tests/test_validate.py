@@ -1,6 +1,5 @@
 import pytest
-
-from yaml import FullLoader, load
+from yaml import FullLoader, load  # type: ignore
 
 from otoole.validate import (
     compose_expression,

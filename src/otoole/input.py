@@ -1,6 +1,6 @@
 """The ``input`` module allows you to access the conversion routines programmatically
 
-To use the routines, you need to instanciate a ``ReadStrategy`` and a ``WriteStrategy``
+To use the routines, you need to instantiate a ``ReadStrategy`` and a ``WriteStrategy``
 relevant for the format of the input and output data.  You then pass these to a
 ``Context``.
 
@@ -27,26 +27,14 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 >>> converter = Context(read_strategy=reader, write_strategy=writer)
 >>> converter.convert('my_datafile.txt', 'folder_of_csv_files')
 
-Convert a GNUMathProg datafile to a folder of Tabular DataPackage::
-
->>> from otoole import ReadDataFile
->>> from otoole import WriteDatapackage
->>> from otoole import Context
->>> reader = ReadDataFile()
->>> writer = WriteDatapackage()
->>> converter = Context(read_strategy=reader, write_strategy=writer)
->>> converter.convert('my_datafile.txt', 'my_datapackage')
-
 """
 from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, Optional, TextIO, Tuple, Union
 
 import pandas as pd
-
-from otoole.utils import read_packaged_file
 
 logger = logging.getLogger(__name__)
 
@@ -101,15 +89,16 @@ class Context:
     def _read(
         self, filepath: str, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
-        """Delegate reading to the strategy, depending upon the format
-        """
+        """Delegate reading to the strategy, depending upon the format"""
         return self._read_strategy.read(filepath, **kwargs)
 
-    def _write(self, inputs: Dict, filepath: str, default_values: Dict) -> None:
+    def _write(
+        self, inputs: Dict, filepath: str, default_values: Dict, **kwargs
+    ) -> None:
         """
         Delegate writing to the strategy, depending upon the format
         """
-        self._write_strategy.write(inputs, filepath, default_values)
+        self._write_strategy.write(inputs, filepath, default_values, **kwargs)
 
     def convert(self, input_filepath: str, output_filepath: str, **kwargs: Dict):
         """Converts from file ``input_filepath`` to file ``output_filepath``
@@ -120,7 +109,7 @@ class Context:
         output_filepath: str
         """
         inputs, default_values = self._read(input_filepath, **kwargs)
-        self._write(inputs, output_filepath, default_values)
+        self._write(inputs, output_filepath, default_values, **kwargs)
 
 
 class Strategy(ABC):
@@ -128,27 +117,20 @@ class Strategy(ABC):
 
     Arguments
     ---------
-    input_config : dict, default=None
+    user_config : dict, default=None
         A user configuration for the input parameters and sets
-    results_config : dict, default=None
-        A user configuration for the results parameters
-
     """
 
-    def __init__(
-        self, user_config: Optional[Dict] = None, results_config: Optional[Dict] = None
-    ):
-        self._input_config = {}  # type: Dict[str, Dict[str, Union[str, List[str]]]]
-        self._results_config = {}
+    def __init__(self, user_config: Dict[str, Dict]):
 
-        if user_config:
-            self.input_config = user_config
-        else:
-            self.input_config = self._read_config()
-        if results_config:
-            self._results_config = results_config
-        else:
-            self._results_config = self._read_results_config()
+        self.user_config = user_config
+
+        # self.input_config = {
+        #     x: y for x, y in self.user_config.items() if y["type"] in ["param", 'set']
+        # }
+        self.results_config = {
+            x: y for x, y in self.user_config.items() if y["type"] == "result"
+        }
 
     def _add_dtypes(self, config: Dict):
         for name, details in config.items():
@@ -162,29 +144,22 @@ class Strategy(ABC):
                 details["index_dtypes"] = dtypes
         return config
 
-    def _read_config(self) -> Dict[str, Dict]:
-        return read_packaged_file("config.yaml", "otoole.preprocess")
-
-    def _read_results_config(self) -> Dict[str, Dict]:
-        return read_packaged_file("config.yaml", "otoole.results")
-
     @property
-    def input_config(self) -> Dict:
-        return self._input_config
+    def user_config(self) -> Dict:
+        return self._user_config
 
-    @input_config.setter
-    def input_config(self, value: Dict):
-        self._input_config = self._add_dtypes(value)
-
-    @property
-    def results_config(self):
-        return self._results_config
+    @user_config.setter
+    def user_config(self, value: Dict):
+        if value:
+            self._user_config = self._add_dtypes(value)
+        elif value is None:
+            raise ValueError("A user configuration must be passed into the reader")
 
     @staticmethod
     def _read_default_values(config):
         default_values = {}
         for name, contents in config.items():
-            if contents["type"] == "param":
+            if contents["type"] != "set":
                 default_values[name] = contents["default"]
         return default_values
 
@@ -206,9 +181,11 @@ class WriteStrategy(Strategy):
 
     def __init__(
         self,
+        user_config: Dict,
         filepath: Optional[str] = None,
         default_values: Optional[Dict] = None,
-        user_config: Optional[Dict] = None,
+        write_defaults: bool = False,
+        input_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         super().__init__(user_config=user_config)
         if filepath:
@@ -221,13 +198,25 @@ class WriteStrategy(Strategy):
         else:
             self.default_values = {}
 
+        if input_data:
+            self.input_data = input_data
+        else:
+            self.input_data = {}
+
+        self.write_defaults = write_defaults
+
     @abstractmethod
     def _header(self) -> Union[TextIO, Any]:
         raise NotImplementedError()
 
     @abstractmethod
     def _write_parameter(
-        self, df: pd.DataFrame, parameter_name: str, handle: TextIO, default: float
+        self,
+        df: pd.DataFrame,
+        parameter_name: str,
+        handle: TextIO,
+        default: float,
+        **kwargs,
     ) -> pd.DataFrame:
         """Write parameter data"""
         raise NotImplementedError()
@@ -241,36 +230,128 @@ class WriteStrategy(Strategy):
     def _footer(self, handle: TextIO):
         raise NotImplementedError()
 
-    def write(self, inputs: Dict, filepath: str, default_values: Dict):
-        """Perform the conversion from dict of dataframes to destination format
-        """
+    def write(
+        self,
+        inputs: Dict[str, pd.DataFrame],
+        filepath: str,
+        default_values: Dict[str, float],
+        **kwargs,
+    ):
+        """Perform the conversion from dict of dataframes to destination format"""
         self.filepath = filepath
         self.default_values = default_values
 
         handle = self._header()
         logger.debug(default_values)
 
+        if self.write_defaults:
+            try:
+                inputs = self._expand_defaults(inputs, default_values, **kwargs)
+            except KeyError as ex:
+                logger.debug(ex)
+
         for name, df in sorted(inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
             try:
-                entity_type = self.input_config[name]["type"]
+                entity_type = self.user_config[name]["type"]
             except KeyError:
                 try:
                     entity_type = self.results_config[name]["type"]
                 except KeyError:
                     raise KeyError("Cannot find %s in input or results config", name)
 
-            if entity_type == "param":
+            if entity_type != "set":
                 default_value = default_values[name]
-                self._write_parameter(df, name, handle, default=default_value)
+                self._write_parameter(
+                    df, name, handle, default=default_value, input_data=self.input_data
+                )
             else:
                 self._write_set(df, name, handle)
 
         self._footer(handle)
 
-        if handle:
+        if isinstance(handle, TextIO):
             handle.close()
+
+    def _expand_defaults(
+        self,
+        data_to_expand: Dict[str, pd.DataFrame],
+        default_values: Dict[str, float],
+        **kwargs,
+    ) -> Dict[str, pd.DataFrame]:
+        """Populates default value entry rows in dataframes
+
+        Parameters
+        ----------
+        input_data : Dict[str, pd.DataFrame],
+        default_values : Dict[str, float]
+
+        Returns
+        -------
+        results : Dict[str, pd.DataFrame]
+            Updated available reults dictionary
+
+        Raises
+        ------
+        KeyError
+            If set defenitons are not in input_data and input_data is not supplied
+        """
+
+        sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
+
+        # if expanding results, input data is needed for set defenitions
+        if "input_data" in kwargs:
+            model_data = kwargs["input_data"]
+        else:
+            model_data = data_to_expand
+
+        output = {}
+        for name, data in data_to_expand.items():
+            logger.info(f"Writing defaults for {name}")
+
+            # skip sets
+            if name in sets:
+                output[name] = data
+                continue
+
+            # TODO
+            # Issue with how otoole handles trade route right now.
+            # The double defenition of REGION throws an error.
+            if name == "TradeRoute":
+                output[name] = data
+                continue
+
+            # save set information for each parameter
+            index_data = {}
+            for index in data.index.names:
+                try:
+                    index_data[index] = model_data[index]["VALUE"].to_list()
+                except KeyError as ex:
+                    logger.info("Can not write default values. Supply input data")
+                    raise KeyError(ex)
+
+            # set index
+            if len(index_data) > 1:
+                new_index = pd.MultiIndex.from_product(
+                    list(index_data.values()), names=list(index_data.keys())
+                )
+            else:
+                new_index = pd.Index(
+                    list(index_data.values())[0], name=list(index_data.keys())[0]
+                )
+            df_default = pd.DataFrame(index=new_index)
+
+            # save default result value
+            df_default["VALUE"] = default_values[name]
+
+            # combine result and default value dataframe
+            df = pd.concat([data, df_default])
+            df = df[~df.index.duplicated(keep="first")]
+            df = df.sort_index()
+            output[name] = df
+
+        return output
 
 
 class ReadStrategy(Strategy):
@@ -300,7 +381,7 @@ class ReadStrategy(Strategy):
         """
         for name, df in input_data.items():
 
-            details = self.input_config[name]
+            details = self.user_config[name]
 
             if details["type"] == "param":
                 logger.debug("Identified {} as a parameter".format(name))
@@ -326,6 +407,46 @@ class ReadStrategy(Strategy):
                 df = df.astype(details["dtype"])
 
             input_data[name] = df
+
+        return input_data
+
+    def _get_missing_input_dataframes(
+        self, input_data: Dict[str, pd.DataFrame], config_type: str
+    ) -> Dict[str, pd.DataFrame]:
+        """Creates empty dataframes if user config data does not exist
+
+        Arguments:
+        ----------
+        input_data: Dict[str, pd.DataFrame]
+            Data read in from the excel notebook
+        config_type: str
+            Type of value. Must be "set", "param", or "result"
+
+        Returns:
+        --------
+        all_params: Dict[str, pd.DataFrame]
+            Input data plus empty dataframes
+        """
+
+        if config_type not in ["set", "param", "result"]:
+            raise ValueError(f"{config_type} not of type 'set', 'param', or 'result'")
+
+        all_values = [
+            value
+            for value, data in self.user_config.items()
+            if data["type"] == config_type
+        ]
+        missing_values = [x for x in all_values if x not in input_data]
+
+        for value in missing_values:
+            try:  # param and result condition
+                indices = self.user_config[value]["indices"]
+                df = pd.DataFrame(columns=indices)
+                df = df.set_index(indices)
+            except KeyError:  # set condition
+                df = pd.DataFrame()
+            df["VALUE"] = ""
+            input_data[value] = df
 
         return input_data
 
