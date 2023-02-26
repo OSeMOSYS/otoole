@@ -27,7 +27,6 @@ of the OSeMOSYS model. This improves interoperability of analyses and
 generally makes life a little bit easier.
 
 .. image:: docs/_static/workflow.png
-    :scale: 75%
 
 Installation
 ============
@@ -43,7 +42,7 @@ For instructions of the use of the tool, run the command line help function::
 Documentation
 =============
 A more detailed documentation of otoole can be found here:
-https://otoole.readthedocs.io/en/stable/index.html
+https://otoole.readthedocs.io/en/latest/
 
 Contributing
 ============
