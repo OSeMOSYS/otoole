@@ -17,11 +17,11 @@ A Python toolkit to support use of OSeMOSYS
 Description
 ===========
 
-**O**\ SeMOSYS **tool**\ s for **e**\ nergy work, or **otoole**, is a Python package 
+OSeMOSYS tools for energy work, or **otoole**, is a Python package 
 which provides a command-line interface for users of OSeMOSYS. The aim of the 
 package is to provide commonly used pre- and post-processing steps for OSeMOSYS.
 
-otoole aims to support different ways of storing input data and results,
+**otoole** aims to support different ways of storing input data and results,
 including csv files and Excel workbooks, as well as different implementations
 of the OSeMOSYS model. This improves interoperability of analyses and
 generally makes life a little bit easier.
