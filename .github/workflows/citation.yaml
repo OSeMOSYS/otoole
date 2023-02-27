@@ -3,7 +3,7 @@ name: cffconvert
 on:
   push:
     paths:
-      - CITATION.cff
+      - citation.cff
 
 jobs:
   validate:
