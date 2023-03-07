@@ -120,7 +120,7 @@ Moreover, otoole can be further generalized to work with any model MathProg file
 # Installation and Example
 
 otoole is deplyed to the Python Packaging Index (PyPI) and can be installed 
-via pip
+via pip 
 
 ```bash
 pip install otoole
