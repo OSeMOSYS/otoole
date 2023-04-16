@@ -4,7 +4,7 @@ flatten_dict
 importlib_resources; python_version<'3.7'
 networkx
 openpyxl
-pandas<2.0
+pandas
 pydantic
 pydot
 pyyaml
