@@ -420,10 +420,6 @@ class ReadStrategy(Strategy):
             logger.info(f"No index identifed for {name}")
             return
 
-        print(name)
-        print(actual_indices)
-        print(expected_indices)
-
         if actual_indices == expected_indices:
             return
         else:
