@@ -126,3 +126,26 @@ class OtooleSetupError(OtooleException):
 
     def __str__(self):
         return f"{self.resource} -> {self.message}"
+
+
+class OtooleIndexError(OtooleException):
+    """Index data not consistent between data and config file
+
+    Arguments
+    ---------
+    resource : str
+        Name of the resource which is invalid
+    config_indices: List[str]
+        Indices from config file
+    data_indices: List[str]
+        Indices from input data
+    """
+
+    def __init__(self, resource, config_indices, data_indices):
+        self.resource = resource
+        self.config_indices = config_indices
+        self.data_indices = data_indices
+        self.message = "Indices inconsistent between config and data"
+
+    def __str__(self):
+        return f"{self.resource} -> {self.message}. Config indices are {self.config_indices}. Data indices are {self.data_indices}."
