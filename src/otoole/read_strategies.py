@@ -6,7 +6,7 @@ import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 
-from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameMismatchError
+from otoole.exceptions import OtooleDeprecationError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 from otoole.utils import create_name_mappings
@@ -121,8 +121,7 @@ class ReadExcel(_ReadTabular):
         excel_to_csv = create_name_mappings(config, map_full_to_short=False)
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
-
-        self._check_input_sheet_names(xl.sheet_names)
+        self._compare_read_to_expected(names=xl.sheet_names, short_names=True)
 
         input_data = {}
 
@@ -154,33 +153,6 @@ class ReadExcel(_ReadTabular):
         input_data = self._check_index(input_data)
 
         return input_data, default_values
-
-    def _check_input_sheet_names(self, sheet_names: List[str]) -> None:
-        """Checks that excel sheet names are in the config file.
-
-        Arguments:
-        ---------
-        sheet_names: list[str]
-            Sheet names from the excel file
-
-        Raises:
-        -------
-        OtooleExcelNameMismatchError
-            If the sheet name is not found in the config files parameter or
-            'short_name' parameter
-        """
-        user_config = self.user_config
-        csv_to_excel = create_name_mappings(user_config)
-        config_param_names = []
-        for name in user_config:
-            try:
-                config_param_names.append(csv_to_excel[name])
-            except KeyError:
-                config_param_names.append(name)
-
-        for sheet_name in sheet_names:
-            if sheet_name not in config_param_names:
-                raise OtooleExcelNameMismatchError(excel_name=sheet_name)
 
 
 class ReadCsv(_ReadTabular):
@@ -235,6 +207,8 @@ class ReadCsv(_ReadTabular):
             )
 
         input_data = self._check_index(input_data)
+
+        self._compare_read_to_expected(names=list(input_data))
 
         return input_data, default_values
 
@@ -306,6 +280,7 @@ class ReadDatafile(ReadStrategy):
         for config_type in ["param", "set"]:
             inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
         inputs = self._check_index(inputs)
+        self._compare_read_to_expected(names=list(inputs))
         return inputs, default_values
 
     def read_in_datafile(self, path_to_datafile: str, config: Dict) -> Amply:
