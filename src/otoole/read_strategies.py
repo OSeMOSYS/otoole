@@ -165,6 +165,10 @@ class ReadCsv(_ReadTabular):
         input_data = {}
 
         self._check_for_default_values_csv(filepath)
+        self._compare_read_to_expected(
+            names=[f.split(".csv")[0] for f in os.listdir(filepath)]
+        )
+
         default_values = self._read_default_values(self.user_config)
 
         for parameter, details in self.user_config.items():
@@ -207,8 +211,6 @@ class ReadCsv(_ReadTabular):
             )
 
         input_data = self._check_index(input_data)
-
-        self._compare_read_to_expected(names=list(input_data))
 
         return input_data, default_values
 
@@ -280,7 +282,6 @@ class ReadDatafile(ReadStrategy):
         for config_type in ["param", "set"]:
             inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
         inputs = self._check_index(inputs)
-        self._compare_read_to_expected(names=list(inputs))
         return inputs, default_values
 
     def read_in_datafile(self, path_to_datafile: str, config: Dict) -> Amply:

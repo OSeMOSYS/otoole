@@ -4,6 +4,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from pytest import fixture, mark, raises
 
+from otoole.exceptions import OtooleNameMismatchError
 from otoole.input import ReadStrategy, WriteStrategy
 
 
@@ -37,6 +38,31 @@ def simple_input_data(region, year, technology):
         "REGION": region,
         "TECHNOLOGY": technology,
         "YEAR": year,
+    }
+
+
+@fixture
+def simple_user_config():
+    return {
+        "AccumulatedAnnualDemand": {
+            "indices": ["REGION", "FUEL", "YEAR"],
+            "type": "param",
+            "dtype": "float",
+            "default": 0,
+            "short_name": "AAD",
+        },
+        "REGION": {
+            "dtype": "str",
+            "type": "set",
+        },
+        "FUEL": {
+            "dtype": "str",
+            "type": "set",
+        },
+        "YEAR": {
+            "dtype": "int",
+            "type": "set",
+        },
     }
 
 
@@ -279,6 +305,14 @@ class TestReadStrategy:
         ),
         ("set", "REGION", pd.DataFrame(columns=["VALUE"])),
     )
+    compare_read_to_expected_data = [
+        [["AccumulatedAnnualDemand", "REGION", "FUEL", "YEAR"], False],
+        [["AAD", "REGION", "FUEL", "YEAR"], True],
+    ]
+    compare_read_to_expected_data_exception = [
+        ["AccumulatedAnnualDemand", "REGION", "FUEL"],
+        ["AccumulatedAnnualDemand", "REGION", "FUEL", "YEAR", "Extra"],
+    ]
 
     @mark.parametrize(
         "config_type, test_value, expected",
@@ -299,3 +333,22 @@ class TestReadStrategy:
         reader = DummyReadStrategy(user_config)
         with raises(ValueError):
             reader._get_missing_input_dataframes(input_data, config_type="not_valid")
+
+    @mark.parametrize(
+        "expected, short_name",
+        compare_read_to_expected_data,
+        ids=["full_name", "short_name"],
+    )
+    def test_compare_read_to_expected(self, simple_user_config, expected, short_name):
+        reader = DummyReadStrategy(simple_user_config)
+        reader._compare_read_to_expected(names=expected, short_names=short_name)
+
+    @mark.parametrize(
+        "expected",
+        compare_read_to_expected_data_exception,
+        ids=["missing_value", "extra_value"],
+    )
+    def test_compare_read_to_expected_exception(self, simple_user_config, expected):
+        reader = DummyReadStrategy(simple_user_config)
+        with raises(OtooleNameMismatchError):
+            reader._compare_read_to_expected(names=expected)
