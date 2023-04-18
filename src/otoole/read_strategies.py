@@ -54,41 +54,33 @@ class _ReadTabular(ReadStrategy):
         expected_headers: List
         name: str
         """
-        actual_headers = df.columns
-        logger.debug("Expected headers for %s: %s", name, expected_headers)
-
-        if "REGION" in expected_headers and "REGION" not in actual_headers:
-            raise ValueError("No REGION column provided for %s", name)
+        actual_headers = list(df.columns)
 
         if "MODEOFOPERATION" in actual_headers:
             df = df.rename(columns={"MODEOFOPERATION": "MODE_OF_OPERATION"})
 
         if actual_headers[-1] == "VALUE":
             logger.info(
-                "%s is already in narrow form with headers %s", name, df.columns
+                f"{name} is already in narrow form with headers {actual_headers}"
             )
             narrow = df
+            actual_headers = actual_headers[:-1]  # remove "VALUE"
         else:
             try:
                 narrow = pd.melt(
                     df,
-                    id_vars=expected_headers[:-1],
-                    var_name=expected_headers[-1],  # Normally 'YEAR'
+                    id_vars=actual_headers[:-1],
+                    var_name=actual_headers[-1],  # Normally 'YEAR'
                     value_name="new_VALUE",
                 )
                 narrow = narrow.rename(columns={"new_VALUE": "VALUE"})
+                logger.info(f"{name} reshaped from wide to narrow format")
             except IndexError as ex:
-                logger.debug("Could not reshape %s", df.columns)
+                logger.debug(f"Could not reshape {name}")
                 raise ex
 
-        all_headers = expected_headers + ["VALUE"]
-        for column in all_headers:
-            if column not in narrow.columns:
-                logger.warning("%s not in header of %s", column, name)
-
-        logger.debug("Final all headers for %s: %s", name, all_headers)
-
-        return narrow[all_headers].set_index(expected_headers)
+        all_headers = actual_headers + ["VALUE"]
+        return narrow[all_headers].set_index(actual_headers)
 
     def _whitespace_converter(self, indices: List[str]) -> Dict[str, Any]:
         """Creates converter for striping whitespace in dataframe
