@@ -4,7 +4,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from pytest import fixture, mark, raises
 
-from otoole.exceptions import OtooleIndexError
+from otoole.exceptions import OtooleIndexError, OtooleNameMismatchError
 from otoole.input import ReadStrategy, WriteStrategy
 
 
@@ -316,13 +316,21 @@ class TestReadStrategy:
     missing_input_test_data = (
         (
             "param",
-            "AccumulatedAnnualDemand",
-            pd.DataFrame(columns=["REGION", "FUEL", "YEAR", "VALUE"]).set_index(
-                ["REGION", "FUEL", "YEAR"]
+            "CapitalCost",
+            pd.DataFrame(columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]).set_index(
+                ["REGION", "TECHNOLOGY", "YEAR"]
             ),
         ),
         ("set", "REGION", pd.DataFrame(columns=["VALUE"])),
     )
+    compare_read_to_expected_data = [
+        [["CapitalCost", "REGION", "TECHNOLOGY", "YEAR"], False],
+        [["CAPEX", "REGION", "TECHNOLOGY", "YEAR"], True],
+    ]
+    compare_read_to_expected_data_exception = [
+        ["CapitalCost", "REGION", "TECHNOLOGY"],
+        ["CapitalCost", "REGION", "TECHNOLOGY", "YEAR", "Extra"],
+    ]
 
     capex_correct = pd.DataFrame(
         data=[
@@ -504,3 +512,22 @@ class TestReadStrategy:
         reader = DummyReadStrategy(user_config)
         with raises(OtooleIndexError):
             reader._check_set_index_names(name="YEAR", df=year)
+
+    @mark.parametrize(
+        "expected, short_name",
+        compare_read_to_expected_data,
+        ids=["full_name", "short_name"],
+    )
+    def test_compare_read_to_expected(self, simple_user_config, expected, short_name):
+        reader = DummyReadStrategy(simple_user_config)
+        reader._compare_read_to_expected(names=expected, short_names=short_name)
+
+    @mark.parametrize(
+        "expected",
+        compare_read_to_expected_data_exception,
+        ids=["missing_value", "extra_value"],
+    )
+    def test_compare_read_to_expected_exception(self, simple_user_config, expected):
+        reader = DummyReadStrategy(simple_user_config)
+        with raises(OtooleNameMismatchError):
+            reader._compare_read_to_expected(names=expected)

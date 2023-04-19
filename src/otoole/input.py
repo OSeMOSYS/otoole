@@ -32,11 +32,11 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
-from otoole.exceptions import OtooleIndexError
+from otoole.exceptions import OtooleIndexError, OtooleNameMismatchError
 
 logger = logging.getLogger(__name__)
 
@@ -126,10 +126,9 @@ class Strategy(ABC):
     def __init__(self, user_config: Dict[str, Dict]):
 
         self.user_config = user_config
-
-        # self.input_config = {
-        #     x: y for x, y in self.user_config.items() if y["type"] in ["param", 'set']
-        # }
+        self.input_config = {
+            x: y for x, y in self.user_config.items() if y["type"] in ["param", "set"]
+        }
         self.results_config = {
             x: y for x, y in self.user_config.items() if y["type"] == "result"
         }
@@ -514,7 +513,7 @@ class ReadStrategy(Strategy):
         Arguments:
         ----------
         input_data: Dict[str, pd.DataFrame]
-            Data read in from the excel notebook
+            Internal datastore
         config_type: str
             Type of value. Must be "set", "param", or "result"
 
@@ -545,6 +544,39 @@ class ReadStrategy(Strategy):
             input_data[value] = df
 
         return input_data
+
+    def _compare_read_to_expected(
+        self, names: List[str], short_names: bool = False
+    ) -> None:
+        """Compares input data definitions to config file definitions
+
+        Arguments:
+        ---------
+        names: List[str]
+            Parameter and set names read in
+        map_names: bool = False
+            If should be checking short_names from config file
+
+        Raises:
+        -------
+        OtooleNameMismatchError
+            If the info in the data and config file do not match
+        """
+        user_config = self.input_config
+        if short_names:
+            expected = []
+            for name in user_config:
+                try:
+                    expected.append(user_config[name]["short_name"])
+                except KeyError:
+                    expected.append(name)
+        else:
+            expected = [x for x in user_config]
+
+        errors = list(set(expected).symmetric_difference(set(names)))
+        if errors:
+            logger.debug(f"data and config name errors are: {errors}")
+            raise OtooleNameMismatchError(name=errors[0])
 
     @abstractmethod
     def read(

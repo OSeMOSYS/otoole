@@ -6,11 +6,7 @@ import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 
-from otoole.exceptions import (
-    OtooleDeprecationError,
-    OtooleError,
-    OtooleExcelNameMismatchError,
-)
+from otoole.exceptions import OtooleDeprecationError, OtooleError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 from otoole.utils import create_name_mappings
@@ -126,8 +122,7 @@ class ReadExcel(_ReadTabular):
         excel_to_csv = create_name_mappings(config, map_full_to_short=False)
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
-
-        self._check_input_sheet_names(xl.sheet_names)
+        self._compare_read_to_expected(names=xl.sheet_names, short_names=True)
 
         input_data = {}
 
@@ -160,33 +155,6 @@ class ReadExcel(_ReadTabular):
 
         return input_data, default_values
 
-    def _check_input_sheet_names(self, sheet_names: List[str]) -> None:
-        """Checks that excel sheet names are in the config file.
-
-        Arguments:
-        ---------
-        sheet_names: list[str]
-            Sheet names from the excel file
-
-        Raises:
-        -------
-        OtooleExcelNameMismatchError
-            If the sheet name is not found in the config files parameter or
-            'short_name' parameter
-        """
-        user_config = self.user_config
-        csv_to_excel = create_name_mappings(user_config)
-        config_param_names = []
-        for name in user_config:
-            try:
-                config_param_names.append(csv_to_excel[name])
-            except KeyError:
-                config_param_names.append(name)
-
-        for sheet_name in sheet_names:
-            if sheet_name not in config_param_names:
-                raise OtooleExcelNameMismatchError(excel_name=sheet_name)
-
 
 class ReadCsv(_ReadTabular):
     """Read in a folder of CSV files"""
@@ -198,6 +166,10 @@ class ReadCsv(_ReadTabular):
         input_data = {}
 
         self._check_for_default_values_csv(filepath)
+        self._compare_read_to_expected(
+            names=[f.split(".csv")[0] for f in os.listdir(filepath)]
+        )
+
         default_values = self._read_default_values(self.user_config)
 
         for parameter, details in self.user_config.items():
