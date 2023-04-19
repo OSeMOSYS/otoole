@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
 
-from otoole.exceptions import OtooleNameMismatchError
+from otoole.exceptions import OtooleIndexError, OtooleNameMismatchError
 
 logger = logging.getLogger(__name__)
 
@@ -385,31 +385,125 @@ class ReadStrategy(Strategy):
             details = self.user_config[name]
 
             if details["type"] == "param":
-                logger.debug("Identified {} as a parameter".format(name))
-                try:
-                    df.set_index(details["indices"], inplace=True)
-                except KeyError:
-                    logger.debug("Unable to set index on {}".format(name))
-                    pass
+                self._check_param_index_names(name=name, config=details, df=df)
+            elif details["type"] == "set":
+                self._check_set_index_names(name=name, df=df)
 
-                logger.debug(
-                    "Column dtypes identified: {}".format(details["index_dtypes"])
-                )
-                logger.debug(df.head())
-                # Drop empty rows
-                df = (
-                    df.dropna(axis=0, how="all")
-                    .reset_index()
-                    .astype(details["index_dtypes"])
-                    .set_index(details["indices"])
-                )
-            else:
-                logger.debug("Identified {} as a set".format(name))
-                df = df.astype(details["dtype"])
+            df = self._check_index_dtypes(name=name, config=details, df=df)
 
             input_data[name] = df
 
         return input_data
+
+    @staticmethod
+    def _check_param_index_names(
+        name: str, config: Dict[str, Any], df: pd.DataFrame
+    ) -> None:
+        """Checks parameter index names input data against config file
+
+        Arguments
+        ---------
+        name: str
+            Name of parameter
+        config: Dict[str,Any]
+            Configuration file data for the parameter
+        df: pd.DataFrame
+            Data read in for the parameter
+
+        Raises
+        ------
+        OtooleIndexError
+            If actual indices do not match expected indices
+        """
+
+        actual_indices = df.index.names
+        if actual_indices[0] is None:  # for ReadMemory
+            logger.debug(f"No mulit-index identified for {name}")
+            actual_indices = list(df)[:-1]  # Drop "VALUE"
+
+        logger.debug(f"Actual indices for {name} are {actual_indices}")
+        try:
+            expected_indices = config["indices"]
+            logger.debug(f"Expected indices for {name} are {expected_indices}")
+        except KeyError:
+            logger.debug(f"No expected indices identifed for {name}")
+            return
+
+        if actual_indices == expected_indices:
+            return
+        else:
+            raise OtooleIndexError(
+                resource=name,
+                config_indices=expected_indices,
+                data_indices=actual_indices,
+            )
+
+    @staticmethod
+    def _check_set_index_names(name: str, df: pd.DataFrame) -> None:
+        """Checks for proper set index name
+
+        Arguments
+        ---------
+        name: str
+            Name of set
+        df: pd.DataFrame
+            Data read in for the parameter
+
+        Raises
+        ------
+        OtooleIndexError
+            If actual indices do not match expected indices
+        """
+        if not df.columns == ["VALUE"]:
+            raise OtooleIndexError(
+                resource=name,
+                config_indices=["VALUE"],
+                data_indices=df.columns,
+            )
+
+    @staticmethod
+    def _check_index_dtypes(
+        name: str, config: Dict[str, Any], df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Checks datatypes of input data against config file
+
+        Arguments
+        ---------
+        name: str
+            Name of parameter
+        config: Dict[str,Any]
+            Configuration file data for the parameter
+        df: pd.DataFrame
+            Data read in for the parameter
+
+        Returns
+        -------
+        pd.DataFrame
+            input_data with corrected datatypes
+        """
+
+        if config["type"] == "param":
+            logger.debug("Identified {} as a parameter".format(name))
+            try:
+                df.set_index(config["indices"], inplace=True)
+            except KeyError:
+                logger.debug("Unable to set index on {}".format(name))
+                pass
+
+            logger.debug("Column dtypes identified: {}".format(config["index_dtypes"]))
+            logger.debug(df.head())
+            # Drop empty rows
+            df = (
+                df.dropna(axis=0, how="all")
+                .reset_index()
+                .astype(config["index_dtypes"])
+                .set_index(config["indices"])
+            )
+        else:
+            logger.debug("Identified {} as a set".format(name))
+            df = df.astype(config["dtype"])
+
+        return df
 
     def _get_missing_input_dataframes(
         self, input_data: Dict[str, pd.DataFrame], config_type: str
