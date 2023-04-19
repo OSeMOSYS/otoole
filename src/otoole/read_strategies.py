@@ -6,7 +6,11 @@ import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 
-from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameMismatchError
+from otoole.exceptions import (
+    OtooleDeprecationError,
+    OtooleError,
+    OtooleExcelNameMismatchError,
+)
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 from otoole.utils import create_name_mappings
@@ -45,7 +49,7 @@ class _ReadTabular(ReadStrategy):
 
         return narrow
 
-    def _check_parameter(self, df: pd.DataFrame, expected_headers: List, name: str):
+    def _convert_wide_2_narrow(self, df: pd.DataFrame, name: str):
         """Converts a dataframe from wide to narrow format
 
         Arguments
@@ -64,13 +68,22 @@ class _ReadTabular(ReadStrategy):
                 f"{name} is already in narrow form with headers {actual_headers}"
             )
             narrow = df
-            actual_headers = actual_headers[:-1]  # remove "VALUE"
+            converted_headers = actual_headers[:-1]  # remove "VALUE"
         else:
             try:
+                converted_headers = [
+                    x for x in actual_headers if not isinstance(x, int)
+                ]
+                converted_headers += ["YEAR"]
+                if "VALUE" in converted_headers:
+                    raise OtooleError(
+                        resource=name,
+                        message="'VALUE' can not be a header in wide format data",
+                    )
                 narrow = pd.melt(
                     df,
-                    id_vars=actual_headers[:-1],
-                    var_name=actual_headers[-1],  # Normally 'YEAR'
+                    id_vars=converted_headers[:-1],
+                    var_name=converted_headers[-1],  # Normally 'YEAR'
                     value_name="new_VALUE",
                 )
                 narrow = narrow.rename(columns={"new_VALUE": "VALUE"})
@@ -79,8 +92,8 @@ class _ReadTabular(ReadStrategy):
                 logger.debug(f"Could not reshape {name}")
                 raise ex
 
-        all_headers = actual_headers + ["VALUE"]
-        return narrow[all_headers].set_index(actual_headers)
+        all_headers = converted_headers + ["VALUE"]
+        return narrow[all_headers].set_index(converted_headers)
 
     def _whitespace_converter(self, indices: List[str]) -> Dict[str, Any]:
         """Creates converter for striping whitespace in dataframe
@@ -132,7 +145,7 @@ class ReadExcel(_ReadTabular):
             entity_type = config[mod_name]["type"]
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details["indices"], mod_name)
+                narrow = self._convert_wide_2_narrow(df, mod_name)
             elif entity_type == "set":
                 narrow = self._check_set(df, config_details, mod_name)
 
@@ -198,7 +211,7 @@ class ReadCsv(_ReadTabular):
 
             if entity_type == "param":
                 df = self._get_input_data(filepath, parameter, details, converter)
-                narrow = self._check_parameter(df, details["indices"], parameter)
+                narrow = self._convert_wide_2_narrow(df, parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
                         narrow, self.user_config, parameter

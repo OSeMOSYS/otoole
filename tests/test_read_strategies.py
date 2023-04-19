@@ -968,11 +968,10 @@ class TestReadExcel:
             ["IH0012", 0.071232876, 0.071232876, 0.071232876],
         ]
         df = pd.DataFrame(data, columns=["TIMESLICE", 2017, 2018, 2019])
-        config_details = ["TIMESLICE", "YEAR"]
         name = "YearSplit"
 
         reader = ReadExcel(user_config=user_config)
-        actual = reader._check_parameter(df, config_details, name)
+        actual = reader._convert_wide_2_narrow(df, name)
         data = [
             ["IW0016", 2017, 0.238356164],
             ["IW1624", 2017, 0.119178082],

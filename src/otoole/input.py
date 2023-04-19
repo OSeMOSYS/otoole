@@ -386,7 +386,9 @@ class ReadStrategy(Strategy):
             details = self.user_config[name]
 
             if details["type"] == "param":
-                self._check_index_names(name=name, config=details, df=df)
+                self._check_param_index_names(name=name, config=details, df=df)
+            elif details["type"] == "set":
+                self._check_set_index_names(name=name, df=df)
 
             df = self._check_index_dtypes(name=name, config=details, df=df)
 
@@ -395,8 +397,10 @@ class ReadStrategy(Strategy):
         return input_data
 
     @staticmethod
-    def _check_index_names(name: str, config: Dict[str, Any], df: pd.DataFrame) -> None:
-        """Checks index names input data against config file
+    def _check_param_index_names(
+        name: str, config: Dict[str, Any], df: pd.DataFrame
+    ) -> None:
+        """Checks parameter index names input data against config file
 
         Arguments
         ---------
@@ -414,10 +418,16 @@ class ReadStrategy(Strategy):
         """
 
         actual_indices = df.index.names
+        if actual_indices[0] is None:  # for ReadMemory
+            logger.debug(f"No mulit-index identified for {name}")
+            actual_indices = list(df)[:-1]  # Drop "VALUE"
+
+        logger.debug(f"Actual indices for {name} are {actual_indices}")
         try:
             expected_indices = config["indices"]
+            logger.debug(f"Expected indices for {name} are {expected_indices}")
         except KeyError:
-            logger.info(f"No index identifed for {name}")
+            logger.debug(f"No expected indices identifed for {name}")
             return
 
         if actual_indices == expected_indices:
@@ -427,6 +437,29 @@ class ReadStrategy(Strategy):
                 resource=name,
                 config_indices=expected_indices,
                 data_indices=actual_indices,
+            )
+
+    @staticmethod
+    def _check_set_index_names(name: str, df: pd.DataFrame) -> None:
+        """Checks for proper set index name
+
+        Arguments
+        ---------
+        name: str
+            Name of set
+        df: pd.DataFrame
+            Data read in for the parameter
+
+        Raises
+        ------
+        OtooleIndexError
+            If actual indices do not match expected indices
+        """
+        if not df.columns == ["VALUE"]:
+            raise OtooleIndexError(
+                resource=name,
+                config_indices=["VALUE"],
+                data_indices=df.columns,
             )
 
     @staticmethod

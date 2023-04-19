@@ -149,3 +149,22 @@ class OtooleIndexError(OtooleException):
 
     def __str__(self):
         return f"{self.resource} -> {self.message}. Config indices are {self.config_indices}. Data indices are {self.data_indices}."
+
+
+class OtooleError(OtooleException):
+    """General purpose error
+
+    Arguments
+    ---------
+    resource : str
+        Name of the resource which is invalid
+    message : str
+        Error message
+    """
+
+    def __init__(self, resource, message):
+        self.resource = resource
+        self.message = message
+
+    def __str__(self):
+        return f"{self.resource} -> {self.message}"
