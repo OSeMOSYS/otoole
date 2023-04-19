@@ -419,7 +419,7 @@ class ReadStrategy(Strategy):
         Arguments:
         ----------
         input_data: Dict[str, pd.DataFrame]
-            Data read in from the excel notebook
+            Internal datastore
         config_type: str
             Type of value. Must be "set", "param", or "result"
 
