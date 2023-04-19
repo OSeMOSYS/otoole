@@ -8,7 +8,7 @@ from amply import Amply
 from pytest import mark, raises
 
 from otoole import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
-from otoole.exceptions import OtooleDeprecationError
+from otoole.exceptions import OtooleDeprecationError, OtooleError
 from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.results import (
     ReadCbc,
@@ -989,6 +989,17 @@ class TestReadExcel:
             .set_index(["TIMESLICE", "YEAR"])
         )
         pd.testing.assert_frame_equal(actual, expected)
+
+    def test_invalid_column_name(self, user_config):
+        data = [
+            ["ELC", "IW0016", 0.238356164, 0.238356164, 0.238356164],
+            ["ELC", "IW1624", 0.119178082, 0.119178082, 0.119178082],
+            ["ELC", "IH0012", 0.071232876, 0.071232876, 0.071232876],
+        ]
+        df = pd.DataFrame(data, columns=["VALUE", "TIMESLICE", 2017, 2018, 2019])
+        reader = ReadExcel(user_config=user_config)
+        with raises(OtooleError):
+            reader._convert_wide_2_narrow(df=df, name="example")
 
     def test_check_index(self, user_config):
 
