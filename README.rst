@@ -2,7 +2,7 @@
 otoole: OSeMOSYS tools for energy work
 ==================================================
 
-.. image:: https://coveralls.io/repos/github/OSeMOSYS/otoole/badge.svg?branch=master
+.. image:: https://coveralls.io/repos/github/OSeMOSYS/otoole/badge.svg?branch=master&kill_cache=1
     :target: https://coveralls.io/github/OSeMOSYS/otoole?branch=master
 
 .. image:: https://readthedocs.org/projects/otoole/badge/?version=latest
