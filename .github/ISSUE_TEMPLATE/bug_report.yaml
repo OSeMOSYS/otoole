@@ -34,7 +34,7 @@ body:
     id: logs
     attributes:
       label: Log output
-      description: | 
+      description: |
         Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
         To include the full traceback error, run otoole in verbose mode with the "-v" flag
       render: shell
