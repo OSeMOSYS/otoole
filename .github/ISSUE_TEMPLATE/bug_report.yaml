@@ -51,7 +51,7 @@ body:
         - MacOS
         - Windows
     validations:
-      required: true
+      required: false
 
   - type: input
     id: version
