@@ -34,10 +34,9 @@ body:
     id: logs
     attributes:
       label: Log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      placeholder: |
-        Please include the full traceback error by running otoole in verbose mode with the "-v" flag
-        For example, "otoole -v convert ..."
+      description: | 
+        Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+        To include the full traceback error, run otoole in verbose mode with the "-v" flag
       render: shell
     validations:
       required: false
@@ -54,7 +53,7 @@ body:
     validations:
       required: true
 
-  - type: textarea
+  - type: input
     id: version
     attributes:
       label: What version of otoole are you running?
