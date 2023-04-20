@@ -27,7 +27,7 @@ body:
   validations:
     required: true
 
-- type: input
+- type: textarea
   id: current
   attributes:
     label: Link to existing documentation
@@ -35,7 +35,7 @@ body:
   validations:
     required: false
 
-- type: input
+- type: textarea
   id: solution
   attributes:
     label: Suggested Update
