@@ -493,12 +493,22 @@ class ReadStrategy(Strategy):
             logger.debug("Column dtypes identified: {}".format(config["index_dtypes"]))
             logger.debug(df.head())
             # Drop empty rows
-            df = (
-                df.dropna(axis=0, how="all")
-                .reset_index()
-                .astype(config["index_dtypes"])
-                .set_index(config["indices"])
-            )
+            try:
+                df = (
+                    df.dropna(axis=0, how="all")
+                    .reset_index()
+                    .astype(config["index_dtypes"])
+                    .set_index(config["indices"])
+                )
+            except ValueError:  # ValueError: invalid literal for int() with base 10:
+                df = df.dropna(axis=0, how="all").reset_index()
+                for index, dtype in config["index_dtypes"].items():
+                    if dtype == "int":
+                        df[index] = df[index].astype(float).astype(int)
+                    else:
+                        df[index] = df[index].astype(dtype)
+                df = df.set_index(config["indices"])
+
         else:
             logger.debug("Identified {} as a set".format(name))
             df = df.astype(config["dtype"])
