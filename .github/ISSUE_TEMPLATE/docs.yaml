@@ -1,6 +1,6 @@
 name: Documentation
 description: Issues relating to documentation
-title: "[DOCS] <Replace with short description of documentation issue>"
+title: "[DOCS]: <Replace with short description of documentation issue>"
 labels: ["documentation"]
 body:
 
