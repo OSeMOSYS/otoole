@@ -1,3 +1,6 @@
+from typing import List, Union
+
+
 class OtooleException(Exception):
     """Base class for all otoole exceptions."""
 
@@ -77,15 +80,20 @@ class OtooleNameMismatchError(OtooleException):
 
     def __init__(
         self,
-        name: str,
-        message: str = "Name not consistent between data and config file",
+        name: Union[List, str],
     ) -> None:
-        self.name = name
-        self.message = message
+        if isinstance(name, list):
+            self.message = "Names not consistent between data and config file"
+            self.name = ", ".join(sorted(name))
+        elif isinstance(name, str):
+            self.name = name
+            self.message = "Name not consistent between data and config file"
+        else:
+            raise TypeError("Incorrect type passed to OtooleNameMismatchError")
         super().__init__(self.message)
 
     def __str__(self):
-        return f"{self.name} -> {self.message}"
+        return f"{self.message}:\n\n{self.name}.\n\nUpdate config or data with matching names."
 
 
 class OtooleDeprecationError(OtooleException):
