@@ -4,11 +4,15 @@
 Data Formats
 ============
 
+This page explains the different data formatting options available in otoole. Firstly,
+the format of the user configuration file is explained. Following this, the different
+input data formats are explained.
+
 User Configuration File
 -----------------------
 
 .. versionadded:: v1.0.0
-    The user configuration file
+    The user configuration file is now required for data conversion
 
 Overview
 ~~~~~~~~
@@ -126,14 +130,14 @@ repository for a complete example.
 Input Data
 ----------
 
+.. deprecated:: v1.0.0
+    The ``datapackage`` format is no longer supported
+
 Overview
 ~~~~~~~~
 
 This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
-
-.. deprecated:: v1.0.0
-    The ``datapackage`` format is no longer supported
 
 .. SEEALSO::
    See the Simplicity_ repository for a full example of these formats

@@ -49,19 +49,19 @@ that any documentation update is done in the same way was a code contribution.
 
 Our documentation is written in reStructuredText_.
 
-   .. tip::
-      Please notice that the `GitHub web interface`_ provides a quick way of
-      propose changes in ``otoole``'s files. While this mechanism can
-      be tricky for normal code contributions, it works perfectly fine for
-      contributing to the docs, and can be quite handy.
+.. tip::
+    Please notice that the `GitHub web interface`_ provides a quick way of
+    propose changes in ``otoole``'s files. While this mechanism can
+    be tricky for normal code contributions, it works perfectly fine for
+    contributing to the docs, and can be quite handy.
 
-      If you are interested in trying this method out, please navigate to
-      the ``docs`` folder in the source repository_, find which file you
-      would like to propose changes and click in the little pencil icon at the
-      top, to open `GitHub's code editor`_. Once you finish editing the file,
-      please write a message in the form at the bottom of the page describing
-      which changes have you made and what are the motivations behind them and
-      submit your proposal.
+    If you are interested in trying this method out, please navigate to
+    the ``docs`` folder in the source repository_, find which file you
+    would like to propose changes and click in the little pencil icon at the
+    top, to open `GitHub's code editor`_. Once you finish editing the file,
+    please write a message in the form at the bottom of the page describing
+    which changes have you made and what are the motivations behind them and
+    submit your proposal.
 
 When working on documentation changes in your local machine, you can
 compile them using |tox|_::
