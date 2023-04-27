@@ -43,8 +43,6 @@ given by **X**, while optional values are given by **(X)**.
 +-------------+------+------------+---------+
 | default     |      | X          | X       |
 +-------------+------+------------+---------+
-| calculated  |      |            | X       |
-+-------------+------+------------+---------+
 
 .. WARNING::
    Names longer than 31 characters require a ``short_name`` field. This is due
@@ -92,7 +90,6 @@ name, **not** the ``short_name``::
         type: result
         dtype: "int" or "float"
         default: 0
-        calculated: "True" or "False"
 
 .. NOTE::
    It's convention in OSeMOSYS to use Pascal case for result names
@@ -125,7 +122,6 @@ repository for a complete example.
         type: result
         dtype: float
         default: 0
-        calculated: True
 
 Input Data
 ----------

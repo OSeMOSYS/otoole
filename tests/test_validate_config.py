@@ -114,13 +114,11 @@ class TestInvalidConfigs:
           type: result
           dtype: float
           default: 0
-          calculated: True
         Result:
           indices: [SET]
           type: result
           dtype: float
           default: 0
-          calculated: True
         SET:
           dtype: str
           type: set
@@ -196,7 +194,6 @@ class TestUserDefinedValue:
           type: not_valid_type
           dtype: float
           default: 0
-          calculated: True
         SET:
           dtype: str
           type: set
@@ -479,7 +476,6 @@ class TestInvalidConfigResults:
           type: result
           dtype: float
           default: 0
-          calculated: True
           fieldnotexpected: True
         SET:
           dtype: str
@@ -502,7 +498,6 @@ class TestInvalidConfigResults:
           type: result
           dtype: float
           default: 0
-          calculated: True
         SET:
           dtype: str
           type: set
@@ -514,7 +509,6 @@ class TestInvalidConfigResults:
           type: result
           dtype: float
           default: s
-          calculated: True
         SET:
           dtype: str
           type: set
