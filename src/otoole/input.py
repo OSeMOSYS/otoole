@@ -418,7 +418,7 @@ class ReadStrategy(Strategy):
 
         actual_indices = df.index.names
         if actual_indices[0] is None:  # for ReadMemory
-            logger.debug(f"No mulit-index identified for {name}")
+            logger.debug(f"No multi-index identified for {name}")
             actual_indices = list(df)[:-1]  # Drop "VALUE"
 
         logger.debug(f"Actual indices for {name} are {actual_indices}")
@@ -426,7 +426,7 @@ class ReadStrategy(Strategy):
             expected_indices = config["indices"]
             logger.debug(f"Expected indices for {name} are {expected_indices}")
         except KeyError:
-            logger.debug(f"No expected indices identifed for {name}")
+            logger.debug(f"No expected indices identified for {name}")
             return
 
         if actual_indices == expected_indices:
@@ -586,7 +586,7 @@ class ReadStrategy(Strategy):
         errors = list(set(expected).symmetric_difference(set(names)))
         if errors:
             logger.debug(f"data and config name errors are: {errors}")
-            raise OtooleNameMismatchError(name=errors[0])
+            raise OtooleNameMismatchError(name=errors)
 
     @abstractmethod
     def read(

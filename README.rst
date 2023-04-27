@@ -2,7 +2,7 @@
 otoole: OSeMOSYS tools for energy work
 ==================================================
 
-.. image:: https://coveralls.io/repos/github/OSeMOSYS/otoole/badge.svg?branch=master
+.. image:: https://coveralls.io/repos/github/OSeMOSYS/otoole/badge.svg?branch=master&kill_cache=1
     :target: https://coveralls.io/github/OSeMOSYS/otoole?branch=master
 
 .. image:: https://readthedocs.org/projects/otoole/badge/?version=latest
@@ -17,7 +17,7 @@ A Python toolkit to support use of OSeMOSYS
 Description
 ===========
 
-OSeMOSYS tools for energy work, or **otoole**, is a Python package
+OSeMOSYS tools for energy work, or otoole, is a Python package
 which provides a command-line interface for users of OSeMOSYS. The aim of the
 package is to provide commonly used pre- and post-processing steps for OSeMOSYS.
 
@@ -41,7 +41,7 @@ For instructions of the use of the tool, run the command line help function::
 
 Documentation
 =============
-Detailed documentation of **otoole**, including examples, can be found here:
+Detailed documentation of otoole, including examples, can be found here:
 https://otoole.readthedocs.io/en/latest/
 
 Contributing
