@@ -74,7 +74,7 @@ class UserDefinedValue(BaseModel):
 
 
 class UserDefinedSet(UserDefinedValue):
-    """Represents a parameter"""
+    """Represents a set"""
 
     @validator("dtype")
     @classmethod
@@ -85,7 +85,7 @@ class UserDefinedSet(UserDefinedValue):
 
 
 class UserDefinedParameter(UserDefinedValue):
-    """Represents a user defined parameter"""
+    """Represents a parameter"""
 
     @validator("dtype")
     @classmethod
@@ -126,7 +126,7 @@ class UserDefinedParameter(UserDefinedValue):
 
 
 class UserDefinedResult(UserDefinedValue):
-    """Represents a parameter"""
+    """Represents a result"""
 
     @validator("dtype")
     @classmethod
@@ -138,11 +138,22 @@ class UserDefinedResult(UserDefinedValue):
     @root_validator(pre=True)
     @classmethod
     def check_required_inputs(cls, values):
-        required = ["default", "defined_sets", "indices", "calculated"]
+        required = ["default", "defined_sets", "indices"]
         if not all(req in values for req in required):
             raise ValueError(
-                f"{values['name']} -> Missing one of required fields ('default', 'defined_sets', 'indices', calculated)"
+                f"{values['name']} -> Missing one of required fields ('default', 'defined_sets', 'indices')"
             )
+        return values
+
+    @root_validator(pre=True)
+    @classmethod
+    def check_deprecated_values(cls, values):
+        deprecated = ["calculated", "Calculated"]
+        for v in values:
+            if v in deprecated:
+                logger.warning(
+                    f"{values['name']} -> Config file field of '{v}' is deprecated. Remove '{v}' to suppress this warning."
+                )
         return values
 
     @root_validator(pre=True)
