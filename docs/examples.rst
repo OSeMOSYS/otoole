@@ -10,7 +10,7 @@ functionality in seperate simple use cases.
 
 .. NOTE::
     To follow these examples, clone the Simplicity_ repository and run all commands
-    from the ``simplicity/`` directory.
+    from the ``simplicity/`` directory::
 
         git clone https://github.com/OSeMOSYS/simplicity.git
         cd simplicity

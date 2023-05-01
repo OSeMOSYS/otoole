@@ -177,6 +177,7 @@ html_theme_options = {
         <p>Theme by the <a href="https://executablebooks.org/en/latest/">Executable Book Project</a></p>
         <p>Logo by <a href="https://looka.com/">looka.com</a></p>
         """,
+    "icon_links": [],
 }
 
 # Add any paths that contain custom themes here, relative to this directory.

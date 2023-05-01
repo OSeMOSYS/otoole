@@ -94,10 +94,6 @@ name, **not** the ``short_name``::
 .. NOTE::
    It's convention in OSeMOSYS to use Pascal case for result names
 
-.. WARNING::
-   The ``Calcualted`` field is currently a placeholder for future logic to
-   toggle what result variables to calculate.
-
 Examples
 ~~~~~~~~
 
@@ -126,6 +122,9 @@ repository for a complete example.
         type: result
         dtype: float
         default: 0
+
+.. TIP::
+   See the :ref:`examples` page to create a template configuration file
 
 Input Data
 ----------
