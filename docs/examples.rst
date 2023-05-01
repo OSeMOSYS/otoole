@@ -12,13 +12,16 @@ functionality in seperate simple use cases.
     To follow these examples, clone the Simplicity_ repository and run all commands
     from the ``simplicity/`` directory.
 
-.. CAUTION::
-    While ``otoole`` does not require any solver, these examples will use the
-    free and open-source tools GLPK_ and CBC_ to build and solve example
-    models.
+        git clone https://github.com/OSeMOSYS/simplicity.git
+        cd simplicity
 
-Data Conversion
----------------
+.. CAUTION::
+    While ``otoole`` does not require a solver, these examples
+    will use the free and open source solvers GLPK_ and CBC_.
+    Installation instructions are described in the `Solver Setup`_ section.
+
+Data Conversion with CSVs
+-------------------------
 
 Objective
 ~~~~~~~~~
@@ -28,8 +31,8 @@ the full suite of OSeMOSYS results.
 
 1. ``otoole`` Convert
 ~~~~~~~~~~~~~~~~~~~~~
-We first want to convert the folder of Simplicity_ CSVs (``data/``) into
-an OSeMOSYS datafile (``simplicity.txt``)::
+We first want to convert the folder of Simplicity_ CSVs into
+an OSeMOSYS datafile called ``simplicity.txt``::
 
     $ otoole convert csv datafile data simplicity.txt config.yaml
 
@@ -37,7 +40,7 @@ an OSeMOSYS datafile (``simplicity.txt``)::
 ~~~~~~~~~~~~~~~~~~~
 Use GLPK_ to build the model and save it as ``simplicity.lp``::
 
-    $ glpsol -m osemosys.txt -d simplicity.txt --wlp simplicity.lp --check
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
 
 .. TIP::
     See the `GLPK Wiki`_ for more information on the ``glpsol`` command
@@ -50,124 +53,59 @@ Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
 
 4. Generate the full set of results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a folder to hold the results::
-
-    $ mkdir results
-
 Use ``otoole``'s ``result`` package to generate the results file::
 
     $ otoole results cbc csv simplicity.sol results config.yaml
 
-Result Processing
------------------
+5. View Results
+~~~~~~~~~~~~~~~
+Results are now viewable in the files ``results/*.csv``
+
+.. TIP::
+    Before moving onto the next section, remove all the generated files::
+
+        $ rm simplicity.lp simplicity.sol simplicity.txt results/*
+
+Data Conversion with Excel
+--------------------------
 
 Objective
 ~~~~~~~~~
 
-Use an excel worksheet to build and solve an OSeMOSYS model with CBC. Only
-generate the results for ``TotalDiscountedCost`` and ``TotalCapacityAnnual``.
+Use an excel worksheet to build and solve an OSeMOSYS model with CBC.
 
-1. ``otoole`` Convert
-~~~~~~~~~~~~~~~~~~~~~
-We first want to convert the excel workbook (``simplicity.xlsx``) into
-an OSeMOSYS datafile (``simplicity.txt```)::
+1. Create the Excel Workbook
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use the example CSV data to create an Excel Workbook using ``otoole convert``::
 
-    $ otoole convert excel datafile data simplicity.xlsx config.yaml
+    $ otoole convert csv excel data simplicity.xlsx config.yaml
 
-2. Build the Model
+Excel workbooks are an easy way for humans to interface with OSeMOSYS data!
+
+2. Create the MathProg datafile
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Next, we want to convert the excel workbook (``simplicity.xlsx``) into
+an OSeMOSYS datafile (``simplicity.txt``)::
+
+    $ otoole convert excel datafile simplicity.xlsx simplicity.txt config.yaml
+
+3. Build the Model
 ~~~~~~~~~~~~~~~~~~
 Use GLPK_ to build the model and save it as ``simplicity.lp``::
 
-    $ glpsol -m osemosys.txt -d simplicity.txt --wlp simplicity.lp --check
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
 
-3. Solve the Model
+4. Solve the Model
 ~~~~~~~~~~~~~~~~~~
 Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
 
-    $ cbc simplicity.sol solve -solu simplicity.sol
-
-4. Modify the Configuration File
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Change the ``calculated`` fields for the ``TotalDiscountedCost`` and ``TotalCapacityAnnual``
-values to ``True``, and set all other ``calculated`` fields to ``False``::
-
-    TotalCapacityAnnual:
-        indices: [REGION, TECHNOLOGY, YEAR]
-        type: result
-        dtype: float
-        default: 0
-        calculated: True
+    $ cbc simplicity.lp solve -solu simplicity.sol
 
 5. Generate the selected results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create a folder to hold the results::
-
-    $ mkdir results
-
 Use ``otoole``'s ``result`` package to generate the result CSVs::
 
     $ otoole results cbc csv simplicity.sol results config.yaml
-
-Template Setup
---------------
-
-Objective
-~~~~~~~~~
-
-Generate a template configuration file and excel input file to use with
-``otoole convert`` commands
-
-1. Create the Configuration File
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Run the following command, to create a template configuration file
-called ``config.yaml``::
-
-    $ otoole setup config config.yaml
-
-2. Create the Template Data CSVs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``otoole`` will only generate template CSV data, however, we want to input
-data in Excel format. Therefore, we will first generate CSV data and convert
-it to Excel format::
-
-    $ otoole setup csv data
-
-3. Add Year Definitions
-~~~~~~~~~~~~~~~~~~~~~~~
-Open up the the file ``data/YEARS.csv`` and add all the years over the model
-horizon. For example, if the model horizon is from 2020 to 2050, the
-``data/YEARS.csv`` file should be formatted as follows:
-
-+---------+
-| VALUE   |
-+=========+
-| 2020    |
-+---------+
-| 2021    |
-+---------+
-| 2022    |
-+---------+
-| ...     |
-+---------+
-| 2050    |
-+---------+
-
-.. NOTE::
-   While this step in not technically required, by filling out the years in
-   CSV format, ``otoole`` will pivot all the Excel sheets on the years
-   during the conversion process. This will save significant formatting time!
-
-4. Convert the CSV Template Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To convert the template CSV data into Excel formatted data, run the following
-``convert`` command::
-
-    $ otoole convert csv excel data data.xlsx config.yaml
-
-5. Add Model Data
-~~~~~~~~~~~~~~~~~
-There should now be a file called ``data.xlsx`` that the user can open and
-add data to.
 
 Model Visualization
 -------------------
@@ -193,6 +131,68 @@ Open the newly created file, ``res.png`` and the following image should be
 displayed
 
 .. image:: _static/simplicity_res.png
+
+Template Setup
+--------------
+
+Objective
+~~~~~~~~~
+
+Generate a template configuration file and excel input file to use with
+``otoole convert`` commands
+
+1. Create the Configuration File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run the following command, to create a template configuration file
+called ``config.yaml``::
+
+    $ otoole setup config template_config.yaml
+
+2. Create the Template Data CSVs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``otoole`` will only generate template CSV data, however, we want to input
+data in Excel format. Therefore, we will first generate CSV data and convert
+it to Excel format::
+
+    $ otoole setup csv template_data
+
+3. Add Year Definitions
+~~~~~~~~~~~~~~~~~~~~~~~
+Open up the the file ``template_data/YEARS.csv`` and add all the years over the model
+horizon. For example, if the model horizon is from 2020 to 2050, the
+``template_data/YEARS.csv`` file should be formatted as follows:
+
++---------+
+| VALUE   |
++=========+
+| 2020    |
++---------+
+| 2021    |
++---------+
+| 2022    |
++---------+
+| ...     |
++---------+
+| 2050    |
++---------+
+
+.. NOTE::
+   While this step in not technically required, by filling out the years in
+   CSV format, ``otoole`` will pivot all the Excel sheets on the years
+   during the conversion process. This will save significant formatting time!
+
+4. Convert the CSV Template Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To convert the template CSV data into Excel formatted data, run the following
+``convert`` command::
+
+    $ otoole convert csv excel template_data template.xlsx template_config.yaml
+
+5. Add Model Data
+~~~~~~~~~~~~~~~~~
+There should now be a file called ``template.xlsx`` that the user can open and
+add data to.
+
 
 Model Validation
 ----------------
