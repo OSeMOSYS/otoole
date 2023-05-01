@@ -6,7 +6,7 @@ import pandas as pd
 from amply import Amply
 from flatten_dict import flatten
 
-from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameMismatchError
+from otoole.exceptions import OtooleDeprecationError, OtooleError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes, check_set_datatype
 from otoole.utils import create_name_mappings
@@ -45,7 +45,7 @@ class _ReadTabular(ReadStrategy):
 
         return narrow
 
-    def _check_parameter(self, df: pd.DataFrame, expected_headers: List, name: str):
+    def _convert_wide_2_narrow(self, df: pd.DataFrame, name: str):
         """Converts a dataframe from wide to narrow format
 
         Arguments
@@ -54,41 +54,42 @@ class _ReadTabular(ReadStrategy):
         expected_headers: List
         name: str
         """
-        actual_headers = df.columns
-        logger.debug("Expected headers for %s: %s", name, expected_headers)
-
-        if "REGION" in expected_headers and "REGION" not in actual_headers:
-            raise ValueError("No REGION column provided for %s", name)
+        actual_headers = list(df.columns)
 
         if "MODEOFOPERATION" in actual_headers:
             df = df.rename(columns={"MODEOFOPERATION": "MODE_OF_OPERATION"})
 
         if actual_headers[-1] == "VALUE":
             logger.info(
-                "%s is already in narrow form with headers %s", name, df.columns
+                f"{name} is already in narrow form with headers {actual_headers}"
             )
             narrow = df
+            converted_headers = actual_headers[:-1]  # remove "VALUE"
         else:
             try:
+                converted_headers = [
+                    x for x in actual_headers if not isinstance(x, int)
+                ]
+                converted_headers += ["YEAR"]
+                if "VALUE" in converted_headers:
+                    raise OtooleError(
+                        resource=name,
+                        message="'VALUE' can not be a header in wide format data",
+                    )
                 narrow = pd.melt(
                     df,
-                    id_vars=expected_headers[:-1],
-                    var_name=expected_headers[-1],  # Normally 'YEAR'
+                    id_vars=converted_headers[:-1],
+                    var_name=converted_headers[-1],  # Normally 'YEAR'
                     value_name="new_VALUE",
                 )
                 narrow = narrow.rename(columns={"new_VALUE": "VALUE"})
+                logger.info(f"{name} reshaped from wide to narrow format")
             except IndexError as ex:
-                logger.debug("Could not reshape %s", df.columns)
+                logger.debug(f"Could not reshape {name}")
                 raise ex
 
-        all_headers = expected_headers + ["VALUE"]
-        for column in all_headers:
-            if column not in narrow.columns:
-                logger.warning("%s not in header of %s", column, name)
-
-        logger.debug("Final all headers for %s: %s", name, all_headers)
-
-        return narrow[all_headers].set_index(expected_headers)
+        all_headers = converted_headers + ["VALUE"]
+        return narrow[all_headers].set_index(converted_headers)
 
     def _whitespace_converter(self, indices: List[str]) -> Dict[str, Any]:
         """Creates converter for striping whitespace in dataframe
@@ -121,8 +122,7 @@ class ReadExcel(_ReadTabular):
         excel_to_csv = create_name_mappings(config, map_full_to_short=False)
 
         xl = pd.ExcelFile(filepath, engine="openpyxl")
-
-        self._check_input_sheet_names(xl.sheet_names)
+        self._compare_read_to_expected(names=xl.sheet_names, short_names=True)
 
         input_data = {}
 
@@ -140,7 +140,7 @@ class ReadExcel(_ReadTabular):
             entity_type = config[mod_name]["type"]
 
             if entity_type == "param":
-                narrow = self._check_parameter(df, config_details["indices"], mod_name)
+                narrow = self._convert_wide_2_narrow(df, mod_name)
             elif entity_type == "set":
                 narrow = self._check_set(df, config_details, mod_name)
 
@@ -155,33 +155,6 @@ class ReadExcel(_ReadTabular):
 
         return input_data, default_values
 
-    def _check_input_sheet_names(self, sheet_names: List[str]) -> None:
-        """Checks that excel sheet names are in the config file.
-
-        Arguments:
-        ---------
-        sheet_names: list[str]
-            Sheet names from the excel file
-
-        Raises:
-        -------
-        OtooleExcelNameMismatchError
-            If the sheet name is not found in the config files parameter or
-            'short_name' parameter
-        """
-        user_config = self.user_config
-        csv_to_excel = create_name_mappings(user_config)
-        config_param_names = []
-        for name in user_config:
-            try:
-                config_param_names.append(csv_to_excel[name])
-            except KeyError:
-                config_param_names.append(name)
-
-        for sheet_name in sheet_names:
-            if sheet_name not in config_param_names:
-                raise OtooleExcelNameMismatchError(excel_name=sheet_name)
-
 
 class ReadCsv(_ReadTabular):
     """Read in a folder of CSV files"""
@@ -193,6 +166,10 @@ class ReadCsv(_ReadTabular):
         input_data = {}
 
         self._check_for_default_values_csv(filepath)
+        self._compare_read_to_expected(
+            names=[f.split(".csv")[0] for f in os.listdir(filepath)]
+        )
+
         default_values = self._read_default_values(self.user_config)
 
         for parameter, details in self.user_config.items():
@@ -206,7 +183,7 @@ class ReadCsv(_ReadTabular):
 
             if entity_type == "param":
                 df = self._get_input_data(filepath, parameter, details, converter)
-                narrow = self._check_parameter(df, details["indices"], parameter)
+                narrow = self._convert_wide_2_narrow(df, parameter)
                 if not narrow.empty:
                     narrow_checked = check_datatypes(
                         narrow, self.user_config, parameter

@@ -28,3 +28,9 @@ jobs:
       - name: Test with pytest
         run: |
           tox
+      - name: Upload coverage data to converalls.io
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install --upgrade coveralls
+          coveralls --service=github

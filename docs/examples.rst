@@ -26,7 +26,7 @@ Data Conversion with CSVs
 Objective
 ~~~~~~~~~
 
-Use a folder of CSV data to build and solve an OSeMOSYS model with CBC. Generate
+Use a folder of CSV data to build and solve an OSeMOSYS model with CBC_. Generate
 the full suite of OSeMOSYS results.
 
 1. ``otoole`` Convert
@@ -285,8 +285,7 @@ against the validation configuration file::
     validation configuation file (``validate.yaml``). Both configuartion files
     are required for validation functionality.
 
-.. NOTE::
-   The final validation configuration file in this example will look like::
+The final validation configuration file in this example will look like::
 
     codes:
       fuels:
@@ -322,9 +321,75 @@ against the validation configuration file::
           valid: fuels
           position: (4, 6)
 
+Solver Setup
+------------
+
+Objective
+~~~~~~~~~
+
+Install GLPK_ and CBC_ to use in the otoole examples.
+
+1. Install GLPK
+~~~~~~~~~~~~~~~~
+
+GLPK_ is a free and open-source linear program solver.
+
+To install it on **Linux**, run the command::
+
+    sudo apt-get update
+    sudo apt-get install glpk glpk-utils
+
+To install it on **Mac**, run the command::
+
+    brew install glpk
+
+.. To install it on **Windows**, follow the install instruction on the GLPK_
+.. website, and/or follow the instructions_ from the OSeMOSYS community
+
+2. Test the GLPK install
+~~~~~~~~~~~~~~~~~~~~~~~~
+Once installed, you should be able to call the ``glpsol`` command::
+
+    $ glpsol
+    GLPSOL: GLPK LP/MIP Solver, v4.65
+    No input problem file specified; try glpsol --help
+
+3. Install CBC
+~~~~~~~~~~~~~~
+
+CBC_ is a free and open-source mixed integer linear programming solver. Full
+install instructions can be found on the CBC_ website. However, the abbreviated
+instructions are shown below
+
+To install it on **Linux**, run the command::
+
+    sudo apt-get install coinor-cbc coinor-libcbc-dev
+
+To install it on **Mac**, run the command::
+
+    brew install coin-or-tools/coinor/cbc
+
+.. To install it on **Windows**, follow the install instruction on the CBC_
+.. website by downloading a binary
+
+4. Test the CBC install
+~~~~~~~~~~~~~~~~~~~~~~~
+Once installed, you should be able to directly call CBC::
+
+    $ cbc
+    Welcome to the CBC MILP Solver
+    Version: 2.10.3
+    Build Date: Mar 24 2020
+
+    CoinSolver takes input from arguments ( - switches to stdin)
+    Enter ? for list of commands or help
+    Coin:
+
+You can exit the solver by typing ``quit``
 
 .. _Simplicity: https://github.com/OSeMOSYS/simplicity
 .. _GLPK: https://www.gnu.org/software/glpk/
 .. _GLPK Wiki: https://en.wikibooks.org/wiki/GLPK/Using_GLPSOL
 .. _CBC: https://github.com/coin-or/Cbc
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
+.. _instructions: http://www.osemosys.org/uploads/1/8/5/0/18504136/glpk_installation_guide_for_windows10_-_201702.pdf
