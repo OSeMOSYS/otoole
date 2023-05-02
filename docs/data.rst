@@ -30,6 +30,9 @@ The table below highlights what information is required for each ``Set``,
 ``Parameter`` and ``Result`` definition in the configuration file. Required values are
 given by **X**, while optional values are given by **(X)**.
 
+.. deprecated:: v1.0.3
+    The **Calculated** keyword is no longer needed for Result definitions
+
 +-------------+------+------------+---------+
 |             | Set  | Parameter  | Result  |
 +=============+======+============+=========+

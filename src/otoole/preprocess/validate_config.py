@@ -151,7 +151,7 @@ class UserDefinedResult(UserDefinedValue):
         deprecated = ["calculated", "Calculated"]
         for v in values:
             if v in deprecated:
-                logger.warning(
+                logger.info(
                     f"{values['name']} -> Config file field of '{v}' is deprecated. Remove '{v}' to suppress this warning."
                 )
         return values
