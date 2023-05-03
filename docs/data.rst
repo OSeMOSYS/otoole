@@ -8,6 +8,9 @@ This page explains the different data formatting options available in otoole. Fi
 the format of the user configuration file is explained. Following this, the different
 input data formats are explained.
 
+.. SEEALSO::
+   See the Simplicity_ repository for a full example of these formats
+
 User Configuration File
 -----------------------
 
@@ -140,9 +143,6 @@ Overview
 
 This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
-
-.. SEEALSO::
-   See the Simplicity_ repository for a full example of these formats
 
 Excel
 ~~~~~
