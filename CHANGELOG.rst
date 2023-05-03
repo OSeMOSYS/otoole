@@ -2,6 +2,14 @@
 Changelog
 =========
 
+Version 1.0.3
+=============
+- Improved error message for multiple names mismatches
+- Fix for excel pivoting bug (issue 171)
+- Fix data type casting issue for floats to ints (issue 167)
+- Deprecates calculated field for Result definitions in config file (issue 173)
+- Minor documentation updates
+
 Version 1.0.2
 =============
 - Fix of pandas version in setup.cfg
