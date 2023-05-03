@@ -8,6 +8,9 @@ This page explains the different data formatting options available in otoole. Fi
 the format of the user configuration file is explained. Following this, the different
 input data formats are explained.
 
+.. SEEALSO::
+   See the Simplicity_ repository for a full example of these formats
+
 User Configuration File
 -----------------------
 
@@ -30,9 +33,6 @@ The table below highlights what information is required for each ``Set``,
 ``Parameter`` and ``Result`` definition in the configuration file. Required values are
 given by **X**, while optional values are given by **(X)**.
 
-.. deprecated:: v1.0.3
-    The **Calculated** keyword is no longer needed for Result definitions
-
 +-------------+------+------------+---------+
 |             | Set  | Parameter  | Result  |
 +=============+======+============+=========+
@@ -46,6 +46,9 @@ given by **X**, while optional values are given by **(X)**.
 +-------------+------+------------+---------+
 | default     |      | X          | X       |
 +-------------+------+------------+---------+
+
+.. deprecated:: v1.0.3
+    The ``Calculated`` keyword is no longer needed for Result definitions
 
 .. WARNING::
    Names longer than 31 characters require a ``short_name`` field. This is due
@@ -140,9 +143,6 @@ Overview
 
 This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
-
-.. SEEALSO::
-   See the Simplicity_ repository for a full example of these formats
 
 Excel
 ~~~~~
