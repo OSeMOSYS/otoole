@@ -26,7 +26,7 @@ Data Conversion
 Overview
 ~~~~~~~~
 
-``otoole`` supports many data pre-processing conversions so as to ease the tasks of
+``otoole`` supports different data pre-processing conversions so as to ease the tasks of
 the OSeMOSYS modeller. The modeller can generate data in any one of the formats and
 convert it to another format through a ``convert`` command. ``otoole`` currently supports
 conversion between the following formats:
@@ -34,9 +34,6 @@ conversion between the following formats:
 - Excel
 - A folder of CSV files
 - GNU MathProg datafile
-
-.. deprecated:: v1.0.0
-    The ``datapackage`` format is no longer supported
 
 ``otoole convert``
 ~~~~~~~~~~~~~~~~~~
@@ -58,6 +55,9 @@ input formats::
     -h, --help            show this help message and exit
     --write_defaults      Writes default values
     --keep_whitespace     Keeps leading/trailing whitespace
+
+.. deprecated:: v1.0.0
+    The ``datapackage`` format is no longer supported
 
 .. versionadded:: v1.0.0
     The ``config`` positional argument is now required
@@ -129,7 +129,7 @@ quickly get up and running.
 
 ``otoole setup``
 ~~~~~~~~~~~~~~~~
-The ``setup``command allows you to generate a template user configuration file,
+The ``setup`` command allows you to generate a template user configuration file,
 useful for ``conversion`` and ``result`` commands, and template input ``csv``
 data::
 

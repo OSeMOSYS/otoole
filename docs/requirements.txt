@@ -5,4 +5,5 @@ Jinja2<3.1
 # under `install_requires` in `setup.cfg` is also listed here!
 sphinx>=3.2.1
 sphinx-book-theme
+urllib3<2
 # sphinx_rtd_theme

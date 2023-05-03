@@ -858,6 +858,7 @@ def discount_factor(
     if regions and years:
         discount_rate["YEAR"] = [years]
         discount_factor = discount_rate.explode("YEAR").reset_index(level="REGION")
+        discount_factor["YEAR"] = discount_factor["YEAR"].astype(int)
         discount_factor["NUM"] = discount_factor["YEAR"] - discount_factor["YEAR"].min()
         discount_factor["RATE"] = discount_factor["VALUE"] + 1
         discount_factor["VALUE"] = (

@@ -1,14 +1,45 @@
 =========
 Changelog
 =========
-Version 1.0
-===========
+
+Version 1.0.3
+=============
+- Improved error message for multiple names mismatches
+- Fix for excel pivoting bug (issue 171)
+- Fix data type casting issue for floats to ints (issue 167)
+- Deprecates calculated field for Result definitions in config file (issue 173)
+- Minor documentation updates
+
+Version 1.0.2
+=============
+- Fix of pandas version in setup.cfg
+
+Version 1.0.1
+=============
+- Updates to citation file
+- Relink to coveralls
+- Upgrade to pandas 2.0
+- Add issue and PR templates
+- Add reading checks between config file and input data
+
+Version 1.0.0
+=============
 - Requires explicit provision of a user-defined configuration file for otoole to workbook
 - Deprecates datapackage fuctionality
 - Adds setup command to generate template config.yaml and csv files
 - Documentation update
 - Bumped pyscaffold to 4.2
 - Otoole now requires Python 3.8 or later
+
+Version 0.11.0
+==============
+- Foundation for user defined configuration
+- Fix for issue #101
+- Better writing of floating point numbers as text
+
+Version 0.10.0
+==============
+- Adds support for OSeMOSYS v1.0, Gurobi and CBC
 
 Version 0.9
 ===========

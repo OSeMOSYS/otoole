@@ -4,11 +4,18 @@
 Data Formats
 ============
 
+This page explains the different data formatting options available in otoole. Firstly,
+the format of the user configuration file is explained. Following this, the different
+input data formats are explained.
+
+.. SEEALSO::
+   See the Simplicity_ repository for a full example of these formats
+
 User Configuration File
 -----------------------
 
 .. versionadded:: v1.0.0
-    The user configuration file
+    The user configuration file is now required for data conversion
 
 Overview
 ~~~~~~~~
@@ -39,8 +46,9 @@ given by **X**, while optional values are given by **(X)**.
 +-------------+------+------------+---------+
 | default     |      | X          | X       |
 +-------------+------+------------+---------+
-| calculated  |      |            | X       |
-+-------------+------+------------+---------+
+
+.. deprecated:: v1.0.3
+    The ``Calculated`` keyword is no longer needed for Result definitions
 
 .. WARNING::
    Names longer than 31 characters require a ``short_name`` field. This is due
@@ -88,7 +96,6 @@ name, **not** the ``short_name``::
         type: result
         dtype: "int" or "float"
         default: 0
-        calculated: "True" or "False"
 
 .. NOTE::
    It's convention in OSeMOSYS to use Pascal case for result names
@@ -121,22 +128,21 @@ repository for a complete example.
         type: result
         dtype: float
         default: 0
-        calculated: True
+
+.. TIP::
+   See the :ref:`examples` page to create a template configuration file
 
 Input Data
 ----------
+
+.. deprecated:: v1.0.0
+    The ``datapackage`` format is no longer supported
 
 Overview
 ~~~~~~~~
 
 This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
-
-.. deprecated:: v1.0.0
-    The ``datapackage`` format is no longer supported
-
-.. SEEALSO::
-   See the Simplicity_ repository for a full example of these formats
 
 Excel
 ~~~~~

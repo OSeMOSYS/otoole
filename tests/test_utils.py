@@ -4,12 +4,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from otoole.exceptions import (
-    OtooleDeprecationError,
-    OtooleExcelNameLengthError,
-    OtooleExcelNameMismatchError,
-)
-from otoole.read_strategies import ReadExcel
+from otoole.exceptions import OtooleDeprecationError, OtooleExcelNameLengthError
 from otoole.utils import (
     UniqueKeyLoader,
     create_name_mappings,
@@ -69,13 +64,6 @@ class TestCreateNameMappings:
         }
         actual = create_name_mappings(user_config, map_full_to_short=False)
         assert actual == expected
-
-
-def test_excel_name_mismatch_error(user_config):
-    read_excel = ReadExcel(user_config=user_config)
-    sheet_names = ["AccumulatedAnnualDemand", "MismatchSheet"]
-    with pytest.raises(OtooleExcelNameMismatchError):
-        read_excel._check_input_sheet_names(sheet_names=sheet_names)
 
 
 user_config_name_errors = ["user_config_long_param_name", "user_config_long_short_name"]

@@ -1,3 +1,6 @@
+from typing import List, Union
+
+
 class OtooleException(Exception):
     """Base class for all otoole exceptions."""
 
@@ -72,18 +75,25 @@ class OtooleExcelNameLengthError(OtooleException):
         return f"{self.name} -> {self.message}"
 
 
-class OtooleExcelNameMismatchError(OtooleException):
-    """Name mismatch between config and excel tabs."""
+class OtooleNameMismatchError(OtooleException):
+    """Names not consistent between read in data and config file"""
 
     def __init__(
-        self, excel_name: str, message: str = "Excel tab name not found in config file"
+        self,
+        name: Union[List, str],
     ) -> None:
-        self.excel_name = excel_name
-        self.message = message
+        if isinstance(name, list):
+            self.message = "Names not consistent between data and config file"
+            self.name = ", ".join(sorted(name))
+        elif isinstance(name, str):
+            self.name = name
+            self.message = "Name not consistent between data and config file"
+        else:
+            raise TypeError("Incorrect type passed to OtooleNameMismatchError")
         super().__init__(self.message)
 
     def __str__(self):
-        return f"{self.excel_name} -> {self.message}"
+        return f"{self.message}:\n\n{self.name}.\n\nUpdate config or data with matching names."
 
 
 class OtooleDeprecationError(OtooleException):
@@ -121,6 +131,48 @@ class OtooleSetupError(OtooleException):
         resource,
         message="Data already exists. Delete file/directory or pass the --overwrite flag",
     ):
+        self.resource = resource
+        self.message = message
+
+    def __str__(self):
+        return f"{self.resource} -> {self.message}"
+
+
+class OtooleIndexError(OtooleException):
+    """Index data not consistent between data and config file
+
+    Arguments
+    ---------
+    resource : str
+        Name of the resource which is invalid
+    config_indices: List[str]
+        Indices from config file
+    data_indices: List[str]
+        Indices from input data
+    """
+
+    def __init__(self, resource, config_indices, data_indices):
+        self.resource = resource
+        self.config_indices = config_indices
+        self.data_indices = data_indices
+        self.message = "Indices inconsistent between config and data"
+
+    def __str__(self):
+        return f"{self.resource} -> {self.message}. Config indices are {self.config_indices}. Data indices are {self.data_indices}."
+
+
+class OtooleError(OtooleException):
+    """General purpose error
+
+    Arguments
+    ---------
+    resource : str
+        Name of the resource which is invalid
+    message : str
+        Error message
+    """
+
+    def __init__(self, resource, message):
         self.resource = resource
         self.message = message
 

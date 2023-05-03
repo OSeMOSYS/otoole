@@ -4,6 +4,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from pytest import fixture, mark, raises
 
+from otoole.exceptions import OtooleIndexError, OtooleNameMismatchError
 from otoole.input import ReadStrategy, WriteStrategy
 
 
@@ -22,6 +23,22 @@ def technology():
     return pd.DataFrame(data=["NGCC", "HYD1"], columns=["VALUE"])
 
 
+@fixture
+def capital_cost():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "NGCC", 2014, 1.23],
+            ["SIMPLICITY", "NGCC", 2015, 2.34],
+            ["SIMPLICITY", "NGCC", 2016, 3.45],
+            ["SIMPLICITY", "HYD1", 2014, 3.45],
+            ["SIMPLICITY", "HYD1", 2015, 2.34],
+            ["SIMPLICITY", "HYD1", 2016, 1.23],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return df
+
+
 @fixture()
 def simple_default_values():
     default_values = {}
@@ -32,11 +49,37 @@ def simple_default_values():
 
 
 @fixture
-def simple_input_data(region, year, technology):
+def simple_input_data(region, year, technology, capital_cost):
     return {
         "REGION": region,
         "TECHNOLOGY": technology,
         "YEAR": year,
+        "CapitalCost": capital_cost,
+    }
+
+
+@fixture
+def simple_user_config():
+    return {
+        "CapitalCost": {
+            "indices": ["REGION", "TECHNOLOGY", "YEAR"],
+            "type": "param",
+            "dtype": "float",
+            "default": 0,
+            "short_name": "CAPEX",
+        },
+        "REGION": {
+            "dtype": "str",
+            "type": "set",
+        },
+        "TECHNOLOGY": {
+            "dtype": "str",
+            "type": "set",
+        },
+        "YEAR": {
+            "dtype": "int",
+            "type": "set",
+        },
     }
 
 
@@ -269,15 +312,76 @@ class TestExpandDefaults:
 
 
 class TestReadStrategy:
+
     missing_input_test_data = (
         (
             "param",
-            "AccumulatedAnnualDemand",
-            pd.DataFrame(columns=["REGION", "FUEL", "YEAR", "VALUE"]).set_index(
-                ["REGION", "FUEL", "YEAR"]
+            "CapitalCost",
+            pd.DataFrame(columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]).set_index(
+                ["REGION", "TECHNOLOGY", "YEAR"]
             ),
         ),
         ("set", "REGION", pd.DataFrame(columns=["VALUE"])),
+    )
+    compare_read_to_expected_data = [
+        [["CapitalCost", "REGION", "TECHNOLOGY", "YEAR"], False],
+        [["CAPEX", "REGION", "TECHNOLOGY", "YEAR"], True],
+    ]
+    compare_read_to_expected_data_exception = [
+        ["CapitalCost", "REGION", "TECHNOLOGY"],
+        ["CapitalCost", "REGION", "TECHNOLOGY", "YEAR", "Extra"],
+    ]
+
+    capex_correct = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "NGCC", 2014, 1.23],
+            ["SIMPLICITY", "NGCC", 2015, 2.34],
+            ["SIMPLICITY", "NGCC", 2016, 3.45],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+    capex_incorrect_dtype = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "NGCC", "2014", "1.23"],
+            ["SIMPLICITY", "NGCC", 2015.0, 2.34],
+            ["SIMPLICITY", "NGCC", "2016.0", 3.45],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+    capex_incorrect_header = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "NGCC", 2014, 1.23],
+            ["SIMPLICITY", "NGCC", 2015, 2.34],
+            ["SIMPLICITY", "NGCC", 2016, 3.45],
+        ],
+        columns=["REGION", "FUEL", "YEAR", "VALUE"],
+    ).set_index(["REGION", "FUEL", "YEAR"])
+
+    year_correct = pd.DataFrame(data=[2014, 2015, 2016], columns=["VALUE"])
+
+    year_incorrect_dtype = pd.DataFrame(
+        data=["2014", "2015", "2016"], columns=["VALUE"]
+    )
+
+    year_incorrect_header = pd.DataFrame(
+        data=["2014", 2015.0, "2016.0"], columns=["YEAR"]
+    )
+
+    input_data_correct = (
+        ({"CapitalCost": capex_correct}, capex_correct),
+        ({"YEAR": year_correct}, year_correct),
+    )
+
+    input_data_incorrect_dtype = (
+        ({"CapitalCost": capex_incorrect_dtype}, capex_correct),
+        ({"YEAR": year_incorrect_dtype}, year_correct),
+    )
+
+    input_data_incorrect_header = (
+        {"CapitalCost": capex_incorrect_header},
+        {"YEAR": year_incorrect_header},
     )
 
     @mark.parametrize(
@@ -299,3 +403,133 @@ class TestReadStrategy:
         reader = DummyReadStrategy(user_config)
         with raises(ValueError):
             reader._get_missing_input_dataframes(input_data, config_type="not_valid")
+
+    @mark.parametrize(
+        "input_data, expected",
+        input_data_correct,
+        ids=["param", "set"],
+    )
+    def test_check_index(self, user_config, input_data, expected):
+        reader = DummyReadStrategy(user_config)
+        actual = reader._check_index(input_data)
+        for _, df in actual.items():
+            pd.testing.assert_frame_equal(df, expected)
+
+    @mark.parametrize(
+        "input_data, expected",
+        input_data_incorrect_dtype,
+        ids=["param", "set"],
+    )
+    def test_check_index_dtype(self, user_config, input_data, expected):
+        reader = DummyReadStrategy(user_config)
+        actual = reader._check_index(input_data)
+        for _, df in actual.items():
+            pd.testing.assert_frame_equal(df, expected)
+
+    @mark.parametrize(
+        "input_data",
+        input_data_incorrect_header,
+        ids=["param", "set"],
+    )
+    def test_check_index_header(self, user_config, input_data):
+        reader = DummyReadStrategy(user_config)
+        with raises(OtooleIndexError):
+            reader._check_index(input_data)
+
+    def test_check_index_config(self):
+        incorrect_user_config = {
+            "CapitalCost": {
+                "indices": ["REGION"],
+                "type": "param",
+                "dtype": "float",
+                "default": 0,
+            },
+            "REGION": {
+                "dtype": "str",
+                "type": "set",
+            },
+        }
+        data = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "NGCC", 2014, 1.23],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        input_data = {"CapitalCost": data}
+        reader = DummyReadStrategy(incorrect_user_config)
+        with raises(OtooleIndexError):
+            reader._check_index(input_data)
+
+    @mark.parametrize(
+        "input_data, expected",
+        input_data_correct,
+        ids=["param", "set"],
+    )
+    def test_check_dtypes(self, user_config, input_data, expected):
+        reader = DummyReadStrategy(user_config)
+        for param, df in input_data.items():
+            actual = reader._check_index_dtypes(
+                name=param, config=user_config[param], df=df
+            )
+            pd.testing.assert_frame_equal(actual, expected)
+
+    def test_check_param_index_name_passes(self, user_config):
+        capex = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "NGCC", 2014, 1.23],
+                ["SIMPLICITY", "NGCC", 2015, 2.34],
+                ["SIMPLICITY", "NGCC", 2016, 3.45],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        reader = DummyReadStrategy(user_config)
+        reader._check_param_index_names(
+            name="CapitalCost", config=user_config["CapitalCost"], df=capex
+        )
+
+    def test_check_param_index_name_fails(self, user_config):
+        capex = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "NGCC", 2014, 1.23],
+                ["SIMPLICITY", "NGCC", 2015, 2.34],
+                ["SIMPLICITY", "NGCC", 2016, 3.45],
+            ],
+            columns=["REGION", "FUEL", "YEAR", "VALUE"],
+        ).set_index(["REGION", "FUEL", "YEAR"])
+
+        reader = DummyReadStrategy(user_config)
+        with raises(OtooleIndexError):
+            reader._check_param_index_names(
+                name="CapitalCost", config=user_config["CapitalCost"], df=capex
+            )
+
+    def test_check_set_index_name_passes(self, user_config):
+        year = pd.DataFrame(data=[2014, 2015, 2016], columns=["VALUE"])
+        reader = DummyReadStrategy(user_config)
+        reader._check_set_index_names(name="YEAR", df=year)
+
+    def test_check_set_index_name_fails(self, user_config):
+        year = pd.DataFrame(data=[2014, 2015, 2016], columns=["YEAR"])
+        reader = DummyReadStrategy(user_config)
+        with raises(OtooleIndexError):
+            reader._check_set_index_names(name="YEAR", df=year)
+
+    @mark.parametrize(
+        "expected, short_name",
+        compare_read_to_expected_data,
+        ids=["full_name", "short_name"],
+    )
+    def test_compare_read_to_expected(self, simple_user_config, expected, short_name):
+        reader = DummyReadStrategy(simple_user_config)
+        reader._compare_read_to_expected(names=expected, short_names=short_name)
+
+    @mark.parametrize(
+        "expected",
+        compare_read_to_expected_data_exception,
+        ids=["missing_value", "extra_value"],
+    )
+    def test_compare_read_to_expected_exception(self, simple_user_config, expected):
+        reader = DummyReadStrategy(simple_user_config)
+        with raises(OtooleNameMismatchError):
+            reader._compare_read_to_expected(names=expected)
