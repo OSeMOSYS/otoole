@@ -3,8 +3,8 @@ title: 'otoole: OSeMOSYS Tools for Energy Work'
 tags:
   - python
   - energy
-  - energy-system
-  - energy-system-modelling
+  - energy systems
+  - energy systems modelling
   - osemosys
 authors:
   - name: Trevor Barnes
