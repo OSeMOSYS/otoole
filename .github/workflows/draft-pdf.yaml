@@ -1,3 +1,5 @@
+name: joss
+
 on: [push]
 
 jobs:
