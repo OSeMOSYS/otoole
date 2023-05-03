@@ -30,6 +30,9 @@ The table below highlights what information is required for each ``Set``,
 ``Parameter`` and ``Result`` definition in the configuration file. Required values are
 given by **X**, while optional values are given by **(X)**.
 
+.. deprecated:: v1.0.3
+    The **Calculated** keyword is no longer needed for Result definitions
+
 +-------------+------+------------+---------+
 |             | Set  | Parameter  | Result  |
 +=============+======+============+=========+
@@ -42,8 +45,6 @@ given by **X**, while optional values are given by **(X)**.
 | type        | X    | X          | X       |
 +-------------+------+------------+---------+
 | default     |      | X          | X       |
-+-------------+------+------------+---------+
-| calculated  |      |            | X       |
 +-------------+------+------------+---------+
 
 .. WARNING::
@@ -92,7 +93,6 @@ name, **not** the ``short_name``::
         type: result
         dtype: "int" or "float"
         default: 0
-        calculated: "True" or "False"
 
 .. NOTE::
    It's convention in OSeMOSYS to use Pascal case for result names
@@ -125,7 +125,9 @@ repository for a complete example.
         type: result
         dtype: float
         default: 0
-        calculated: True
+
+.. TIP::
+   See the :ref:`examples` page to create a template configuration file
 
 Input Data
 ----------

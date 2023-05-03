@@ -343,9 +343,9 @@ class TestReadStrategy:
 
     capex_incorrect_dtype = pd.DataFrame(
         data=[
-            ["SIMPLICITY", "NGCC", "2014", 1.23],
-            ["SIMPLICITY", "NGCC", "2015", 2.34],
-            ["SIMPLICITY", "NGCC", "2016", 3.45],
+            ["SIMPLICITY", "NGCC", "2014", "1.23"],
+            ["SIMPLICITY", "NGCC", 2015.0, 2.34],
+            ["SIMPLICITY", "NGCC", "2016.0", 3.45],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -365,7 +365,9 @@ class TestReadStrategy:
         data=["2014", "2015", "2016"], columns=["VALUE"]
     )
 
-    year_incorrect_header = pd.DataFrame(data=[2014, 2015, 2016], columns=["YEAR"])
+    year_incorrect_header = pd.DataFrame(
+        data=["2014", 2015.0, "2016.0"], columns=["YEAR"]
+    )
 
     input_data_correct = (
         ({"CapitalCost": capex_correct}, capex_correct),

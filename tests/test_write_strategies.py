@@ -92,6 +92,26 @@ class TestWriteExcel:
 
         pd.testing.assert_frame_equal(actual, expected)
 
+    def test_form_no_pivot(self, user_config):
+
+        convert = WriteExcel(user_config)  # typing: WriteExcel
+
+        # Technology to/from storage data
+        data = [
+            ["SIMPLICITY", "HYD2", "DAM", 1, 0],
+            ["SIMPLICITY", "HYD2", "DAM", 2, 1],
+        ]
+
+        df = pd.DataFrame(
+            data=data,
+            columns=["REGION", "TECHNOLOGY", "STORAGE", "MODE_OF_OPERATION", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "STORAGE", "MODE_OF_OPERATION"])
+
+        actual = convert._form_parameter(df, "test_parameter", 0)
+        expected = df.copy()
+
+        pd.testing.assert_frame_equal(actual, expected)
+
     def test_write_out_empty_dataframe(self, user_config):
 
         temp_excel = NamedTemporaryFile(suffix=".xlsx")

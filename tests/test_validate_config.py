@@ -13,7 +13,18 @@ class TestValidConfigs:
           short_name: SET
     """
 
-    valid_parameter = """
+    valid_parameter_1 = """
+        Parameter_Name:
+          indices: [SET]
+          type: param
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    valid_parameter_2 = """
         Parameter_Name:
           indices: [SET]
           type: param
@@ -25,7 +36,18 @@ class TestValidConfigs:
           type: set
     """
 
-    valid_result = """
+    valid_result_1 = """
+        Result_Name:
+          indices: [SET]
+          type: result
+          dtype: float
+          default: 0
+        SET:
+          dtype: str
+          type: set
+    """
+
+    valid_result_2 = """
         Result_Name:
           indices: [SET]
           type: result
@@ -38,9 +60,21 @@ class TestValidConfigs:
           type: set
     """
 
-    config_data = [valid_set, valid_parameter, valid_result]
+    config_data = [
+        valid_set,
+        valid_parameter_1,
+        valid_parameter_2,
+        valid_result_1,
+        valid_result_2,
+    ]
 
-    config_data_ids = ["valid_set", "valid_parameter", "valid_result"]
+    config_data_ids = [
+        "valid_set",
+        "valid_parameter_1",
+        "valid_parameter_2",
+        "valid_result_1",
+        "valid_result_2",
+    ]
 
     @mark.parametrize("config_data", config_data, ids=config_data_ids)
     def test_valid_configs(self, config_data):
@@ -80,13 +114,11 @@ class TestInvalidConfigs:
           type: result
           dtype: float
           default: 0
-          calculated: True
         Result:
           indices: [SET]
           type: result
           dtype: float
           default: 0
-          calculated: True
         SET:
           dtype: str
           type: set
@@ -162,7 +194,6 @@ class TestUserDefinedValue:
           type: not_valid_type
           dtype: float
           default: 0
-          calculated: True
         SET:
           dtype: str
           type: set
@@ -445,7 +476,6 @@ class TestInvalidConfigResults:
           type: result
           dtype: float
           default: 0
-          calculated: True
           fieldnotexpected: True
         SET:
           dtype: str
@@ -457,7 +487,6 @@ class TestInvalidConfigResults:
           indices: [SET]
           type: result
           dtype: float
-          default: 0
         SET:
           dtype: str
           type: set
@@ -469,7 +498,6 @@ class TestInvalidConfigResults:
           type: result
           dtype: float
           default: 0
-          calculated: True
         SET:
           dtype: str
           type: set
@@ -481,7 +509,6 @@ class TestInvalidConfigResults:
           type: result
           dtype: float
           default: s
-          calculated: True
         SET:
           dtype: str
           type: set

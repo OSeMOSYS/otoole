@@ -284,7 +284,7 @@ class ReadGurobi(ReadResultsCBC):
             skiprows=2,
         )  # type: pd.DataFrame
         df[["Variable", "Index"]] = df["Variable"].str.split("(", expand=True)
-        df["Index"] = df["Index"].str.replace(")", "")
+        df["Index"] = df["Index"].str.replace(")", "", regex=False)
         LOGGER.debug(df)
         df = df[(df["Value"] != 0)].reset_index()
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
@@ -325,6 +325,6 @@ class ReadCbc(ReadResultsCBC):
             .str.split(expand=True)[1]
         )
         df[["Index", "Value"]] = df["indexvalue"].str.split(expand=True).loc[:, 0:1]
-        df["Index"] = df["Index"].str.replace(")", "")
+        df["Index"] = df["Index"].str.replace(")", "", regex=False)
         df = df.drop(columns=["indexvalue"])
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
