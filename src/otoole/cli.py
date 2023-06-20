@@ -44,21 +44,10 @@ import os
 import shutil
 import sys
 
-from otoole import (
-    ReadCbc,
-    ReadCplex,
-    ReadCsv,
-    ReadDatafile,
-    ReadExcel,
-    ReadGurobi,
-    WriteCsv,
-    WriteDatafile,
-    WriteExcel,
-    __version__,
-)
+from otoole import __version__, convert, convert_results
 from otoole.exceptions import OtooleSetupError
-from otoole.input import Context
 from otoole.preprocess.setup import get_config_setup_data, get_csv_setup_data
+from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel
 from otoole.utils import (
     _read_file,
     read_deprecated_datapackage,
@@ -67,6 +56,7 @@ from otoole.utils import (
 )
 from otoole.validate import main as validate
 from otoole.visualise import create_res
+from otoole.write_strategies import WriteCsv
 
 logger = logging.getLogger(__name__)
 
@@ -104,70 +94,21 @@ def validate_model(args):
         validate(input_data)
 
 
-def cplex2cbc(args):
-    ReadCplex()._convert_cplex_file(
-        args.cplex_file,
-        args.output_file,
-        args.start_year,
-        args.end_year,
-        args.output_format,
+def _result_matrix(args):
+    convert_results(
+        args.config,
+        args.input_datapackage,
+        args.input_csvs,
+        args.input_datafile,
+        args.to_path,
+        args.from_path,
+        args.from_format,
+        args.to_format,
+        args.write_defaults,
     )
 
 
-def result_matrix(args):
-    """Post-process results from CBC solution file into CSV format"""
-    msg = "Conversion from {} to {} is not yet implemented".format(
-        args.from_format, args.to_format
-    )
-
-    read_strategy = None
-    write_strategy = None
-
-    config = None
-    if args.config:
-        _, ending = os.path.splitext(args.config)
-        with open(args.config, "r") as config_file:
-            config = _read_file(config_file, ending)
-        logger.info("Reading config from {}".format(args.config))
-        logger.info("Validating config from {}".format(args.config))
-        validate_config(config)
-
-    # set read strategy
-
-    if args.from_format == "cbc":
-        read_strategy = ReadCbc(user_config=config)
-    elif args.from_format == "cplex":
-        read_strategy = ReadCplex(user_config=config)
-    elif args.from_format == "gurobi":
-        read_strategy = ReadGurobi(user_config=config)
-
-    # set write strategy
-
-    write_defaults = True if args.write_defaults else False
-
-    if args.to_format == "csv":
-        write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
-
-    if args.input_datapackage:
-        logger.warning(
-            "Reading from datapackage is deprecated, trying to read from CSVs"
-        )
-        input_csvs = read_deprecated_datapackage(args.input_datapackage)
-        logger.info("Successfully read folder of CSVs")
-        input_data, _ = ReadCsv(user_config=config).read(input_csvs)
-    elif args.input_datafile:
-        input_data, _ = ReadDatafile(user_config=config).read(args.input_datafile)
-    else:
-        input_data = {}
-
-    if read_strategy and write_strategy:
-        context = Context(read_strategy, write_strategy)
-        context.convert(args.from_path, args.to_path, input_data=input_data)
-    else:
-        raise NotImplementedError(msg)
-
-
-def conversion_matrix(args):
+def _conversion_matrix(args):
     """Convert from one format to another
 
     Implemented conversion functions::
@@ -179,70 +120,14 @@ def conversion_matrix(args):
         datafile    nn -- --
 
     """
-
-    msg = "Conversion from {} to {} is not yet implemented".format(
-        args.from_format, args.to_format
+    convert(
+        args.config,
+        args.from_format,
+        args.to_format,
+        args.from_path,
+        args.to_path,
+        args.write_defaults,
     )
-
-    read_strategy = None
-    write_strategy = None
-
-    from_path = args.from_path
-    to_path = args.to_path
-
-    config = None
-    if args.config:
-        _, ending = os.path.splitext(args.config)
-        with open(args.config, "r") as config_file:
-            config = _read_file(config_file, ending)
-        logger.info("Reading config from {}".format(args.config))
-        logger.info("Validating config from {}".format(args.config))
-        validate_config(config)
-
-    # set read strategy
-
-    keep_whitespace = True if args.keep_whitespace else False
-
-    if args.from_format == "datafile":
-        read_strategy = ReadDatafile(user_config=config)
-    elif args.from_format == "datapackage":
-        logger.warning(
-            "Reading from datapackage is deprecated, trying to read from CSVs"
-        )
-        from_path = read_deprecated_datapackage(from_path)
-        logger.info("Successfully read folder of CSVs")
-        read_strategy = ReadCsv(user_config=config, keep_whitespace=keep_whitespace)
-    elif args.from_format == "csv":
-        read_strategy = ReadCsv(user_config=config, keep_whitespace=keep_whitespace)
-    elif args.from_format == "excel":
-        read_strategy = ReadExcel(user_config=config, keep_whitespace=keep_whitespace)
-
-    input_data, _ = read_strategy.read(args.from_path)
-
-    # set write strategy
-
-    write_defaults = True if args.write_defaults else False
-
-    if args.to_format == "datapackage":
-        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
-        to_path = os.path.join(os.path.dirname(to_path), "data")
-        write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
-    elif args.to_format == "excel":
-        write_strategy = WriteExcel(
-            user_config=config, write_defaults=write_defaults, input_data=input_data
-        )
-    elif args.to_format == "datafile":
-        write_strategy = WriteDatafile(
-            user_config=config, write_defaults=write_defaults
-        )
-    elif args.to_format == "csv":
-        write_strategy = WriteCsv(user_config=config, write_defaults=write_defaults)
-
-    if read_strategy and write_strategy:
-        context = Context(read_strategy, write_strategy)
-        context.convert(from_path, to_path)
-    else:
-        raise NotImplementedError(msg)
 
 
 def data2res(args):
@@ -349,7 +234,7 @@ def get_parser():
         default=False,
         action="store_true",
     )
-    result_parser.set_defaults(func=result_matrix)
+    result_parser.set_defaults(func=_result_matrix)
 
     # Parser for conversion
     convert_parser = subparsers.add_parser(
@@ -382,7 +267,7 @@ def get_parser():
         default=False,
         action="store_true",
     )
-    convert_parser.set_defaults(func=conversion_matrix)
+    convert_parser.set_defaults(func=_conversion_matrix)
 
     # Parser for validation
     valid_parser = subparsers.add_parser("validate", help="Validate an OSeMOSYS model")

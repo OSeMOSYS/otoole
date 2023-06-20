@@ -58,6 +58,7 @@ class _ReadTabular(ReadStrategy):
 
         if "MODEOFOPERATION" in actual_headers:
             df = df.rename(columns={"MODEOFOPERATION": "MODE_OF_OPERATION"})
+            actual_headers = list(df.columns)
 
         if actual_headers[-1] == "VALUE":
             logger.info(
@@ -86,6 +87,11 @@ class _ReadTabular(ReadStrategy):
                 logger.info(f"{name} reshaped from wide to narrow format")
             except IndexError as ex:
                 logger.debug(f"Could not reshape {name}")
+                raise ex
+            except KeyError as ex:
+                logger.debug(
+                    f"Actual headers: {actual_headers}\nConverted headers: {converted_headers}"
+                )
                 raise ex
 
         all_headers = converted_headers + ["VALUE"]
@@ -166,9 +172,13 @@ class ReadCsv(_ReadTabular):
         input_data = {}
 
         self._check_for_default_values_csv(filepath)
-        self._compare_read_to_expected(
-            names=[f.split(".csv")[0] for f in os.listdir(filepath)]
-        )
+        names = [
+            f.split(".csv")[0]
+            for f in os.listdir(filepath)
+            if f.split(".")[-1] == "csv"
+        ]
+        logger.debug(names)
+        self._compare_read_to_expected(names=names)
 
         default_values = self._read_default_values(self.user_config)
 
@@ -278,12 +288,19 @@ class ReadDatafile(ReadStrategy):
 
         config = self.user_config
         default_values = self._read_default_values(config)
-        amply_datafile = self.read_in_datafile(filepath, config)
-        inputs = self._convert_amply_to_dataframe(amply_datafile, config)
-        for config_type in ["param", "set"]:
-            inputs = self._get_missing_input_dataframes(inputs, config_type=config_type)
-        inputs = self._check_index(inputs)
-        return inputs, default_values
+
+        # Check filepath exists
+        if os.path.exists(filepath):
+            amply_datafile = self.read_in_datafile(filepath, config)
+            inputs = self._convert_amply_to_dataframe(amply_datafile, config)
+            for config_type in ["param", "set"]:
+                inputs = self._get_missing_input_dataframes(
+                    inputs, config_type=config_type
+                )
+            inputs = self._check_index(inputs)
+            return inputs, default_values
+        else:
+            raise FileNotFoundError(f"File not found: {filepath}")
 
     def read_in_datafile(self, path_to_datafile: str, config: Dict) -> Amply:
         """Read in a datafile using the Amply parsing class
@@ -322,6 +339,7 @@ class ReadDatafile(ReadStrategy):
             elif attributes["type"] == "set":
                 elements += "set {};\n".format(name)
 
+        logger.debug("Amply Elements: %s", elements)
         return elements
 
     def _convert_amply_to_dataframe(

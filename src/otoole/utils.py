@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _read_file(open_file, ending):
     if ending == ".yaml" or ending == ".yml":
-        contents = load(open_file, Loader=UniqueKeyLoader)  # typing: Dict
+        contents = load(open_file, Loader=UniqueKeyLoader)  # typing: Dict[str, Any]
     elif ending == ".json":
         contents = json.load(open_file)  # typing: Dict
     else:

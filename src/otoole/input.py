@@ -174,9 +174,11 @@ class WriteStrategy(Strategy):
 
     Arguments
     ---------
+    user_config: dict, default=None
     filepath: str, default=None
     default_values: dict, default=None
-    user_config: dict, default=None
+    write_defaults: bool, default=False
+    input_data: dict, default=None
 
     """
 
@@ -296,7 +298,7 @@ class WriteStrategy(Strategy):
         Raises
         ------
         KeyError
-            If set defenitons are not in input_data and input_data is not supplied
+            If set definitons are not in input_data and input_data is not supplied
         """
 
         sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
@@ -389,7 +391,10 @@ class ReadStrategy(Strategy):
             elif details["type"] == "set":
                 self._check_set_index_names(name=name, df=df)
 
-            df = self._check_index_dtypes(name=name, config=details, df=df)
+            try:
+                df = self._check_index_dtypes(name=name, config=details, df=df)
+            except ValueError as ex:
+                raise ValueError(f"{name}: {ex}")
 
             input_data[name] = df
 
@@ -454,7 +459,7 @@ class ReadStrategy(Strategy):
         OtooleIndexError
             If actual indices do not match expected indices
         """
-        if not df.columns == ["VALUE"]:
+        if not list(df.columns) == ["VALUE"]:
             raise OtooleIndexError(
                 resource=name,
                 config_indices=["VALUE"],
