@@ -5,8 +5,8 @@ Welcome to the documentation of ``otoole``!
 ===========================================
 
 **otoole**, or **O**\ SeMOSYS **tool**\ s for **e**\ nergy work, is a Python package
-which provides a command-line interface for users of OSeMOSYS. The aim of the package is
-to provide commonly used pre- and post-processing steps when  working with OSeMOSYS models.
+which provides a command-line interface and Python API for users of OSeMOSYS. The aim of the
+package is to provide commonly used pre- and post-processing steps when working with OSeMOSYS models.
 Specifically, ``otoole`` allows the user to convert between data formats, process solutions,
 and visualise the reference energy system.
 
@@ -28,6 +28,7 @@ Contents
    Core Functionality <functionality>
    Data Formats <data>
    Examples <examples>
+   Python API <convert>
    Contributing <contributing>
    License <license>
    Authors <authors>

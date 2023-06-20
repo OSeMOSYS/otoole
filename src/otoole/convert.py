@@ -36,14 +36,29 @@ def convert_results(
     Arguments
     ---------
     config : str
-    input_datapackage : str
-    input_csvs : str
-    input_datafile : str
-    to_path : str
-    from_path : str
+        Path to config file
     from_format : str
+        Available options are 'cbc', 'cplex' and 'gurobi'
     to_format : str
+        Available options are 'csv'
+    from_path : str
+        Path to cbc, cplex or gurobi solution file
+    to_path : str
+        Path to destination folder
+    input_datapackage : str
+        Path to folder containing datapackage.json
+    input_csvs : str
+        Path to folder containing CSVs
+    input_datafile : str
+        Path to datafile
     write_defaults : str
+        Write default values to CSVs
+
+    Returns
+    -------
+    bool
+        True if conversion was successful, False otherwise
+
     """
     msg = "Conversion from {} to {} is not yet implemented".format(
         from_format, to_format
@@ -124,12 +139,14 @@ def convert(
     from_path : str
         Path to destination file (if datafile or excel) or folder (csv or datapackage)
     write_defaults: bool, default: False
+        Write default values to CSVs
     keep_whitespace: bool, default: False
+        Keep whitespace in CSVs
 
     Returns
     -------
     bool
-        True if conversion was successful
+        True if conversion was successful, False otherwise
     """
 
     msg = "Conversion from {} to {} is not yet implemented".format(
@@ -143,8 +160,6 @@ def convert(
         logger.info("Reading config from {}".format(config))
         logger.info("Validating config from {}".format(config))
         validate_config(user_config)
-
-    # set read strategy
 
     keep_whitespace = True if keep_whitespace else False
 
