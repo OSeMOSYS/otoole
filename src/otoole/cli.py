@@ -97,14 +97,14 @@ def validate_model(args):
 def _result_matrix(args):
     convert_results(
         args.config,
-        args.input_datapackage,
-        args.input_csvs,
-        args.input_datafile,
-        args.to_path,
-        args.from_path,
         args.from_format,
         args.to_format,
-        args.write_defaults,
+        args.from_path,
+        args.to_path,
+        input_datapackage=args.input_datapackage,
+        input_csvs=args.input_csvs,
+        input_datafile=args.input_datafile,
+        write_defaults=args.write_defaults,
     )
 
 
@@ -126,7 +126,8 @@ def _conversion_matrix(args):
         args.to_format,
         args.from_path,
         args.to_path,
-        args.write_defaults,
+        write_defaults=args.write_defaults,
+        keep_whitespace=args.keep_whitespace,
     )
 
 
@@ -223,8 +224,13 @@ def get_parser():
         default=None,
     )
     result_parser.add_argument(
+        "--input_csvs",
+        help="Input folder of CSVs required for OSeMOSYS short or fast results",
+        default=None,
+    )
+    result_parser.add_argument(
         "--input_datapackage",
-        help="Deprecated",
+        help="Deprecated. Use --input_csvs instead",
         default=None,
     )
     result_parser.add_argument("config", help="Path to config YAML file")
