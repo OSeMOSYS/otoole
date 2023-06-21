@@ -117,6 +117,109 @@ def convert_results(
     return True
 
 
+def _get_user_config(config) -> dict:
+    """Read in the configuration file
+
+    Arguments
+    ---------
+    config : str
+        Path to config file
+
+    Returns
+    -------
+    dict
+        A dictionary containing the user configuration
+    """
+    if config:
+        _, ending = os.path.splitext(config)
+        with open(config, "r") as config_file:
+            user_config = _read_file(config_file, ending)
+        logger.info("Reading config from {}".format(config))
+        logger.info("Validating config from {}".format(config))
+        validate_config(user_config)
+    return user_config
+
+
+def _get_read_strategy(
+    user_config, from_format, from_path, keep_whitespace=False
+) -> Union[ReadStrategy, None]:
+    """Read OSeMOSYS parameter data from csv/datafile/excel format
+
+    Arguments
+    ---------
+    config : dict
+        User configuration describing parameters and sets
+    from_format : str
+        Available options are 'datafile', 'datapackage', 'csv' and 'excel'
+    from_path : str
+        Path to destination file (if datafile or excel) or folder (csv or datapackage)
+    keep_whitespace: bool, default: False
+        Keep whitespace in CSVs
+
+    Returns
+    -------
+    dict[str, pandas.DataFrame]
+        Dictionary of pandas DataFrames containing the data
+
+    """
+    keep_whitespace = True if keep_whitespace else False
+
+    if from_format == "datafile":
+        read_strategy: Union[ReadStrategy, None] = ReadDatafile(user_config=user_config)
+    elif from_format == "datapackage":
+        logger.warning(
+            "Reading from datapackage is deprecated, trying to read from CSVs"
+        )
+        from_path = read_deprecated_datapackage(from_path)
+        logger.info("Successfully read folder of CSVs")
+        read_strategy = ReadCsv(
+            user_config=user_config, keep_whitespace=keep_whitespace
+        )  # typing: ReadStrategy
+    elif from_format == "csv":
+        read_strategy = ReadCsv(
+            user_config=user_config, keep_whitespace=keep_whitespace
+        )  # typing: ReadStrategy
+    elif from_format == "excel":
+        read_strategy = ReadExcel(
+            user_config=user_config, keep_whitespace=keep_whitespace
+        )  # typing: ReadStrategy
+    else:
+        read_strategy = None
+
+    return read_strategy
+
+
+def _get_write_strategy(
+    user_config, to_format, to_path, write_defaults=False
+) -> Union[WriteStrategy, None]:
+    """ """
+    # set write strategy
+    write_defaults = True if write_defaults else False
+
+    if to_format == "datapackage":
+        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
+        to_path = os.path.join(os.path.dirname(to_path), "data")
+        write_strategy: Union[WriteStrategy, None] = WriteCsv(
+            user_config=user_config, write_defaults=write_defaults
+        )
+    elif to_format == "excel":
+        write_strategy = WriteExcel(
+            user_config=user_config, write_defaults=write_defaults
+        )
+    elif to_format == "datafile":
+        write_strategy = WriteDatafile(
+            user_config=user_config, write_defaults=write_defaults
+        )
+    elif to_format == "csv":
+        write_strategy = WriteCsv(
+            user_config=user_config, write_defaults=write_defaults
+        )
+    else:
+        write_strategy = None
+
+    return write_strategy
+
+
 def convert(
     config,
     from_format,
@@ -153,67 +256,14 @@ def convert(
         from_format, to_format
     )
 
-    if config:
-        _, ending = os.path.splitext(config)
-        with open(config, "r") as config_file:
-            user_config = _read_file(config_file, ending)
-        logger.info("Reading config from {}".format(config))
-        logger.info("Validating config from {}".format(config))
-        validate_config(user_config)
+    user_config = _get_user_config(config)
+    read_strategy = _get_read_strategy(
+        user_config, from_format, from_path, keep_whitespace=keep_whitespace
+    )
 
-    keep_whitespace = True if keep_whitespace else False
-
-    if from_format == "datafile":
-        read_strategy: Union[ReadStrategy, None] = ReadDatafile(user_config=user_config)
-    elif from_format == "datapackage":
-        logger.warning(
-            "Reading from datapackage is deprecated, trying to read from CSVs"
-        )
-        from_path = read_deprecated_datapackage(from_path)
-        logger.info("Successfully read folder of CSVs")
-        read_strategy = ReadCsv(
-            user_config=user_config, keep_whitespace=keep_whitespace
-        )  # typing: ReadStrategy
-    elif from_format == "csv":
-        read_strategy = ReadCsv(
-            user_config=user_config, keep_whitespace=keep_whitespace
-        )  # typing: ReadStrategy
-    elif from_format == "excel":
-        read_strategy = ReadExcel(
-            user_config=user_config, keep_whitespace=keep_whitespace
-        )  # typing: ReadStrategy
-    else:
-        read_strategy = None
-
-    if read_strategy:
-        input_data, _ = read_strategy.read(from_path)
-
-    # set write strategy
-
-    write_defaults = True if write_defaults else False
-
-    if to_format == "datapackage":
-        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
-        to_path = os.path.join(os.path.dirname(to_path), "data")
-        write_strategy: Union[WriteStrategy, None] = WriteCsv(
-            user_config=user_config, write_defaults=write_defaults
-        )
-    elif to_format == "excel":
-        write_strategy = WriteExcel(
-            user_config=user_config,
-            write_defaults=write_defaults,
-            input_data=input_data,
-        )
-    elif to_format == "datafile":
-        write_strategy = WriteDatafile(
-            user_config=user_config, write_defaults=write_defaults
-        )
-    elif to_format == "csv":
-        write_strategy = WriteCsv(
-            user_config=user_config, write_defaults=write_defaults
-        )
-    else:
-        write_strategy = None
+    write_strategy = _get_write_strategy(
+        user_config, to_format, to_path, write_defaults=write_defaults
+    )
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
