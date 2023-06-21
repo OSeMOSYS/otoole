@@ -9,7 +9,8 @@ Import the convert function from the otoole package::
 """
 import logging
 import os
-from typing import Union
+
+import pandas as pd
 
 from otoole.input import Context, ReadStrategy, WriteStrategy
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel
@@ -140,10 +141,8 @@ def _get_user_config(config) -> dict:
     return user_config
 
 
-def _get_read_strategy(
-    user_config, from_format, from_path, keep_whitespace=False
-) -> Union[ReadStrategy, None]:
-    """Read OSeMOSYS parameter data from csv/datafile/excel format
+def _get_read_strategy(user_config, from_format, keep_whitespace=False) -> ReadStrategy:
+    """Get ``ReadStrategy`` for csv/datafile/excel format
 
     Arguments
     ---------
@@ -151,26 +150,23 @@ def _get_read_strategy(
         User configuration describing parameters and sets
     from_format : str
         Available options are 'datafile', 'datapackage', 'csv' and 'excel'
-    from_path : str
-        Path to destination file (if datafile or excel) or folder (csv or datapackage)
     keep_whitespace: bool, default: False
         Keep whitespace in CSVs
 
     Returns
     -------
-    dict[str, pandas.DataFrame]
-        Dictionary of pandas DataFrames containing the data
+    ReadStrategy or None
+        A ReadStrategy object. Returns None if from_format is not recognised
 
     """
     keep_whitespace = True if keep_whitespace else False
 
     if from_format == "datafile":
-        read_strategy: Union[ReadStrategy, None] = ReadDatafile(user_config=user_config)
+        read_strategy: ReadStrategy = ReadDatafile(user_config=user_config)
     elif from_format == "datapackage":
         logger.warning(
             "Reading from datapackage is deprecated, trying to read from CSVs"
         )
-        from_path = read_deprecated_datapackage(from_path)
         logger.info("Successfully read folder of CSVs")
         read_strategy = ReadCsv(
             user_config=user_config, keep_whitespace=keep_whitespace
@@ -184,22 +180,35 @@ def _get_read_strategy(
             user_config=user_config, keep_whitespace=keep_whitespace
         )  # typing: ReadStrategy
     else:
-        read_strategy = None
+        msg = f"Conversion from {from_format} is not supported"
+        raise NotImplementedError(msg)
 
     return read_strategy
 
 
-def _get_write_strategy(
-    user_config, to_format, to_path, write_defaults=False
-) -> Union[WriteStrategy, None]:
-    """ """
+def _get_write_strategy(user_config, to_format, write_defaults=False) -> WriteStrategy:
+    """Get ``WriteStrategy`` for csv/datafile/excel format
+
+    Arguments
+    ---------
+    user_config : dict
+        User configuration describing parameters and sets
+    to_format : str
+        Available options are 'datafile', 'datapackage', 'csv' and 'excel'
+    write_defaults: bool, default: False
+        Write default values to output format
+
+    Returns
+    -------
+    WriteStrategy or None
+        A ReadStrategy object. Returns None if to_format is not recognised
+
+    """
     # set write strategy
     write_defaults = True if write_defaults else False
 
     if to_format == "datapackage":
-        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
-        to_path = os.path.join(os.path.dirname(to_path), "data")
-        write_strategy: Union[WriteStrategy, None] = WriteCsv(
+        write_strategy: WriteStrategy = WriteCsv(
             user_config=user_config, write_defaults=write_defaults
         )
     elif to_format == "excel":
@@ -215,7 +224,8 @@ def _get_write_strategy(
             user_config=user_config, write_defaults=write_defaults
         )
     else:
-        write_strategy = None
+        msg = f"Conversion to {to_format} is not supported"
+        raise NotImplementedError(msg)
 
     return write_strategy
 
@@ -252,24 +262,84 @@ def convert(
         True if conversion was successful, False otherwise
     """
 
-    msg = "Conversion from {} to {} is not yet implemented".format(
-        from_format, to_format
-    )
-
     user_config = _get_user_config(config)
     read_strategy = _get_read_strategy(
-        user_config, from_format, from_path, keep_whitespace=keep_whitespace
+        user_config, from_format, keep_whitespace=keep_whitespace
     )
 
     write_strategy = _get_write_strategy(
-        user_config, to_format, to_path, write_defaults=write_defaults
+        user_config, to_format, write_defaults=write_defaults
     )
 
-    if read_strategy and write_strategy:
-        context = Context(read_strategy, write_strategy)
-        context.convert(from_path, to_path)
+    if from_format == "datapackage":
+        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
+        from_path = read_deprecated_datapackage(from_path)
+        to_path = os.path.join(os.path.dirname(to_path), "data")
+
+    context = Context(read_strategy, write_strategy)
+    context.convert(from_path, to_path)
+
+    return True
+
+
+def read(
+    config, from_format, from_path, keep_whitespace=False
+) -> tuple[dict[str, pd.DataFrame], dict[str, float]]:
+    """Read OSeMOSYS data from datafile, csv or Excel formats
+
+    Arguments
+    ---------
+    config : str
+        Path to config file
+    from_format : str
+        Available options are 'datafile', 'csv', 'excel' and 'datapackage' [deprecated]
+    from_path : str
+        Path to source file (if datafile or excel) or folder (csv)
+    keep_whitespace: bool, default: False
+        Keep whitespace in source files
+
+    Returns
+    -------
+    tuple[dict[str, pd.DataFrame], dict[str, float]]
+        Dictionary of parameter and set data and dictionary of default values
+    """
+    user_config = _get_user_config(config)
+    read_strategy = _get_read_strategy(
+        user_config, from_format, keep_whitespace=keep_whitespace
+    )
+
+    if from_format == "datapackage":
+        from_path = read_deprecated_datapackage(from_path)
+
+    return read_strategy.read(from_path)
+
+
+def write(config, to_format, to_path, inputs, default_values=None) -> bool:
+    """Write OSeMOSYS data to datafile, csv or Excel formats
+
+    Arguments
+    ---------
+    config : str
+        Path to config file
+    to_format : str
+        Available options are 'datafile', 'csv', 'excel' and 'datapackage' [deprecated],
+    to_path : str
+        Path to destination file (if datafile or excel) or folder (csv))
+    inputs : dict[str, pd.DataFrame]
+        Dictionary of pandas data frames to write
+    default_values: dict[str, float], default: None
+        Dictionary of default values to write to datafile
+
+    """
+    user_config = _get_user_config(config)
+    if default_values is None:
+        write_defaults = False
     else:
-        raise NotImplementedError(msg)
-        return False
+        write_defaults = True
+
+    write_strategy = _get_write_strategy(
+        user_config, to_format, write_defaults=write_defaults
+    )
+    write_strategy.write(inputs, to_path, default_values=default_values)
 
     return True
