@@ -4,9 +4,86 @@
 import os
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
+import pandas as pd
 from pytest import raises
 
-from otoole import convert, convert_results
+from otoole import convert, convert_results, read, write
+
+
+class TestRead:
+    """Tests the public api for reading data"""
+
+    def test_read_datafile(self):
+        """Test reading data from a file"""
+        data, defaults = read(
+            os.path.join("tests", "fixtures", "config.yaml"),
+            "datafile",
+            os.path.join("tests", "fixtures", "simplicity.txt"),
+        )
+
+        assert isinstance(data, dict)
+        assert isinstance(defaults, dict)
+
+    def test_read_excel(self):
+        """Test reading data from an Excel file"""
+        data, defaults = read(
+            os.path.join("tests", "fixtures", "config.yaml"),
+            "excel",
+            os.path.join("tests", "fixtures", "combined_inputs.xlsx"),
+        )
+
+        assert isinstance(data, dict)
+        assert isinstance(defaults, dict)
+
+    def test_read_csv(self):
+        """Test reading data from a CSV file"""
+        data, defaults = read(
+            os.path.join("tests", "fixtures", "super_simple", "super_simple.yaml"),
+            "csv",
+            os.path.join("tests", "fixtures", "super_simple", "csv"),
+        )
+
+        assert isinstance(data, dict)
+        assert "REGION" in data
+        pd.testing.assert_frame_equal(data["REGION"], pd.DataFrame({"VALUE": ["BB"]}))
+        assert "TECHNOLOGY" in data
+        assert "MODE_OF_OPERATION" in data
+        assert "YEAR" in data
+        assert isinstance(defaults, dict)
+
+
+class TestWrite:
+    """Tests the public api for writing data"""
+
+    def test_write_datafile(self):
+        """Test writing data to a file"""
+        data = {"REGION": pd.DataFrame({"VALUE": ["BB"]})}
+        temp = NamedTemporaryFile()
+        assert write(
+            os.path.join("tests", "fixtures", "config.yaml"),
+            "datafile",
+            temp.name,
+            data,
+        )
+
+    def test_write_excel(self):
+        """Test writing data to an Excel file"""
+        data = {"REGION": pd.DataFrame({"VALUE": ["BB"]})}
+        temp = NamedTemporaryFile(suffix=".xlsx")
+        assert write(
+            os.path.join("tests", "fixtures", "config.yaml"), "excel", temp.name, data
+        )
+
+    def test_write_csv(self):
+        """Test writing data to a CSV file"""
+        data = {"REGION": pd.DataFrame({"VALUE": ["BB"]})}
+        temp = TemporaryDirectory()
+        assert write(
+            os.path.join("tests", "fixtures", "super_simple", "super_simple.yaml"),
+            "csv",
+            temp.name,
+            data,
+        )
 
 
 class TestConvert:
