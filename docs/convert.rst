@@ -31,6 +31,28 @@ Gurobi_ or CPLEX_ solution file::
 
 See :func:`otoole.convert.convert_results` for more details
 
+Read in data from different Formats
+-----------------------------------
+
+You can use the :py:func:`otoole.convert.read` function to read data in from different formats to a Python object.
+This allows you to then use all the features offered by Python to manipulate the data.
+
+>>> from otoole import read
+>>> data, defaults = read('my_model.yaml', 'csv', 'my_model_csvs') # read from a folder of csv files
+>>> data, defaults = read('my_model.yaml', 'excel', 'my_model.xlsx') # read from an Excel file
+>>> data, defaults = read('my_model.yaml', 'datafile', 'my_model.dat') # read from a GNU MathProg datafile
+
+Write out data to different Formats
+-----------------------------------
+
+You can use the :py:func:`otoole.convert.write` function to write data out to different formats from a Python object.
+
+>>> from otoole import read, write
+>>> data, defaults = read('my_model.yaml', 'csv', 'my_model_csvs') # read from a folder of csv files
+>>> write('my_model.yaml', 'excel', 'my_model.xlsx', data, defaults) # write to an Excel file
+>>> write('my_model.yaml', 'datafile', 'my_model.dat', data, defaults) # write to a GNU MathProg datafile
+
+
 .. _CBC: https://github.com/coin-or/Cbc
 .. _CLP: https://github.com/coin-or/Clp
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
