@@ -1,11 +1,13 @@
 from typing import Any, Dict, TextIO, Tuple, Union
 
 import pandas as pd
+import xarray as xr
 from pandas.testing import assert_frame_equal
 from pytest import fixture, mark, raises
 
 from otoole.exceptions import OtooleIndexError, OtooleNameMismatchError
 from otoole.input import ReadStrategy, WriteStrategy
+from otoole.read_strategies import ReadMemory
 
 
 @fixture
@@ -533,3 +535,21 @@ class TestReadStrategy:
         reader = DummyReadStrategy(simple_user_config)
         with raises(OtooleNameMismatchError):
             reader._compare_read_to_expected(names=expected)
+
+
+class TestXarray:
+    def test_xarray(self, user_config):
+        """Test that xarray can be imported"""
+
+        data = [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            ["SIMPLICITY", "RAWSUG", 2015, 0.51],
+        ]
+        df = pd.DataFrame(data=data, columns=["REGION", "FUEL", "YEAR", "VALUE"])
+        parameters = {"AccumulatedAnnualDemand": df}
+
+        reader = ReadMemory(parameters, user_config)
+        actual = reader.to_xarray("")
+        assert isinstance(actual, xr.Dataset)

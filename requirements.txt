@@ -8,4 +8,5 @@ pandas
 pydantic
 pydot
 pyyaml
+xarray
 xlrd
