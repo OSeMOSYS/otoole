@@ -9,6 +9,7 @@ Import the convert function from the otoole package::
 """
 import logging
 import os
+from typing import Dict, Tuple
 
 import pandas as pd
 
@@ -284,7 +285,7 @@ def convert(
 
 def read(
     config, from_format, from_path, keep_whitespace=False
-) -> tuple[dict[str, pd.DataFrame], dict[str, float]]:
+) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS data from datafile, csv or Excel formats
 
     Arguments
@@ -300,7 +301,7 @@ def read(
 
     Returns
     -------
-    tuple[dict[str, pd.DataFrame], dict[str, float]]
+    Tuple[dict[str, pd.DataFrame], dict[str, float]]
         Dictionary of parameter and set data and dictionary of default values
     """
     user_config = _get_user_config(config)
