@@ -35,6 +35,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import pandas as pd
+import xarray as xr
 
 from otoole.exceptions import OtooleIndexError, OtooleNameMismatchError
 
@@ -593,3 +594,34 @@ class ReadStrategy(Strategy):
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
         raise NotImplementedError()
+
+    def to_xarray(self, filepath) -> xr.Dataset:
+        """Returns input data as an xarray.Dataset
+
+        Arguments
+        ---------
+        filepath: Union[str, TextIO]
+
+        """
+
+        model, defaults = self.read(filepath)
+        config = self.input_config
+
+        data_vars = {
+            x: y.VALUE.to_xarray()
+            for x, y in model.items()
+            if config[x]["type"] == "param"
+        }
+        coords = {
+            x: y.values.T[0] for x, y in model.items() if config[x]["type"] == "set"
+        }
+        ds = xr.Dataset(data_vars=data_vars, coords=coords)
+        # ds = ds.assign_coords({'_REGION': model['REGION'].values.T[0]})
+
+        for param, default in defaults.items():
+            if param in config and param in model and config[param]["type"] == "param":
+                ds[param].attrs["default"] = default
+                if default != 0:
+                    ds[param] = ds[param].fillna(default)
+
+        return ds
