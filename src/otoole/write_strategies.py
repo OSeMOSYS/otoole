@@ -57,6 +57,9 @@ class WriteExcel(WriteStrategy):
     def _form_parameter_template(self, parameter_name: str, **kwargs) -> pd.DataFrame:
         """Creates wide format excel template
 
+        Pivots the data to wide format using the data from the YEAR set as the columns.
+        This requires input data to be passed into this function.
+
         Arguments
         ---------
         parameter_name: str

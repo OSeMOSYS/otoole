@@ -15,7 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 class ReadMemory(ReadStrategy):
-    """Read a dict of OSeMOSYS parameters from memory"""
+    """Read a dict of OSeMOSYS parameters from memory
+
+    Arguments
+    ---------
+    parameters : Dict[str, pd.DataFrame]
+        Dictionary of OSeMOSYS parameters
+    user_config : Dict[str, Dict]
+        User configuration
+
+    """
 
     def __init__(
         self, parameters: Dict[str, pd.DataFrame], user_config: Dict[str, Dict]
@@ -117,7 +126,15 @@ class _ReadTabular(ReadStrategy):
 
 
 class ReadExcel(_ReadTabular):
-    """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames"""
+    """Read in an Excel spreadsheet in wide format to a dict of Pandas DataFrames
+
+    Arguments
+    ---------
+    user_config : Dict[str, Dict]
+        User configuration
+    keep_whitespace : bool
+        Whether to keep whitespace in the dataframes
+    """
 
     def read(
         self, filepath: Union[str, TextIO], **kwargs
@@ -163,7 +180,15 @@ class ReadExcel(_ReadTabular):
 
 
 class ReadCsv(_ReadTabular):
-    """Read in a folder of CSV files"""
+    """Read in a folder of CSV files to a dict of Pandas DataFrames
+
+    Arguments
+    ---------
+    user_config : Dict[str, Dict]
+        User configuration
+    keep_whitespace : bool
+        Whether to keep whitespace in the dataframes
+    """
 
     def read(
         self, filepath, **kwargs
@@ -282,6 +307,17 @@ class ReadCsv(_ReadTabular):
 
 
 class ReadDatafile(ReadStrategy):
+    """Read in a datafile to a dict of Pandas DataFrames
+
+    Arguments
+    ---------
+    user_config : Dict[str, Dict]
+        User configuration
+    keep_whitespace : bool
+        Whether to keep whitespace in the dataframes
+
+    """
+
     def read(
         self, filepath, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
