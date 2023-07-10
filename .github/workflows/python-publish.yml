@@ -34,3 +34,7 @@ jobs:
       run: tox -e build
     - name: Publish package
       run: tox -e publish
+      env:
+        TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        TWINE_REPOSITORY: ${{ secrets.TWINE_REPOSITORY }}
