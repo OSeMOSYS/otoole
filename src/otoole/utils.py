@@ -42,7 +42,7 @@ def read_packaged_file(filename: str, module_name: str = None):
         with open(filename, "r") as open_file:
             contents = _read_file(open_file, ending)
     else:
-        with resources.open_text(module_name, filename) as open_file:
+        with resources.files(module_name).joinpath(filename).open("r") as open_file:
             contents = _read_file(open_file, ending)
 
     return contents
