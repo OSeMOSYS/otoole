@@ -1,0 +1,21 @@
+p lp min 12665 9450 82606
+n p osemosys_fast
+n z cost
+i 1 f
+n i 1 cost
+i 2 u -0
+n i 2 CAa4_Constraint_Capacity[SIMPLICITY,ID,BACKSTOP1,2014]
+i 3 u -0
+n i 3 CAa4_Constraint_Capacity[SIMPLICITY,ID,BACKSTOP1,2015]
+i 300 u 147.115
+n i 300 CAa4_Constraint_Capacity[SIMPLICITY,ID,LNDFORCOV,2015]
+i 301 u 144.231
+n i 301 CAa4_Constraint_Capacity[SIMPLICITY,ID,LNDFORCOV,2016]
+n j 1 SalvageValueStorage[SIMPLICITY,DAM,2014]
+n j 2 SalvageValueStorage[SIMPLICITY,DAM,2015]
+n j 130 StorageLevelSeasonStart[SIMPLICITY,DAM,2,2035]
+n j 131 StorageLevelSeasonStart[SIMPLICITY,DAM,2,2036]
+n j 1025 NewCapacity[SIMPLICITY,WINDPOWER,2039]
+n j 1026 NewCapacity[SIMPLICITY,WINDPOWER,2040]
+n j 1027 RateOfActivity[SIMPLICITY,ID,BACKSTOP1,1,2014]
+n j 1028 RateOfActivity[SIMPLICITY,IN,BACKSTOP1,1,2014]

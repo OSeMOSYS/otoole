@@ -38,8 +38,7 @@ class ReadResults(ReadStrategy):
             input_data = None
 
         available_results = self.get_results_from_file(
-            filepath, input_data, kwargs
-        )  # type: Dict[str, pd.DataFrame]
+            filepath, input_data)  # type: Dict[str, pd.DataFrame]
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
 
@@ -334,23 +333,26 @@ class ReadGlpk(ReadResultsCBC):
     """Reads a GLPK Solution file into memory 
     
     The user must provide both the solution file (results.sol) and the glpk 
-    model file (model.lp). These can be generated from the following command  
+    model file (model.lp) to generate the complete solution.   
     
     glpsol --wglp model.lp -m osemosys.txt -d simplicity.txt --write results.sol
-    
-    Arguments
-    ---------
-    user_config
-    glpk model file 
     """
     
-    def _convert_to_dataframe(self, glpk_model: str, glpk_sol: str) -> pd.DataFrame:
+    def __init__(self, user_config: Dict[str, Dict], glpk_model: str = None):
+        """
+        glpk_model: str
+            Path to GLPK model file. Can be created using the `--wglp` flag.
+            If not provided, the solution file will be processed without 
+            corresponding english names or index defenitions.  
+        """
+        super().__init__(user_config)
+        self.glpk_model = glpk_model
+    
+    def _convert_to_dataframe(self, glpk_sol: str) -> pd.DataFrame:
         """Creates a wide formatted dataframe from GLPK solution
         
         Arguments
         ---------
-        glpk_model: str
-            Path to GLPK model file. Can be created using the `--wglp` flag
         glpk_sol: str
             Path to GLPK solution file. Can be created using the `--write` flag
             
@@ -359,7 +361,7 @@ class ReadGlpk(ReadResultsCBC):
         pd.DataFrame
         """
         
-        model = self.read_model(glpk_model)
+        model = self.read_model()
         _, sol = self.read_solution(glpk_sol)
         return self.merge_model_sol(model, sol)
         
@@ -442,7 +444,7 @@ class ReadGlpk(ReadResultsCBC):
                 
         return status, df
     
-    def read_model(self, file_path: str) -> pd.DataFrame:
+    def read_model(self) -> pd.DataFrame:
         """Reads in a GLPK Model File 
         
         Arguments
@@ -469,9 +471,17 @@ class ReadGlpk(ReadResultsCBC):
         n j COL NAME # j = variable name, COL is the column ordinal number
         """
         
+        if not self.glpk_model:
+            raise OtooleError(
+                resource="GLPK.lp",
+                message="No GLPK model file provided. This can be generated via the `--wglp` command."
+            )
+        else:
+            model_path = self.glpk_model
+        
         data = []
         
-        with open(file_path, "r") as f:
+        with open(model_path, "r") as f:
             for line in f:
                 parts = line.strip().split()
                 if not parts[0] == "n":

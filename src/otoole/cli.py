@@ -50,13 +50,14 @@ from otoole import (
     ReadCsv,
     ReadDatafile,
     ReadExcel,
+    ReadGlpk,
     ReadGurobi,
     WriteCsv,
     WriteDatafile,
     WriteExcel,
     __version__,
 )
-from otoole.exceptions import OtooleSetupError
+from otoole.exceptions import OtooleSetupError, OtooleError
 from otoole.input import Context
 from otoole.preprocess.setup import get_config_setup_data, get_csv_setup_data
 from otoole.utils import (
@@ -140,6 +141,8 @@ def result_matrix(args):
         read_strategy = ReadCplex(user_config=config)
     elif args.from_format == "gurobi":
         read_strategy = ReadGurobi(user_config=config)
+    elif args.from_format == "glpk":
+        read_strategy = ReadGlpk(user_config=config, glpk_model=args.glpk_model)
 
     # set write strategy
 
@@ -321,7 +324,7 @@ def get_parser():
     result_parser.add_argument(
         "from_format",
         help="Result data format to convert from",
-        choices=sorted(["cbc", "cplex", "gurobi"]),
+        choices=sorted(["cbc", "cplex", "gurobi", "glpk"]),
     )
     result_parser.add_argument(
         "to_format",
@@ -343,6 +346,11 @@ def get_parser():
         default=None,
     )
     result_parser.add_argument("config", help="Path to config YAML file")
+    result_parser.add_argument(
+        "--glpk_model",
+        help="GLPK model file required for processing GLPK results",
+        default=None,
+    )
     result_parser.add_argument(
         "--write_defaults",
         help="Writes default values",

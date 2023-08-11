@@ -659,8 +659,8 @@ class TestReadGlpk:
         
     def test_read_model(self, user_config):
         input_file = os.path.join("tests", "fixtures", "glpk_model.txt")
-        reader = ReadGlpk(user_config)
-        actual = reader.read_model(input_file)
+        reader = ReadGlpk(user_config=user_config, glpk_model=input_file)
+        actual = reader.read_model()
         
         pd.testing.assert_frame_equal(actual, self.expected_model_data)
         
@@ -695,6 +695,11 @@ class TestReadGlpk:
         
         with raises(OtooleError):
             reader.merge_model_sol(model, sol)
+            
+    def test_read_model_error(self, user_config):
+        reader = ReadGlpk(user_config)
+        with raises(OtooleError):
+            reader.read_model()
         
 
 class TestCleanOnRead:

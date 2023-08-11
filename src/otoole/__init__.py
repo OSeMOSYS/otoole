@@ -3,7 +3,7 @@ import sys
 
 from otoole.input import Context
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
-from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi
+from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi, ReadGlpk
 from otoole.write_strategies import WriteCsv, WriteDatafile, WriteExcel
 
 if sys.version_info[:2] >= (3, 8):
@@ -29,6 +29,7 @@ __all__ = [
     "ReadCplex",
     "ReadDatafile",
     "ReadExcel",
+    "ReadGlpk",
     "ReadGurobi",
     "ReadMemory",
     "WriteCsv",
