@@ -8,6 +8,7 @@ import pandas as pd
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.result_package import ResultsPackage
+from otoole.exceptions import OtooleError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class ReadResults(ReadStrategy):
             input_data = None
 
         available_results = self.get_results_from_file(
-            filepath, input_data
+            filepath, input_data, kwargs
         )  # type: Dict[str, pd.DataFrame]
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
@@ -328,3 +329,210 @@ class ReadCbc(ReadResultsCBC):
         df["Index"] = df["Index"].str.replace(")", "", regex=False)
         df = df.drop(columns=["indexvalue"])
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
+
+class ReadGlpk(ReadResultsCBC):
+    """Reads a GLPK Solution file into memory 
+    
+    The user must provide both the solution file (results.sol) and the glpk 
+    model file (model.lp). These can be generated from the following command  
+    
+    glpsol --wglp model.lp -m osemosys.txt -d simplicity.txt --write results.sol
+    
+    Arguments
+    ---------
+    user_config
+    glpk model file 
+    """
+    
+    def _convert_to_dataframe(self, glpk_model: str, glpk_sol: str) -> pd.DataFrame:
+        """Creates a wide formatted dataframe from GLPK solution
+        
+        Arguments
+        ---------
+        glpk_model: str
+            Path to GLPK model file. Can be created using the `--wglp` flag
+        glpk_sol: str
+            Path to GLPK solution file. Can be created using the `--write` flag
+            
+        Returns
+        -------
+        pd.DataFrame
+        """
+        
+        model = self.read_model(glpk_model)
+        _, sol = self.read_solution(glpk_sol)
+        return self.merge_model_sol(model, sol)
+        
+    def read_solution(self, file_path: str) -> Tuple[Dict[str,Union[str, float]], pd.DataFrame]:
+        """Reads a GLPK solution file 
+        
+        Arguments
+        ---------
+        file_path: str
+            Path to GLPK solution file. Can be created using the `--write` flag
+            
+        Returns
+        -------
+        Tuple[Dict[str,Union[str, float]], pd.DataFrame]
+            Dict[str,Union[str, float]] -> Problem name, status, and objective value 
+            pd.DataFrame -> Variables and constraints 
+            
+            
+        {"name":"osemosys", "status":"OPTIMAL", "objective":4497.31976}
+            
+           ID  NUM  STATUS PRIM DUAL
+        0  i   1    b      5    0
+        1  j   2    l      0    2
+        
+        Notes
+        -----
+        
+        -> ROWS IN SOLUTION FILE 
+        
+        i ROW ST PRIM DUAL
+        
+        ROW is the ordinal number of the row
+        ST is one of:
+            b = inactive constraint;
+            l = inequality constraint active on its lower bound;
+            u = inequality constraint active on its upper bound;
+            f = active free (unounded) row;
+            s = active equality constraint.
+        PRIM specifies the row primal value (float)
+        DUAL specifies the row dual value (float)
+        
+        -> COLUMNS IN SOLUTION FILE
+        
+        j COL ST PRIM DUAL
+
+        COL specifies the column ordinal number
+        ST contains one of the following lower-case letters that specifies the column status in the basic solution:
+            b = basic variable
+            l = non-basic variable having its lower bound active
+            u = non-basic variable having its upper bound active
+            f = non-basic free (unbounded) variable
+            s = non-basic fixed variable.
+        PRIM field contains column primal value (float)
+        DUAL field contains the column dual value (float)
+        """
+    
+        data = []
+        status = {}
+
+        with open(file_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if parts[0] in ("i", "j"):
+                    data.append([
+                        parts[0], int(parts[1]), parts[2], float(parts[3]), float(parts[4])
+                    ])
+                elif len(parts) > 1:
+                    if parts[1] == "Problem:":
+                        status["name"] = parts[2]
+                    elif parts[1] == "Status:":
+                        status["status"] = parts[2]
+                    elif parts[1] == "Objective:":
+                        status["objective"] = float(parts[4])
+                    
+        df = pd.DataFrame(data, columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"])
+        
+        for info in ["name", "status", "objective"]:
+            if info not in status:
+                LOGGER.warning(f"No {info} extracted from the GLPK solution")
+                
+        return status, df
+    
+    def read_model(self, file_path: str) -> pd.DataFrame:
+        """Reads in a GLPK Model File 
+        
+        Arguments
+        ---------
+        file_path: str
+            Path to GLPK model file. Can be created using the `--wglp` flag.
+        
+        Returns
+        -------
+        pd.DataFrame
+        
+           ID  NUM  NAME                      INDEX 
+        0  i   1    CAa4_Constraint_Capacity  "SIMPLICITY,ID,BACKSTOP1,2015"
+        1  j   2    NewCapacity               "SIMPLICITY,WINDPOWER,2039"
+        
+        Notes
+        -----
+        
+        -> GENERAL LAYOUT OF SOLUTION FILE 
+        
+        n p NAME # p = problem instance
+        n z NAME # z = objective function
+        n i ROW NAME # i = constraint name, ROW is the row ordinal number
+        n j COL NAME # j = variable name, COL is the column ordinal number
+        """
+        
+        data = []
+        
+        with open(file_path, "r") as f:
+            for line in f:
+                parts = line.strip().split()
+                if not parts[0] == "n":
+                    continue
+                if len(parts) < 4:
+                    continue
+                data.append([parts[1], int(parts[2]), parts[3]])
+                
+        df = pd.DataFrame(data, columns=["ID", "NUM", "INDEX_LIST"])
+        df = df.loc[df["INDEX_LIST"].str.contains("\[")] # removes "n i 1 cost" row
+        
+        df[["NAME", "INDEX"]] = df["INDEX_LIST"].str.split("[", expand=True)
+        df["INDEX"] = df["INDEX"].map(lambda x: x.split("]")[0])
+        
+        df = df[["ID", "NUM", "NAME", "INDEX"]].reset_index(drop=True)
+        return df
+        
+    def merge_model_sol(self, model: pd.DataFrame, sol: pd.DataFrame) -> pd.DataFrame:
+        """Merges GLPK model and solution file into one dataframe
+        
+        Arguments
+        ---------
+        model: pd.DataFrame, 
+            see output from ReadGlpk.read_model(...)
+        sol: pd.DataFrame
+            see output from ReadGlpk.read_solution(...)
+
+        Returns
+        -------
+        pd.DataFrame
+        
+        >>> pd.DataFrame(data=[
+                ['TotalDiscountedCost', "SIMPLICITY,2015", 187.01576],
+                ['TotalDiscountedCost', "SIMPLICITY,2016", 183.30788]],
+                columns=['Variable', 'Index', 'Value'])
+        """
+        
+        # create lookup ids using the id and num columns to coordinate merge
+        model["lookup"] = model["ID"].str.cat(model["NUM"].astype(str))
+        model = model.set_index("lookup")
+        model_lookup = model.to_dict(orient="index")
+        
+        sol = sol.loc[sol["ID"]=="j"] # remove constraints and leave variables
+        sol["lookup"] = sol["ID"].str.cat(sol["NUM"].astype(str))
+        sol = sol.set_index("lookup")
+        sol_lookup = sol.to_dict(orient="index")
+        
+        # assemble dataframe
+        data = []
+        for lookup_id, lookup_values in sol_lookup.items():
+            try:
+                data.append([
+                    model_lookup[lookup_id]["NAME"],
+                    model_lookup[lookup_id]["INDEX"],
+                    lookup_values["PRIM"]
+                ])
+            except KeyError:
+                raise OtooleError(
+                    resource=lookup_id,
+                    message=f"No corresponding id for {lookup_id} in the GLPK model file"
+                )
+            
+        return pd.DataFrame(data, columns=["Variable", "Index", "Value"])
+                    
