@@ -481,7 +481,7 @@ class ReadGlpk(ReadResultsCBC):
                 data.append([parts[1], int(parts[2]), parts[3]])
                 
         df = pd.DataFrame(data, columns=["ID", "NUM", "INDEX_LIST"])
-        df = df.loc[df["INDEX_LIST"].str.contains("\[")] # removes "n i 1 cost" row
+        df = df.loc[df["INDEX_LIST"].str.contains(r"\[")] # removes "n i 1 cost" row
         
         df[["NAME", "INDEX"]] = df["INDEX_LIST"].str.split("[", expand=True)
         df["INDEX"] = df["INDEX"].map(lambda x: x.split("]")[0])
@@ -515,13 +515,14 @@ class ReadGlpk(ReadResultsCBC):
         model_lookup = model.to_dict(orient="index")
         
         sol = sol.loc[sol["ID"]=="j"] # remove constraints and leave variables
-        sol["lookup"] = sol["ID"].str.cat(sol["NUM"].astype(str))
-        sol = sol.set_index("lookup")
-        sol_lookup = sol.to_dict(orient="index")
+        vars = sol.copy() # setting with copy warning
+        vars["lookup"] = vars["ID"].str.cat(vars["NUM"].astype(str))
+        vars = vars.set_index("lookup")
+        vars_lookup = vars.to_dict(orient="index")
         
         # assemble dataframe
         data = []
-        for lookup_id, lookup_values in sol_lookup.items():
+        for lookup_id, lookup_values in vars_lookup.items():
             try:
                 data.append([
                     model_lookup[lookup_id]["NAME"],
