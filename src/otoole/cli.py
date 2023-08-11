@@ -57,7 +57,7 @@ from otoole import (
     WriteExcel,
     __version__,
 )
-from otoole.exceptions import OtooleSetupError, OtooleError
+from otoole.exceptions import OtooleSetupError
 from otoole.input import Context
 from otoole.preprocess.setup import get_config_setup_data, get_csv_setup_data
 from otoole.utils import (

@@ -13,8 +13,8 @@ from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.results import (
     ReadCbc,
     ReadCplex,
-    ReadGurobi,
     ReadGlpk,
+    ReadGurobi,
     check_for_duplicates,
     identify_duplicate,
     rename_duplicate_column,
@@ -611,10 +611,36 @@ class TestReadCbc:
         )
         pd.testing.assert_frame_equal(actual, expected)
 
+
 class TestReadGlpk:
     """Use fixtures instead of StringIO due to the use of context managers in the logic"""
 
-    expected_sol_data = pd.DataFrame([
+    sol_data = dedent(
+        """c Problem:    osemosys_fast
+c Rows:       12665
+c Columns:    9450
+c Non-zeros:  82606
+c Status:     OPTIMAL
+c Objective:  cost = 4497.31967 (MINimum)
+c
+s bas 12665 9450 f f 4497.31967015205
+i 1 b 3942.19479265207 0
+i 2 b 0 0
+i 3 b 0 0
+i 300 b 37.499 0
+i 301 b 31.7309999999999 0
+j 1 b 0 0
+j 2 b 0 0
+j 130 l 0 0.282765294823514
+j 131 l 0 0.601075755990521
+j 1025 b 0.0305438002923389 0
+j 1026 b 0.0422503416065477 0
+j 1027 l 0 162679.693161095
+j 1028 l 0 81291.0524314291"""
+    )
+
+    expected_sol_data = pd.DataFrame(
+        [
             ["i", 1, "b", 3942.19479265207, 0],
             ["i", 2, "b", 0, 0],
             ["i", 3, "b", 0, 0],
@@ -628,9 +654,12 @@ class TestReadGlpk:
             ["j", 1026, "b", 0.0422503416065477, 0],
             ["j", 1027, "l", 0, 162679.693161095],
             ["j", 1028, "l", 0, 81291.0524314291],
-        ], columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"])
-    
-    expected_model_data = pd.DataFrame([
+        ],
+        columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"],
+    )
+
+    expected_model_data = pd.DataFrame(
+        [
             ["i", 2, "CAa4_Constraint_Capacity", "SIMPLICITY,ID,BACKSTOP1,2014"],
             ["i", 3, "CAa4_Constraint_Capacity", "SIMPLICITY,ID,BACKSTOP1,2015"],
             ["i", 300, "CAa4_Constraint_Capacity", "SIMPLICITY,ID,LNDFORCOV,2015"],
@@ -643,64 +672,78 @@ class TestReadGlpk:
             ["j", 1026, "NewCapacity", "SIMPLICITY,WINDPOWER,2040"],
             ["j", 1027, "RateOfActivity", "SIMPLICITY,ID,BACKSTOP1,1,2014"],
             ["j", 1028, "RateOfActivity", "SIMPLICITY,IN,BACKSTOP1,1,2014"],
-        ], columns=["ID", "NUM", "NAME", "INDEX"])
+        ],
+        columns=["ID", "NUM", "NAME", "INDEX"],
+    )
 
     def test_read_solution(self, user_config):
-        input_file = os.path.join("tests", "fixtures", "glpk_sol.txt")
+        input_file = self.sol_data
         reader = ReadGlpk(user_config)
-        actual_status, actual_data = reader.read_solution(input_file)
+        with StringIO(input_file) as file_buffer:
+            actual_status, actual_data = reader.read_solution(file_buffer)
         expected_status = {
-            "name":"osemosys_fast",
-            "status":"OPTIMAL",
-            "objective":4497.31967
+            "name": "osemosys_fast",
+            "status": "OPTIMAL",
+            "objective": 4497.31967,
         }
         assert actual_status == expected_status
         pd.testing.assert_frame_equal(actual_data, self.expected_sol_data)
-        
+
     def test_read_model(self, user_config):
         input_file = os.path.join("tests", "fixtures", "glpk_model.txt")
         reader = ReadGlpk(user_config=user_config, glpk_model=input_file)
         actual = reader.read_model()
-        
+
         pd.testing.assert_frame_equal(actual, self.expected_model_data)
-        
+
     def test_merge_model_sol(self, user_config):
         reader = ReadGlpk(user_config)
-        actual = reader.merge_model_sol(self.expected_model_data, self.expected_sol_data)
-        expected = pd.DataFrame([
-            ["SalvageValueStorage", "SIMPLICITY,DAM,2014", 0],
-            ["SalvageValueStorage", "SIMPLICITY,DAM,2015", 0],
-            ["StorageLevelSeasonStart", "SIMPLICITY,DAM,2,2035", 0],
-            ["StorageLevelSeasonStart", "SIMPLICITY,DAM,2,2036", 0],
-            ["NewCapacity", "SIMPLICITY,WINDPOWER,2039", 0.0305438002923389],
-            ["NewCapacity", "SIMPLICITY,WINDPOWER,2040", 0.0422503416065477],
-            ["RateOfActivity", "SIMPLICITY,ID,BACKSTOP1,1,2014", 0],
-            ["RateOfActivity", "SIMPLICITY,IN,BACKSTOP1,1,2014", 0],
-        ], columns=['Variable', 'Index', 'Value'])
-        
+        actual = reader.merge_model_sol(
+            self.expected_model_data, self.expected_sol_data
+        )
+        expected = pd.DataFrame(
+            [
+                ["SalvageValueStorage", "SIMPLICITY,DAM,2014", 0],
+                ["SalvageValueStorage", "SIMPLICITY,DAM,2015", 0],
+                ["StorageLevelSeasonStart", "SIMPLICITY,DAM,2,2035", 0],
+                ["StorageLevelSeasonStart", "SIMPLICITY,DAM,2,2036", 0],
+                ["NewCapacity", "SIMPLICITY,WINDPOWER,2039", 0.0305438002923389],
+                ["NewCapacity", "SIMPLICITY,WINDPOWER,2040", 0.0422503416065477],
+                ["RateOfActivity", "SIMPLICITY,ID,BACKSTOP1,1,2014", 0],
+                ["RateOfActivity", "SIMPLICITY,IN,BACKSTOP1,1,2014", 0],
+            ],
+            columns=["Variable", "Index", "Value"],
+        )
+
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_merge_model_sol_error(self, user_config):
         reader = ReadGlpk(user_config)
-        
-        model = pd.DataFrame([
-            ["j", 1, "SalvageValueStorage", "SIMPLICITY,DAM,2014"],
-            ["j", 2, "SalvageValueStorage", "SIMPLICITY,DAM,2015"],
-        ], columns=["ID", "NUM", "NAME", "INDEX"])
-        
-        sol = pd.DataFrame([
-            ["j", 1025, "b", 0.0305438002923389, 0],
-            ["j", 1026, "b", 0.0422503416065477, 0],
-        ], columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"])
-        
+
+        model = pd.DataFrame(
+            [
+                ["j", 1, "SalvageValueStorage", "SIMPLICITY,DAM,2014"],
+                ["j", 2, "SalvageValueStorage", "SIMPLICITY,DAM,2015"],
+            ],
+            columns=["ID", "NUM", "NAME", "INDEX"],
+        )
+
+        sol = pd.DataFrame(
+            [
+                ["j", 1025, "b", 0.0305438002923389, 0],
+                ["j", 1026, "b", 0.0422503416065477, 0],
+            ],
+            columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"],
+        )
+
         with raises(OtooleError):
             reader.merge_model_sol(model, sol)
-            
+
     def test_read_model_error(self, user_config):
         reader = ReadGlpk(user_config)
         with raises(OtooleError):
             reader.read_model()
-        
+
 
 class TestCleanOnRead:
     """Tests that a data is cleaned and indexed upon reading"""

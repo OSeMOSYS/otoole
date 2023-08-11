@@ -107,6 +107,29 @@ Use ``otoole``'s ``result`` package to generate the result CSVs::
 
     $ otoole results cbc csv simplicity.sol results config.yaml
 
+Data Processing with GLPK
+-------------------------
+
+Objective
+~~~~~~~~~
+
+Build and solve a model using only GLPK and otoole
+
+1. Build the solve the model using GLPK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use GLPK_ to build the model, save it as ``simplicity.lp``, solve the model,
+and save the solution as ``simplicity.sol```::
+
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wglp simplicity.lp --write simplicity.sol
+
+2. Use otoole to process the solution in CSVs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When processing solutions from GLPK, both the model file (``*.lp``) and solution
+file (``*.sol``) must be passed::
+
+    $ otoole results glpk csv simplicity.sol results config.yaml --glpk_model simplicity.lp --input_datafile simplicity.txt
+
+
 Model Visualization
 -------------------
 

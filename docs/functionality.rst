@@ -75,7 +75,7 @@ apparent. CBC_ is an alternative open-source solver which offers better performa
 GLPK_ and can handle much larger models. However, CBC_ has no way of knowing how to write
 out the CSV files you were used to dealing with when using GLPK_. ``otoole`` to the rescue!
 
-``otoole`` currently supports using CBC_, CPLEX_ or Gurobi_ with all three versions of
+``otoole`` currently supports using GLPK_, CBC_, CPLEX_ or Gurobi_ with all versions of
 GNU MathProg OSeMOSYS - the long, short and fast versions.
 
 The long version includes all results as variables within the formulation, so the
@@ -90,13 +90,13 @@ so as to speed up the model matrix generation and solution times.
 ~~~~~~~~~~~~~~~~~~
 
 The ``results`` command creates a folder of CSV result files from a CBC_, CLP_,
-Gurobi_ or CPLEX_ solution file::
+GLPK_, Gurobi_ or CPLEX_ solution file::
 
     $ otoole results --help
-    usage: otoole results [-h] [--input_datafile INPUT_DATAFILE] [--input_datapackage INPUT_DATAPACKAGE] [--write_defaults] {cbc,cplex,gurobi} {csv} from_path to_path config
+    usage: otoole results [-h] [--input_datafile INPUT_DATAFILE] [--input_datapackage INPUT_DATAPACKAGE] [--glpk_model GLPK_MODEL] [--write_defaults] {cbc,cplex,glpk,gurobi} {csv} from_path to_path config
 
     positional arguments:
-    {cbc,cplex,gurobi}    Result data format to convert from
+    {cbc,cplex,glpk,gurobi}    Result data format to convert from
     {csv}                 Result data format to convert to
     from_path             Path to file or folder to convert from
     to_path               Path to file or folder to convert to
@@ -105,9 +105,11 @@ Gurobi_ or CPLEX_ solution file::
     optional arguments:
         -h, --help            show this help message and exit
         --input_datafile INPUT_DATAFILE
-                                Input GNUMathProg datafile required for OSeMOSYS short or fast results
+                              Input GNUMathProg datafile required for OSeMOSYS short or fast results
         --input_datapackage INPUT_DATAPACKAGE
-                                Deprecated
+                              Deprecated
+        --glpk_model GLPK_MODEL
+                              GLPK model file required for processing GLPK results
         --write_defaults      Writes default values
 
 .. versionadded:: v1.0.0
