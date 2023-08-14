@@ -327,7 +327,7 @@ Solver Setup
 Objective
 ~~~~~~~~~
 
-Install GLPK_ and CBC_ to use in the otoole examples.
+Install GLPK_ (required) and CBC_ (optional) to use in the otoole examples.
 
 1. Install GLPK
 ~~~~~~~~~~~~~~~~
