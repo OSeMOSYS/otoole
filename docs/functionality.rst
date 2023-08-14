@@ -17,7 +17,7 @@ Gurobi_, is called results and post-processing.
 .. image:: _static/workflow.png
 
 .. NOTE::
-    While ``otoole`` is targetted at OSeMOSYS users, the functionality can eaisly be extended
+    While ``otoole`` is targeted at OSeMOSYS users, the functionality can easily be extended
     to work with any workflow that involves the use of a MathProg file!
 
 Data Conversion
@@ -38,7 +38,7 @@ conversion between the following formats:
 ``otoole convert``
 ~~~~~~~~~~~~~~~~~~
 
-THe ``otoole convert``` command allows you to convert between various different
+The ``otoole convert``` command allows you to convert between various different
 input formats::
 
     $ otoole convert --help

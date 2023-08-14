@@ -200,7 +200,7 @@ Model Validation
 .. NOTE::
     In this example, we will use a very simple model instead of the
     Simplicity_ demonstration model. This way the user does not need to be
-    familar with the naming convenations of the model.
+    familiar with the naming conventions of the model.
 
 Objective
 ~~~~~~~~~
@@ -281,8 +281,8 @@ against the validation configuration file::
     $ otoole validate datafile data.txt config.yaml --validate_config validate.yaml
 
 .. WARNING::
-    Do not confuse the user configuation file (``config.yaml``) and the
-    validation configuation file (``validate.yaml``). Both configuartion files
+    Do not confuse the user configuration file (``config.yaml``) and the
+    validation configuration file (``validate.yaml``). Both configuration files
     are required for validation functionality.
 
 The final validation configuration file in this example will look like::
