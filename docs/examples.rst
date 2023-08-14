@@ -334,17 +334,23 @@ Install GLPK_ and CBC_ to use in the otoole examples.
 
 GLPK_ is a free and open-source linear program solver.
 
-To install it on **Linux**, run the command::
+To install GLPK on **Linux**, run the command::
 
     sudo apt-get update
     sudo apt-get install glpk glpk-utils
 
-To install it on **Mac**, run the command::
+To install GLPK on **Mac**, run the command::
 
     brew install glpk
 
-.. To install it on **Windows**, follow the install instruction on the GLPK_
-.. website, and/or follow the instructions_ from the OSeMOSYS community
+To install GLPK on **Windows**, follow the instructions on the 
+`GLPK Website <https://winglpk.sourceforge.net/>`. Be sure to add GLPK to 
+your environment variables if installing on Windows. 
+
+Alternatively, if you use `Anaconda <https://www.anaconda.com/>` to manage 
+your Python packages, you can install GLPK via the command::
+
+    conda install -c conda-forge glpk
 
 2. Test the GLPK install
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -361,16 +367,21 @@ CBC_ is a free and open-source mixed integer linear programming solver. Full
 install instructions can be found on the CBC_ website. However, the abbreviated
 instructions are shown below
 
-To install it on **Linux**, run the command::
+To install CBC on **Linux**, run the command::
 
     sudo apt-get install coinor-cbc coinor-libcbc-dev
 
-To install it on **Mac**, run the command::
+To install CBC on **Mac**, run the command::
 
     brew install coin-or-tools/coinor/cbc
 
-.. To install it on **Windows**, follow the install instruction on the CBC_
-.. website by downloading a binary
+To install CBC on **Windows**, follow the install instruction on the CBC_
+website.
+
+Alternatively, if you use `Anaconda <https://www.anaconda.com/>` to manage 
+your Python packages, you can install CBC via the command::
+
+    conda install -c conda-forge coincbc 
 
 4. Test the CBC install
 ~~~~~~~~~~~~~~~~~~~~~~~
