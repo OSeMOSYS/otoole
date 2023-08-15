@@ -344,8 +344,6 @@ class ReadGlpk(ReadResultsCBC):
         """
         glpk_model: Union[str, TextIO]
             Path to GLPK model file. Can be created using the `--wglp` flag.
-            If not provided, the solution file will be processed without
-            corresponding english names or index defenitions.
         """
         super().__init__(user_config)
 
@@ -362,7 +360,7 @@ class ReadGlpk(ReadResultsCBC):
 
         Arguments
         ---------
-        glpk_sol: str
+        glpk_sol: Union[str, TextIO]
             Path to GLPK solution file. Can be created using the `--write` flag
 
         Returns
@@ -385,7 +383,7 @@ class ReadGlpk(ReadResultsCBC):
 
         Arguments
         ---------
-        file_path: str
+        file_path: Union[str, TextIO]
             Path to GLPK model file. Can be created using the `--wglp` flag.
 
         Returns
@@ -434,7 +432,7 @@ class ReadGlpk(ReadResultsCBC):
 
         Arguments
         ---------
-        file_path: str
+        file_path: Union[str, TextIO]
             Path to GLPK solution file. Can be created using the `--write` flag
 
         Returns
