@@ -3,10 +3,10 @@
 .. _examples-validation:
 
 -----------------------
-Example Validation File 
+Example Validation File
 -----------------------
 
-This page holds the datafile used in the validation example. The file can 
+This page holds the datafile used in the validation example. The file can
 either be copy/pasted from below, or directly downloaded from :download:`here <_static/validation-data.txt>` ::
 
     # Model file written by *otoole*
