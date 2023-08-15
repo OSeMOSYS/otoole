@@ -666,6 +666,25 @@ e o f
 """
     )
 
+    expected_solution = pd.DataFrame(
+        [
+            ["i", 1, "b", 3942.19479265207, 0],
+            ["i", 2, "b", 0, 0],
+            ["i", 3, "b", 0, 0],
+            ["i", 300, "b", 37.499, 0],
+            ["i", 301, "b", 31.7309999999999, 0],
+            ["j", 1, "b", 0, 0],
+            ["j", 2, "b", 0, 0],
+            ["j", 130, "l", 0, 0.282765294823514],
+            ["j", 131, "l", 0, 0.601075755990521],
+            ["j", 1025, "b", 0.0305438002923389, 0],
+            ["j", 1026, "b", 0.0422503416065477, 0],
+            ["j", 1027, "l", 0, 162679.693161095],
+            ["j", 1028, "l", 0, 81291.0524314291],
+        ],
+        columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"],
+    )
+
     def test_read_model(self, user_config):
         model_data = self.model_data
         with StringIO(model_data) as file_buffer:
@@ -707,51 +726,14 @@ e o f
         }
         assert actual_status == expected_status
 
-        expected_data = pd.DataFrame(
-            [
-                ["i", 1, "b", 3942.19479265207, 0],
-                ["i", 2, "b", 0, 0],
-                ["i", 3, "b", 0, 0],
-                ["i", 300, "b", 37.499, 0],
-                ["i", 301, "b", 31.7309999999999, 0],
-                ["j", 1, "b", 0, 0],
-                ["j", 2, "b", 0, 0],
-                ["j", 130, "l", 0, 0.282765294823514],
-                ["j", 131, "l", 0, 0.601075755990521],
-                ["j", 1025, "b", 0.0305438002923389, 0],
-                ["j", 1026, "b", 0.0422503416065477, 0],
-                ["j", 1027, "l", 0, 162679.693161095],
-                ["j", 1028, "l", 0, 81291.0524314291],
-            ],
-            columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"],
-        )
-        pd.testing.assert_frame_equal(actual_data, expected_data)
+        pd.testing.assert_frame_equal(actual_data, self.expected_solution)
 
     def test_merge_model_sol(self, user_config):
         model_data = self.model_data
         with StringIO(model_data) as file_buffer:
             reader = ReadGlpk(user_config=user_config, glpk_model=file_buffer)
 
-        sol_data = pd.DataFrame(
-            [
-                ["i", 1, "b", 3942.19479265207, 0],
-                ["i", 2, "b", 0, 0],
-                ["i", 3, "b", 0, 0],
-                ["i", 300, "b", 37.499, 0],
-                ["i", 301, "b", 31.7309999999999, 0],
-                ["j", 1, "b", 0, 0],
-                ["j", 2, "b", 0, 0],
-                ["j", 130, "l", 0, 0.282765294823514],
-                ["j", 131, "l", 0, 0.601075755990521],
-                ["j", 1025, "b", 0.0305438002923389, 0],
-                ["j", 1026, "b", 0.0422503416065477, 0],
-                ["j", 1027, "l", 0, 162679.693161095],
-                ["j", 1028, "l", 0, 81291.0524314291],
-            ],
-            columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"],
-        )
-
-        actual = reader._merge_model_sol(sol_data)
+        actual = reader._merge_model_sol(self.expected_solution)
         expected = pd.DataFrame(
             [
                 ["SalvageValueStorage", "SIMPLICITY,DAM,2014", 0],
@@ -767,6 +749,14 @@ e o f
         )
 
         pd.testing.assert_frame_equal(actual, expected)
+
+    def test_convert_to_dataframe(self, user_config):
+        model_data = self.model_data
+        sol_data = self.sol_data
+        with StringIO(model_data) as file_buffer:
+            reader = ReadGlpk(user_config=user_config, glpk_model=file_buffer)
+        with StringIO(sol_data) as file_buffer:
+            reader._convert_to_dataframe(file_buffer)
 
     def test_convert_to_dataframe_error(self, user_config):
         model_data = self.model_data

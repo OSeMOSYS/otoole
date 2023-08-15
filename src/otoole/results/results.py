@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Set, TextIO, Tuple, Union
 
 import pandas as pd
 
-from otoole.exceptions import OtooleError
 from otoole.input import ReadStrategy
 from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.result_package import ResultsPackage
@@ -538,18 +537,12 @@ class ReadGlpk(ReadResultsCBC):
         # assemble dataframe
         data = []
         for lookup_id, lookup_values in vars_lookup.items():
-            try:
-                data.append(
-                    [
-                        model_lookup[lookup_id]["NAME"],
-                        model_lookup[lookup_id]["INDEX"],
-                        lookup_values["PRIM"],
-                    ]
-                )
-            except KeyError:
-                raise OtooleError(
-                    resource=lookup_id,
-                    message=f"No corresponding id for {lookup_id} in the GLPK model file",
-                )
+            data.append(
+                [
+                    model_lookup[lookup_id]["NAME"],
+                    model_lookup[lookup_id]["INDEX"],
+                    lookup_values["PRIM"],
+                ]
+            )
 
         return pd.DataFrame(data, columns=["Variable", "Index", "Value"])
