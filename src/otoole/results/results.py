@@ -340,15 +340,22 @@ class ReadGlpk(ReadResultsCBC):
     glpsol --wglp model.lp -m osemosys.txt -d simplicity.txt --write results.sol
     """
 
-    def __init__(self, user_config: Dict[str, Dict], glpk_model: str = None):
+    def __init__(self, user_config: Dict[str, Dict], glpk_model: Union[str, TextIO]):
         """
-        glpk_model: str
+        glpk_model: Union[str, TextIO]
             Path to GLPK model file. Can be created using the `--wglp` flag.
             If not provided, the solution file will be processed without
             corresponding english names or index defenitions.
         """
         super().__init__(user_config)
-        self.glpk_model = glpk_model
+
+        if isinstance(glpk_model, str):
+            with open(glpk_model, "r") as model_file:
+                self.model = self.read_model(model_file)
+        elif isinstance(glpk_model, StringIO):
+            self.model = self.read_model(glpk_model)
+        else:
+            raise TypeError("Argument filepath type must be a string or an open file")
 
     def _convert_to_dataframe(self, glpk_sol: Union[str, TextIO]) -> pd.DataFrame:
         """Creates a wide formatted dataframe from GLPK solution
@@ -363,17 +370,62 @@ class ReadGlpk(ReadResultsCBC):
         pd.DataFrame
         """
 
-        model = self.read_model()
-
         if isinstance(glpk_sol, str):
-            with open(glpk_sol, "r") as sol_file:
-                _, sol = self.read_solution(sol_file)
+            with open(glpk_sol, "r"):
+                _, sol = self.read_solution(glpk_sol)
         elif isinstance(glpk_sol, StringIO):
             _, sol = self.read_solution(glpk_sol)
         else:
             raise TypeError("Argument filepath type must be a string or an open file")
 
-        return self.merge_model_sol(model, sol)
+        return self._merge_model_sol(sol)
+
+    def read_model(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        """Reads in a GLPK Model File
+
+        Arguments
+        ---------
+        file_path: str
+            Path to GLPK model file. Can be created using the `--wglp` flag.
+
+        Returns
+        -------
+        pd.DataFrame
+
+           ID  NUM  NAME                      INDEX
+        0  i   1    CAa4_Constraint_Capacity  "SIMPLICITY,ID,BACKSTOP1,2015"
+        1  j   2    NewCapacity               "SIMPLICITY,WINDPOWER,2039"
+
+        Notes
+        -----
+
+        -> GENERAL LAYOUT OF SOLUTION FILE
+
+        n p NAME # p = problem instance
+        n z NAME # z = objective function
+        n i ROW NAME # i = constraint name, ROW is the row ordinal number
+        n j COL NAME # j = variable name, COL is the column ordinal number
+        """
+
+        df = pd.read_csv(
+            file_path,
+            header=None,
+            sep=r"\s+",
+            index_col=0,
+            names=["ID", "NUM", "value", 4, 5],
+        ).drop(columns=[4, 5])
+
+        df = df[(df["ID"].isin(["i", "j"])) & (df["value"] != "cost")]
+
+        df[["NAME", "INDEX"]] = df["value"].str.split("[", expand=True)
+        df["INDEX"] = df["INDEX"].map(lambda x: x.split("]")[0])
+        df = (
+            df[["ID", "NUM", "NAME", "INDEX"]]
+            .astype({"ID": str, "NUM": int, "NAME": str, "INDEX": str})
+            .reset_index(drop=True)
+        )
+
+        return df
 
     def read_solution(
         self, file_path: Union[str, TextIO]
@@ -429,99 +481,36 @@ class ReadGlpk(ReadResultsCBC):
         DUAL field contains the column dual value (float)
         """
 
-        data = []
+        df = pd.read_csv(file_path, header=None, sep=":")
+
+        # get status information
         status = {}
+        df_status = df.loc[:8].set_index(0)
+        status["name"] = df_status.loc["c Problem", 1].strip()
+        status["status"] = df_status.loc["c Status", 1].strip()
+        status["objective"] = float(df_status.loc["c Objective", 1].split()[2])
 
-        for line in file_path:
-            parts = line.strip().split()
-            if parts[0] in ("i", "j"):
-                data.append(
-                    [
-                        parts[0],
-                        int(parts[1]),
-                        parts[2],
-                        float(parts[3]),
-                        float(parts[4]),
-                    ]
-                )
-            elif len(parts) > 1:
-                if parts[1] == "Problem:":
-                    status["name"] = parts[2]
-                elif parts[1] == "Status:":
-                    status["status"] = parts[2]
-                elif parts[1] == "Objective:":
-                    status["objective"] = float(parts[4])
+        # get solution infromation
+        data = df.iloc[8:-1].copy()
+        data[["ID", "NUM", "STATUS", "PRIM", "DUAL"]] = data[0].str.split(
+            " ", expand=True
+        )
 
-        df = pd.DataFrame(data, columns=["ID", "NUM", "STATUS", "PRIM", "DUAL"])
-
-        for info in ["name", "status", "objective"]:
-            if info not in status:
-                LOGGER.warning(f"No {info} extracted from the GLPK solution")
-
-        return status, df
-
-    def read_model(self) -> pd.DataFrame:
-        """Reads in a GLPK Model File
-
-        Arguments
-        ---------
-        file_path: str
-            Path to GLPK model file. Can be created using the `--wglp` flag.
-
-        Returns
-        -------
-        pd.DataFrame
-
-           ID  NUM  NAME                      INDEX
-        0  i   1    CAa4_Constraint_Capacity  "SIMPLICITY,ID,BACKSTOP1,2015"
-        1  j   2    NewCapacity               "SIMPLICITY,WINDPOWER,2039"
-
-        Notes
-        -----
-
-        -> GENERAL LAYOUT OF SOLUTION FILE
-
-        n p NAME # p = problem instance
-        n z NAME # z = objective function
-        n i ROW NAME # i = constraint name, ROW is the row ordinal number
-        n j COL NAME # j = variable name, COL is the column ordinal number
-        """
-
-        if not self.glpk_model:
-            raise OtooleError(
-                resource="GLPK.lp",
-                message="No GLPK model file provided. This can be generated via the `--wglp` command.",
+        data = (
+            data[["ID", "NUM", "STATUS", "PRIM", "DUAL"]]
+            .astype(
+                {"ID": str, "NUM": int, "STATUS": str, "PRIM": float, "DUAL": float}
             )
-        else:
-            model_path = self.glpk_model
+            .reset_index(drop=True)
+        )
 
-        data = []
+        return status, data
 
-        with open(model_path, "r") as f:
-            for line in f:
-                parts = line.strip().split()
-                if not parts[0] == "n":
-                    continue
-                if len(parts) < 4:
-                    continue
-                data.append([parts[1], int(parts[2]), parts[3]])
-
-        df = pd.DataFrame(data, columns=["ID", "NUM", "INDEX_LIST"])
-        df = df.loc[df["INDEX_LIST"].str.contains(r"\[")]  # removes "n i 1 cost" row
-
-        df[["NAME", "INDEX"]] = df["INDEX_LIST"].str.split("[", expand=True)
-        df["INDEX"] = df["INDEX"].map(lambda x: x.split("]")[0])
-
-        df = df[["ID", "NUM", "NAME", "INDEX"]].reset_index(drop=True)
-        return df
-
-    def merge_model_sol(self, model: pd.DataFrame, sol: pd.DataFrame) -> pd.DataFrame:
+    def _merge_model_sol(self, sol: pd.DataFrame) -> pd.DataFrame:
         """Merges GLPK model and solution file into one dataframe
 
         Arguments
         ---------
-        model: pd.DataFrame,
-            see output from ReadGlpk.read_model(...)
         sol: pd.DataFrame
             see output from ReadGlpk.read_solution(...)
 
@@ -534,6 +523,8 @@ class ReadGlpk(ReadResultsCBC):
                 ['TotalDiscountedCost', "SIMPLICITY,2016", 183.30788]],
                 columns=['Variable', 'Index', 'Value'])
         """
+
+        model = self.model.copy()
 
         # create lookup ids using the id and num columns to coordinate merge
         model["lookup"] = model["ID"].str.cat(model["NUM"].astype(str))
