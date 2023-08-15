@@ -307,7 +307,7 @@ Create the fuel codes and descriptions in the validation configuration file::
         'WND': Wind
         'COA': Coal
         'ELC': Electricity
-      indetifiers:
+      identifiers:
         '00': Primary Resource
         '01': Intermediate
         '02': End Use
@@ -335,8 +335,8 @@ Use the defined codes to create a schema for the fuel codes::
         - name: type
           valid: fuels
           position: (1, 3)
-        - name: indentifier
-          valid: indetifiers
+        - name: identifier
+          valid: identifiers
           position: (4, 5)
 
 6. Create ``TECHNOLOGY`` Schema
@@ -364,7 +364,7 @@ The final validation configuration file for this example will look like::
         'WND': Wind
         'COA': Coal
         'ELC': Electricity
-      indetifiers:
+      identifiers:
         '00': Primary Resource
         '01': Intermediate
         '02': End Use
@@ -380,8 +380,8 @@ The final validation configuration file for this example will look like::
         - name: type
           valid: fuels
           position: (1, 3)
-        - name: indentifier
-          valid: indetifiers
+        - name: identifier
+          valid: identifiers
           position: (4, 5)
       TECHNOLOGY:
       - name: technology_name
