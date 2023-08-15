@@ -44,16 +44,10 @@ import os
 import shutil
 import sys
 
-from otoole import __version__, convert, convert_results
+from otoole import __version__, convert, convert_results, read
 from otoole.exceptions import OtooleSetupError
 from otoole.preprocess.setup import get_config_setup_data, get_csv_setup_data
-from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel
-from otoole.utils import (
-    _read_file,
-    read_deprecated_datapackage,
-    read_packaged_file,
-    validate_config,
-)
+from otoole.utils import read_packaged_file
 from otoole.validate import main as validate
 from otoole.visualise import create_res
 from otoole.write_strategies import WriteCsv
@@ -66,26 +60,7 @@ def validate_model(args):
     data_file = args.data_file
     user_config = args.user_config
 
-    _, ending = os.path.splitext(user_config)
-    with open(user_config, "r") as user_config_file:
-        config = _read_file(user_config_file, ending)
-    validate_config(config)
-
-    if data_format == "datafile":
-        read_strategy = ReadDatafile(user_config=config)
-    elif data_format == "datapackage":
-        logger.warning(
-            "Reading from datapackage is deprecated, trying to read from CSVs"
-        )
-        data_file = read_deprecated_datapackage(data_file)
-        logger.info("Successfully read folder of CSVs")
-        read_strategy = ReadCsv(user_config=config)
-    elif data_format == "csv":
-        read_strategy = ReadCsv(user_config=config)
-    elif data_format == "excel":
-        read_strategy = ReadExcel(user_config=config)
-
-    input_data, _ = read_strategy.read(data_file)
+    input_data, _ = read(user_config, data_format, data_file)
 
     if args.validate_config:
         validation_config = read_packaged_file(args.validate_config)
@@ -136,28 +111,12 @@ def data2res(args):
 
     data_format = args.data_format
     data_path = args.data_path
+    config = args.config
+    resfile = args.resfile
 
-    _, ending = os.path.splitext(args.config)
-    with open(args.config, "r") as config_file:
-        config = _read_file(config_file, ending)
-    validate_config(config)
+    input_data, _ = read(config, data_format, data_path)
 
-    if data_format == "datafile":
-        read_strategy = ReadDatafile(user_config=config)
-    elif data_format == "datapackage":
-        logger.warning(
-            "Reading from datapackage is deprecated, trying to read from CSVs"
-        )
-        data_path = read_deprecated_datapackage(data_path)
-        read_strategy = ReadCsv(user_config=config)
-    elif data_format == "csv":
-        read_strategy = ReadCsv(user_config=config)
-    elif data_format == "excel":
-        read_strategy = ReadExcel(user_config=config)
-
-    input_data, _ = read_strategy.read(data_path)
-
-    create_res(input_data, args.resfile)
+    create_res(input_data, resfile)
 
 
 def setup(args):
