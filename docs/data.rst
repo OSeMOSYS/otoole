@@ -69,7 +69,7 @@ Sets are defined as follows::
    It's convention in OSeMOSYS to capitalize set names
 
 Parameters Format
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Parameters are defined as follows. When referencing set indices use the full
 name, **not** the ``short_name``::
