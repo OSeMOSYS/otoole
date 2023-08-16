@@ -15,10 +15,86 @@ functionality in seperate simple use cases.
         git clone https://github.com/OSeMOSYS/simplicity.git
         cd simplicity
 
-.. CAUTION::
-    While ``otoole`` does not require a solver, these examples
-    will use the free and open source solvers GLPK_ and CBC_.
-    Installation instructions are described in the `Solver Setup`_ section.
+Solver Setup
+------------
+
+Objective
+~~~~~~~~~
+
+Install GLPK_ (required) and CBC_ (optional) to use in the otoole examples.
+While ``otoole`` does not require a solver, these examples will use the free
+and open source solvers GLPK_ and CBC_.
+
+1. Install GLPK
+~~~~~~~~~~~~~~~~
+
+GLPK_ is a free and open-source linear program solver. Full
+install instructions can be found on the `GLPK Website`_, however, the
+abbreviated instructions are shown below
+
+To install GLPK on **Linux**, run the command::
+
+    sudo apt-get update
+    sudo apt-get install glpk glpk-utils
+
+To install GLPK on **Mac**, run the command::
+
+    brew install glpk
+
+To install GLPK on **Windows**, follow the instructions on the
+`GLPK Website`_. Be sure to add GLPK to
+your environment variables after installation
+
+Alternatively, if you use Anaconda_ to manage
+your Python packages, you can install GLPK via the command::
+
+    conda install -c conda-forge glpk
+
+2. Test the GLPK install
+~~~~~~~~~~~~~~~~~~~~~~~~
+Once installed, you should be able to call the ``glpsol`` command::
+
+    $ glpsol
+    GLPSOL: GLPK LP/MIP Solver, v4.65
+    No input problem file specified; try glpsol --help
+
+3. Install CBC
+~~~~~~~~~~~~~~
+
+CBC_ is a free and open-source mixed integer linear programming solver. Full
+install instructions can be found on the CBC_ website, however, the abbreviated
+instructions are shown below
+
+To install CBC on **Linux**, run the command::
+
+    sudo apt-get install coinor-cbc coinor-libcbc-dev
+
+To install CBC on **Mac**, run the command::
+
+    brew install coin-or-tools/coinor/cbc
+
+To install CBC on **Windows**, follow the install instruction on the CBC_
+website.
+
+Alternatively, if you use Anaconda_ to manage
+your Python packages, you can install CBC via the command::
+
+    conda install -c conda-forge coincbc
+
+4. Test the CBC install
+~~~~~~~~~~~~~~~~~~~~~~~
+Once installed, you should be able to directly call CBC::
+
+    $ cbc
+    Welcome to the CBC MILP Solver
+    Version: 2.10.3
+    Build Date: Mar 24 2020
+
+    CoinSolver takes input from arguments ( - switches to stdin)
+    Enter ? for list of commands or help
+    Coin:
+
+You can exit the solver by typing ``quit``
 
 Data Conversion with CSVs
 -------------------------
@@ -200,7 +276,7 @@ Model Validation
 .. NOTE::
     In this example, we will use a very simple model instead of the
     Simplicity_ demonstration model. This way the user does not need to be
-    familar with the naming convenations of the model.
+    familiar with the naming conventions of the model.
 
 Objective
 ~~~~~~~~~
@@ -211,13 +287,18 @@ codes are shown in bold face.
 
 .. image:: _static/validataion_model.png
 
-1. Create the Validation File
+1. Download the example datafile
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The MathProg datafile describing this model can be found on the
+:ref:`examples-validation` page. Download the file and save it as ``data.txt``
+
+2. Create the Validation File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Create a configuration validation ``yaml`` file::
 
     $ touch validate.yaml
 
-2. Create ``FUEL`` Codes
+3. Create ``FUEL`` Codes
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Create the fuel codes and descriptions in the validation configuration file::
 
@@ -226,12 +307,12 @@ Create the fuel codes and descriptions in the validation configuration file::
         'WND': Wind
         'COA': Coal
         'ELC': Electricity
-      indetifiers:
-        '00': Raw Resource
+      identifiers:
+        '00': Primary Resource
         '01': Intermediate
         '02': End Use
 
-3. Create ``TECHNOLOGY`` Codes
+4. Create ``TECHNOLOGY`` Codes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Add the technology codes to the validation configuration file. Note that the
 powerplant types are the same codes as the fuels, so there is no need to
@@ -243,57 +324,48 @@ redefine these codes::
         'PWR': Generator
         'TRN': Transmission
 
-4. Create ``FUEL`` Schema
+5. Create ``FUEL`` Schema
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Use the defined codes to create a schema for the fuel codes::
 
     schema:
       FUEL:
       - name: fuel_name
-          items:
-          - name: fuels
+        items:
+        - name: type
           valid: fuels
           position: (1, 3)
-          - name: indetifiers
-          valid: indetifiers
+        - name: identifier
+          valid: identifiers
           position: (4, 5)
 
-5. Create ``TECHNOLOGY`` Schema
+6. Create ``TECHNOLOGY`` Schema
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use the defined codes to create a schema for the technology codes::
 
     schema:
       TECHNOLOGY:
       - name: technology_name
-          items:
-          - name: techs
+        items:
+        - name: tech
           valid: techs
           position: (1, 3)
-          - name: fuels
+        - name: fuel
           valid: fuels
           position: (4, 6)
 
-6. ``otoole`` validate
-~~~~~~~~~~~~~~~~~~~~~~
-Use otoole to validate the input data (can be any of a ``datafile``, ``csv``, or ``excel``)
-against the validation configuration file::
+7. Save changes
+~~~~~~~~~~~~~~~
 
-    $ otoole validate datafile data.txt config.yaml --validate_config validate.yaml
-
-.. WARNING::
-    Do not confuse the user configuation file (``config.yaml``) and the
-    validation configuation file (``validate.yaml``). Both configuartion files
-    are required for validation functionality.
-
-The final validation configuration file in this example will look like::
+The final validation configuration file for this example will look like::
 
     codes:
       fuels:
         'WND': Wind
         'COA': Coal
         'ELC': Electricity
-      indetifiers:
-        '00': Raw Resource
+      identifiers:
+        '00': Primary Resource
         '01': Intermediate
         '02': End Use
       techs:
@@ -304,92 +376,97 @@ The final validation configuration file in this example will look like::
     schema:
       FUEL:
       - name: fuel_name
-          items:
-          - name: fuels
+        items:
+        - name: type
           valid: fuels
           position: (1, 3)
-          - name: indetifiers
-          valid: indetifiers
+        - name: identifier
+          valid: identifiers
           position: (4, 5)
       TECHNOLOGY:
       - name: technology_name
-          items:
-          - name: techs
+        items:
+        - name: tech
           valid: techs
           position: (1, 3)
-          - name: fuels
+        - name: fuel
           valid: fuels
           position: (4, 6)
 
-Solver Setup
-------------
+8. ``otoole validate``
+~~~~~~~~~~~~~~~~~~~~~~
+Use otoole to validate the input data (can be any of a ``datafile``, ``csv``, or ``excel``)
+against the validation configuration file::
 
-Objective
-~~~~~~~~~
+    $ otoole validate datafile data.txt config.yaml --validate_config validate.yaml
 
-Install GLPK_ and CBC_ to use in the otoole examples.
+    ***Beginning validation***
 
-1. Install GLPK
-~~~~~~~~~~~~~~~~
+    Validating FUEL with fuel_name
 
-GLPK_ is a free and open-source linear program solver.
+    ^(WND|COA|ELC)(00|01|02)
+    4 valid names:
+    WND00, COA00, ELC01, ELC02
 
-To install it on **Linux**, run the command::
+    Validating TECHNOLOGY with technology_name
 
-    sudo apt-get update
-    sudo apt-get install glpk glpk-utils
+    ^(MIN|PWR|TRN)(WND|COA|ELC)
+    5 valid names:
+    MINWND, MINCOA, PWRWND, PWRCOA, TRNELC
 
-To install it on **Mac**, run the command::
 
-    brew install glpk
+    ***Checking graph structure***
 
-.. To install it on **Windows**, follow the install instruction on the GLPK_
-.. website, and/or follow the instructions_ from the OSeMOSYS community
+.. WARNING::
+    Do not confuse the user configuration file (``config.yaml``) and the
+    validation configuration file (``validate.yaml``). Both configuration files
+    are required for validation functionality.
 
-2. Test the GLPK install
-~~~~~~~~~~~~~~~~~~~~~~~~
-Once installed, you should be able to call the ``glpsol`` command::
+9. Use ``otoole validate`` to identify an issue
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In the datafile create a new technology that does not follow the specified schema.
+For example, add the value ``ELC03`` to the ``FUEL`` set::
 
-    $ glpsol
-    GLPSOL: GLPK LP/MIP Solver, v4.65
-    No input problem file specified; try glpsol --help
+    set FUEL :=
+        WND00
+        COA00
+        ELC01
+        ELC02
+        ELC03
 
-3. Install CBC
-~~~~~~~~~~~~~~
+Running ``otoole validate`` again will flag this improperly named value. Moreover it
+will also flag it as an isolated fuel. This means the fuel is unconnected from the model::
 
-CBC_ is a free and open-source mixed integer linear programming solver. Full
-install instructions can be found on the CBC_ website. However, the abbreviated
-instructions are shown below
+    $ otoole validate datafile data.txt config.yaml --validate_config validate.yaml
 
-To install it on **Linux**, run the command::
+    ***Beginning validation***
 
-    sudo apt-get install coinor-cbc coinor-libcbc-dev
+    Validating FUEL with fuel_name
 
-To install it on **Mac**, run the command::
+    ^(WND|COA|ELC)(00|01|02)
+    1 invalid names:
+    ELC03
 
-    brew install coin-or-tools/coinor/cbc
+    4 valid names:
+    WND00, COA00, ELC01, ELC02
 
-.. To install it on **Windows**, follow the install instruction on the CBC_
-.. website by downloading a binary
+    Validating TECHNOLOGY with technology_name
 
-4. Test the CBC install
-~~~~~~~~~~~~~~~~~~~~~~~
-Once installed, you should be able to directly call CBC::
+    ^(MIN|PWR|TRN)(WND|COA|ELC)
+    5 valid names:
+    MINWND, MINCOA, PWRWND, PWRCOA, TRNELC
 
-    $ cbc
-    Welcome to the CBC MILP Solver
-    Version: 2.10.3
-    Build Date: Mar 24 2020
 
-    CoinSolver takes input from arguments ( - switches to stdin)
-    Enter ? for list of commands or help
-    Coin:
+    ***Checking graph structure***
 
-You can exit the solver by typing ``quit``
+    1 'fuel' nodes are isolated:
+        ELC03
+
 
 .. _Simplicity: https://github.com/OSeMOSYS/simplicity
 .. _GLPK: https://www.gnu.org/software/glpk/
 .. _GLPK Wiki: https://en.wikibooks.org/wiki/GLPK/Using_GLPSOL
+.. _GLPK Website: https://winglpk.sourceforge.net/
 .. _CBC: https://github.com/coin-or/Cbc
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
-.. _instructions: http://www.osemosys.org/uploads/1/8/5/0/18504136/glpk_installation_guide_for_windows10_-_201702.pdf
+.. _Anaconda: https://www.anaconda.com/

@@ -68,8 +68,8 @@ Sets are defined as follows::
 .. NOTE::
    It's convention in OSeMOSYS to capitalize set names
 
-Parmaters Foramt
-~~~~~~~~~~~~~~~~
+Parameters Format
+~~~~~~~~~~~~~~~~~
 
 Parameters are defined as follows. When referencing set indices use the full
 name, **not** the ``short_name``::
@@ -112,7 +112,7 @@ repository for a complete example.
         dtype: str
         type: set
 
-2. Parmater definition of ``AccumulatedAnnualDemand``::
+2. Parameter definition of ``AccumulatedAnnualDemand``::
 
     AccumulatedAnnualDemand:
         short_name: AccAnnualDemand
