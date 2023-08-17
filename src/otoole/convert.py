@@ -9,30 +9,72 @@ Import the convert function from the otoole package::
 """
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 
 from otoole.input import Context, ReadStrategy, WriteStrategy
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel
-from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi
+from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi, ReadResults
 from otoole.utils import _read_file, read_deprecated_datapackage, validate_config
 from otoole.write_strategies import WriteCsv, WriteDatafile, WriteExcel
 
 logger = logging.getLogger(__name__)
 
 
+def read_results(
+    config: str, from_format: str, from_path: str, input_format: str, input_path: str
+) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
+    """Read OSeMOSYS results from CBC, GLPK or Gurobi results files
+
+    Arguments
+    ---------
+    config : str
+        Path to config file
+    from_format : str
+        Available options are 'datafile', 'csv', 'excel' and 'datapackage' [deprecated]
+    from_path : str
+        Path to source file (if datafile or excel) or folder (csv)
+    input_format: str
+        Format of input data. Available options are 'datafile', 'csv' and 'excel'
+    input_path: str
+        Path to input data    input_format: str
+        Format of input data. Available options are 'datafile', 'csv' and 'excel'
+    input_path: str
+        Path to input data
+
+    Returns
+    -------
+    Tuple[dict[str, pd.DataFrame], dict[str, float]]
+        Dictionary of parameter and set data and dictionary of default values
+    """
+    user_config = _get_user_config(config)
+    input_strategy = _get_read_strategy(user_config, input_format)
+    result_strategy = _get_read_result_strategy(user_config, from_format)
+
+    if input_strategy:
+        input_data, _ = input_strategy.read(input_path)
+    else:
+        input_data = {}
+
+    if result_strategy:
+        results, default_values = result_strategy.read(from_path, input_data=input_data)
+        return results, default_values
+    else:
+        msg = "Conversion from {} is not yet implemented".format(from_format)
+        raise NotImplementedError(msg)
+
+
 def convert_results(
-    config,
-    from_format,
-    to_format,
-    from_path,
-    to_path,
-    input_datapackage=None,
-    input_csvs=None,
-    input_datafile=None,
+    config: str,
+    from_format: str,
+    to_format: str,
+    from_path: str,
+    to_path: str,
+    input_format: str,
+    input_path: str,
     write_defaults=False,
-):
+) -> bool:
     """Post-process results from a CBC, CPLEX or Gurobi solution file into CSV format
 
     Arguments
@@ -47,12 +89,10 @@ def convert_results(
         Path to cbc, cplex or gurobi solution file
     to_path : str
         Path to destination folder
-    input_datapackage : str
-        Path to folder containing datapackage.json
-    input_csvs : str
-        Path to folder containing CSVs
-    input_datafile : str
-        Path to datafile
+    input_format: str
+        Format of input data. Available options are 'datafile', 'csv' and 'excel'
+    input_path: str
+        Path to input data
     write_defaults : str
         Write default values to CSVs
 
@@ -66,25 +106,11 @@ def convert_results(
         from_format, to_format
     )
 
-    read_strategy = None
-    write_strategy = None
-
-    if config:
-        _, ending = os.path.splitext(config)
-        with open(config, "r") as config_file:
-            user_config = _read_file(config_file, ending)
-        logger.info("Reading config from {}".format(config))
-        logger.info("Validating config from {}".format(config))
-        validate_config(user_config)
+    user_config = _get_user_config(config)
 
     # set read strategy
 
-    if from_format == "cbc":
-        read_strategy = ReadCbc(user_config=user_config)
-    elif from_format == "cplex":
-        read_strategy = ReadCplex(user_config=user_config)
-    elif from_format == "gurobi":
-        read_strategy = ReadGurobi(user_config=user_config)
+    read_strategy = _get_read_result_strategy(user_config, from_format)
 
     # set write strategy
 
@@ -94,29 +120,48 @@ def convert_results(
         write_strategy = WriteCsv(
             user_config=user_config, write_defaults=write_defaults
         )
-
-    if input_datapackage:
-        logger.warning(
-            "Reading from datapackage is deprecated, trying to read from CSVs"
-        )
-        input_csvs = read_deprecated_datapackage(input_datapackage)
-        logger.info("Successfully read folder of CSVs")
-        input_data, _ = ReadCsv(user_config=user_config).read(input_csvs)
-    elif input_datafile:
-        input_data, _ = ReadDatafile(user_config=user_config).read(input_datafile)
-    elif input_csvs:
-        input_data, _ = ReadCsv(user_config=user_config).read(input_csvs)
     else:
-        input_data = {}
+        raise NotImplementedError(msg)
+
+    # read in input file
+    input_data, _ = read(config, input_format, input_path)
 
     if read_strategy and write_strategy:
         context = Context(read_strategy, write_strategy)
         context.convert(from_path, to_path, input_data=input_data)
     else:
         raise NotImplementedError(msg)
-        return False
 
     return True
+
+
+def _get_read_result_strategy(user_config, from_format) -> Union[ReadResults, None]:
+    """Get ``ReadResults`` for gurobi, cbc and cplex formats
+
+    Arguments
+    ---------
+    config : dict
+        User configuration describing parameters and sets
+    from_format : str
+        Available options are 'cbc', 'gurobi', and 'cplex'
+
+    Returns
+    -------
+    ReadStrategy or None
+        A ReadStrategy object. Returns None if from_format is not recognised
+
+    """
+
+    if from_format == "cbc":
+        read_strategy: ReadResults = ReadCbc(user_config)
+    elif from_format == "gurobi":
+        read_strategy = ReadGurobi(user_config=user_config)
+    elif from_format == "cplex":
+        read_strategy = ReadCplex(user_config=user_config)
+    else:
+        return None
+
+    return read_strategy
 
 
 def _get_user_config(config) -> dict:
@@ -273,7 +318,9 @@ def convert(
     )
 
     if from_format == "datapackage":
-        logger.warning("Writing to datapackage is deprecated, writing to CSVs")
+        logger.warning(
+            "Reading from and writing to datapackage is deprecated, writing to CSVs"
+        )
         from_path = read_deprecated_datapackage(from_path)
         to_path = os.path.join(os.path.dirname(to_path), "data")
 
@@ -284,7 +331,7 @@ def convert(
 
 
 def read(
-    config, from_format, from_path, keep_whitespace=False
+    config: str, from_format: str, from_path: str, keep_whitespace: bool = False
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS data from datafile, csv or Excel formats
 
@@ -315,7 +362,13 @@ def read(
     return read_strategy.read(from_path)
 
 
-def write(config, to_format, to_path, inputs, default_values=None) -> bool:
+def write(
+    config: str,
+    to_format: str,
+    to_path: str,
+    inputs,
+    default_values: Optional[Dict[str, float]] = None,
+) -> bool:
     """Write OSeMOSYS data to datafile, csv or Excel formats
 
     Arguments
@@ -334,13 +387,14 @@ def write(config, to_format, to_path, inputs, default_values=None) -> bool:
     """
     user_config = _get_user_config(config)
     if default_values is None:
-        write_defaults = False
+        write_strategy = _get_write_strategy(
+            user_config, to_format, write_defaults=False
+        )
+        write_strategy.write(inputs, to_path, {})
     else:
-        write_defaults = True
-
-    write_strategy = _get_write_strategy(
-        user_config, to_format, write_defaults=write_defaults
-    )
-    write_strategy.write(inputs, to_path, default_values=default_values)
+        write_strategy = _get_write_strategy(
+            user_config, to_format, write_defaults=True
+        )
+        write_strategy.write(inputs, to_path, default_values)
 
     return True

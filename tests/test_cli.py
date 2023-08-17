@@ -27,9 +27,9 @@ class TestResults:
             to_format,
             from_path,
             to_path,
-            config,
-            "--input_csvs",
+            "csv",
             super_simple_csvs,
+            config,
         ]
         actual = run(commands, capture_output=True)
         assert actual.returncode == 0, print(actual.stdout)

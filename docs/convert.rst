@@ -31,6 +31,17 @@ Gurobi_ or CPLEX_ solution file::
 
 See :func:`otoole.convert.convert_results` for more details
 
+Reading solver results into a dict of Pandas DataFrames
+-------------------------------------------------------
+
+The ``read_results`` function reads a CBC_, CLP_,
+Gurobi_ or CPLEX_ solution file into memory::
+
+>>> from otoole import read_results
+>>> read_results('my_model.yaml', 'cbc', 'csv', 'my_model.sol', 'my_model_csvs', 'datafile', 'my_model.dat')
+
+See :func:`otoole.convert.read_results` for more details
+
 Read in data from different Formats
 -----------------------------------
 

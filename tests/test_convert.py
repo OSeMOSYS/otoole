@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import pandas as pd
 from pytest import raises
 
-from otoole import convert, convert_results, read, write
+from otoole import convert, convert_results, read, read_results, write
 
 
 class TestRead:
@@ -125,6 +125,35 @@ class TestConvert:
         assert actual[1] == "CO2\n"
 
 
+class TestReadResults:
+    """Test the read_results function"""
+
+    def test_read_results(self):
+        config = os.path.join("tests", "fixtures", "super_simple", "super_simple.yaml")
+
+        input_path = os.path.join("tests", "fixtures", "super_simple", "csv")
+        input_format = "csv"
+        from_format = "cbc"
+        from_path = os.path.join(
+            "tests", "fixtures", "super_simple", "super_simple_gnu.sol"
+        )
+
+        actual, _ = read_results(
+            config, from_format, from_path, input_format, input_path
+        )
+
+        expected_data = [["BB", "gas_import", 2016, 2.342422]]
+        expected_columns = ["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+        index = ["REGION", "TECHNOLOGY", "YEAR"]
+        expected_data_frame = pd.DataFrame(
+            expected_data, columns=expected_columns
+        ).set_index(index)
+
+        pd.testing.assert_frame_equal(
+            actual["AccumulatedNewCapacity"], expected_data_frame
+        )
+
+
 class TestConvertResults:
     """Test the convert_results function"""
 
@@ -141,7 +170,7 @@ class TestConvertResults:
         input_csvs = os.path.join("tests", "fixtures", "super_simple", "csv")
 
         result = convert_results(
-            config, from_format, to_format, from_path, to_path, input_csvs=input_csvs
+            config, from_format, to_format, from_path, to_path, "csv", input_csvs
         )
         assert result is True
 
@@ -172,7 +201,8 @@ class TestConvertResults:
             to_format,
             from_path,
             to_path,
-            input_datafile=input_datafile,
+            "datafile",
+            input_datafile,
         )
         assert result is True
 
@@ -201,5 +231,6 @@ class TestConvertResults:
                 to_format,
                 from_path,
                 to_path,
-                input_csvs="not_a_path",
+                "csv",
+                "not_a_path",
             )

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from otoole.convert import convert, convert_results, read, write
+from otoole.convert import convert, convert_results, read, read_results, write
 
 if sys.version_info[:2] >= (3, 8):
     # TODO: Import directly (no need for conditional) when `python_requires = >= 3.8`
@@ -22,5 +22,6 @@ convert = convert
 convert_results = convert_results
 read = read
 write = write
+read_results = read_results
 
-__all__ = ["convert" "convert_results", "read", "write"]
+__all__ = ["convert" "convert_results", "read", "write", "read_results"]

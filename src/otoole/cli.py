@@ -70,15 +70,15 @@ def validate_model(args):
 
 
 def _result_matrix(args):
+    """Covert results"""
     convert_results(
         args.config,
         args.from_format,
         args.to_format,
         args.from_path,
         args.to_path,
-        input_datapackage=args.input_datapackage,
-        input_csvs=args.input_csvs,
-        input_datafile=args.input_datafile,
+        args.input_format,
+        args.input_path,
         write_defaults=args.write_defaults,
     )
 
@@ -177,21 +177,13 @@ def get_parser():
         "from_path", help="Path to file or folder to convert from"
     )
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
+
     result_parser.add_argument(
-        "--input_datafile",
-        help="Input GNUMathProg datafile required for OSeMOSYS short or fast results",
-        default=None,
+        "input_format",
+        help="Input data format",
+        choices=sorted(["csv", "datafile", "excel"]),
     )
-    result_parser.add_argument(
-        "--input_csvs",
-        help="Input folder of CSVs required for OSeMOSYS short or fast results",
-        default=None,
-    )
-    result_parser.add_argument(
-        "--input_datapackage",
-        help="Deprecated. Use --input_csvs instead",
-        default=None,
-    )
+    result_parser.add_argument("input_path", help="Path to input_data")
     result_parser.add_argument("config", help="Path to config YAML file")
     result_parser.add_argument(
         "--write_defaults",

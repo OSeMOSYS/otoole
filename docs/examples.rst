@@ -54,7 +54,7 @@ Create a folder to hold the results::
 
 Use ``otoole``'s ``result`` package to generate the results file::
 
-    $ otoole results cbc csv simplicity.sol results config.yaml
+    $ otoole results cbc csv simplicity.sol results datafile simplicity.txt config.yaml
 
 Result Processing
 -----------------
@@ -104,7 +104,7 @@ Create a folder to hold the results::
 
 Use ``otoole``'s ``result`` package to generate the result CSVs::
 
-    $ otoole results cbc csv simplicity.sol results config.yaml
+    $ otoole results cbc csv simplicity.sol results datafile simplicity.txt config.yaml
 
 Template Setup
 --------------
