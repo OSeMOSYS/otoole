@@ -29,7 +29,6 @@ def test_get_csv_setup_data():
             "type": "result",
             "dtype": "float",
             "default": 0,
-            "calculated": True,
         },
     }
 

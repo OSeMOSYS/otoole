@@ -2,6 +2,19 @@
 Changelog
 =========
 
+Version 1.0.4
+=============
+- Fixed issue with pydantic v2.0.0
+- Dropped support for Python 3.8. Otoole now requires Python 3.9 or later
+
+Version 1.0.3
+=============
+- Improved error message for multiple names mismatches
+- Fix for excel pivoting bug (issue 171)
+- Fix data type casting issue for floats to ints (issue 167)
+- Deprecates calculated field for Result definitions in config file (issue 173)
+- Minor documentation updates
+
 Version 1.0.2
 =============
 - Fix of pandas version in setup.cfg

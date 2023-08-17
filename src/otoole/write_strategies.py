@@ -40,7 +40,9 @@ class WriteExcel(WriteStrategy):
 
         total_columns = len(names)
 
-        if total_columns > 3:
+        if "YEAR" not in names:
+            pivot = df.copy()
+        elif total_columns > 3:
             logger.debug("More than 3 columns for {}: {}".format(parameter_name, names))
             rows = names[0:-2]
             columns = names[-2]

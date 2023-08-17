@@ -8,6 +8,9 @@ This page explains the different data formatting options available in otoole. Fi
 the format of the user configuration file is explained. Following this, the different
 input data formats are explained.
 
+.. SEEALSO::
+   See the Simplicity_ repository for a full example of these formats
+
 User Configuration File
 -----------------------
 
@@ -43,8 +46,9 @@ given by **X**, while optional values are given by **(X)**.
 +-------------+------+------------+---------+
 | default     |      | X          | X       |
 +-------------+------+------------+---------+
-| calculated  |      |            | X       |
-+-------------+------+------------+---------+
+
+.. deprecated:: v1.0.3
+    The ``Calculated`` keyword is no longer needed for Result definitions
 
 .. WARNING::
    Names longer than 31 characters require a ``short_name`` field. This is due
@@ -64,8 +68,8 @@ Sets are defined as follows::
 .. NOTE::
    It's convention in OSeMOSYS to capitalize set names
 
-Parmaters Foramt
-~~~~~~~~~~~~~~~~
+Parameters Format
+~~~~~~~~~~~~~~~~~
 
 Parameters are defined as follows. When referencing set indices use the full
 name, **not** the ``short_name``::
@@ -92,7 +96,6 @@ name, **not** the ``short_name``::
         type: result
         dtype: "int" or "float"
         default: 0
-        calculated: "True" or "False"
 
 .. NOTE::
    It's convention in OSeMOSYS to use Pascal case for result names
@@ -109,7 +112,7 @@ repository for a complete example.
         dtype: str
         type: set
 
-2. Parmater definition of ``AccumulatedAnnualDemand``::
+2. Parameter definition of ``AccumulatedAnnualDemand``::
 
     AccumulatedAnnualDemand:
         short_name: AccAnnualDemand
@@ -125,7 +128,9 @@ repository for a complete example.
         type: result
         dtype: float
         default: 0
-        calculated: True
+
+.. TIP::
+   See the :ref:`examples` page to create a template configuration file
 
 Input Data
 ----------
@@ -138,9 +143,6 @@ Overview
 
 This section will describe how to format data for ``excel``, ``csv``, and ``datafile``
 formats.
-
-.. SEEALSO::
-   See the Simplicity_ repository for a full example of these formats
 
 Excel
 ~~~~~
