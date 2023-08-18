@@ -172,11 +172,11 @@ html_theme_options = {
     "path_to_docs": "docs",
     "use_repository_button": True,
     "use_edit_page_button": True,
-    "extra_navbar":
-        """
-        <p>Theme by the <a href="https://executablebooks.org/en/latest/">Executable Book Project</a></p>
-        <p>Logo by <a href="https://looka.com/">looka.com</a></p>
-        """,
+    # "extra_navbar":
+    #     """
+    #     <p>Theme by the <a href="https://executablebooks.org/en/latest/">Executable Book Project</a></p>
+    #     <p>Logo by <a href="https://looka.com/">looka.com</a></p>
+    #     """,
     "icon_links": [],
 }
 

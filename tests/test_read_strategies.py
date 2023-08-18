@@ -7,9 +7,9 @@ import pandas as pd
 from amply import Amply
 from pytest import mark, raises
 
-from otoole import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
 from otoole.exceptions import OtooleDeprecationError, OtooleError
 from otoole.preprocess.longify_data import check_datatypes
+from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
 from otoole.results.results import (
     ReadCbc,
     ReadCplex,

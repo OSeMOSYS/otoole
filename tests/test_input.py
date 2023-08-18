@@ -277,12 +277,13 @@ class TestExpandDefaults:
         parameter_test_data,
         ids=parameter_test_data_ids,
     )
-    def test_expand_parmaters_defaults(
+    def test_expand_parameters_defaults(
         self, user_config, simple_default_values, input_data, parameter, expected
     ):
         write_strategy = DummyWriteStrategy(
             user_config=user_config, default_values=simple_default_values
         )
+        write_strategy.input_data = input_data
         actual = write_strategy._expand_defaults(
             input_data, write_strategy.default_values
         )
@@ -294,21 +295,11 @@ class TestExpandDefaults:
         write_strategy = DummyWriteStrategy(
             user_config=user_config, default_values=simple_default_values
         )
+        write_strategy.input_data = simple_input_data
         actual = write_strategy._expand_defaults(
-            result_data[0], write_strategy.default_values, input_data=simple_input_data
+            result_data[0], write_strategy.default_values
         )
         assert_frame_equal(actual[result_data[1]], result_data[2])
-
-    def test_expand_defaults_exception(
-        self, user_config, simple_default_values, result_data
-    ):
-        write_strategy = DummyWriteStrategy(
-            user_config=user_config, default_values=simple_default_values
-        )
-        with raises(KeyError):
-            write_strategy._expand_defaults(
-                result_data[0], write_strategy.default_values
-            )
 
 
 class TestReadStrategy:
