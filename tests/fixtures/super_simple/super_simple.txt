@@ -1,0 +1,153 @@
+# Model file written by *otoole*
+param default 0 : AccumulatedAnnualDemand :=
+;
+param default -1 : AnnualEmissionLimit :=
+;
+param default 0 : AnnualExogenousEmission :=
+;
+param default 1 : AvailabilityFactor :=
+;
+param default 1 : CapacityFactor :=
+;
+param default 0 : CapacityOfOneTechnologyUnit :=
+;
+param default 1 : CapacityToActivityUnit :=
+;
+param default 0 : CapitalCost :=
+BB gas_plant 2016 1.03456
+;
+param default 0 : CapitalCostStorage :=
+;
+param default 0 : Conversionld :=
+;
+param default 0 : Conversionlh :=
+;
+param default 0 : Conversionls :=
+;
+set DAILYTIMEBRACKET :=
+;
+set DAYTYPE :=
+;
+param default 0.00137 : DaySplit :=
+;
+param default 7 : DaysInDayType :=
+;
+param default 1 : DepreciationMethod :=
+;
+param default 0.05 : DiscountRate :=
+;
+param default 0.05 : DiscountRateIdv :=
+;
+param default 0.05 : DiscountRateStorage :=
+;
+set EMISSION :=
+;
+param default 0 : EmissionActivityRatio :=
+;
+param default 0 : EmissionsPenalty :=
+;
+set FUEL :=
+natural_gas
+electricity
+;
+param default 0 : FixedCost :=
+BB gas_plant 2016 9.1101
+;
+param default 0 : InputActivityRatio :=
+BB gas_plant natural_gas 1 2016 1.1101
+;
+set MODE_OF_OPERATION :=
+1
+;
+param default 0 : MinStorageCharge :=
+;
+param default -1 : ModelPeriodEmissionLimit :=
+;
+param default 0 : ModelPeriodExogenousEmission :=
+;
+param default 1 : OperationalLife :=
+;
+param default 0 : OperationalLifeStorage :=
+;
+param default 0 : OutputActivityRatio :=
+BB gas_import natural_gas 1 2016 1
+BB gas_plant electricity 1 2016 1
+;
+set REGION :=
+BB
+;
+param default 0 : REMinProductionTarget :=
+;
+param default 0 : RETagFuel :=
+;
+param default 0 : RETagTechnology :=
+;
+param default 1 : ReserveMargin :=
+;
+param default 0 : ReserveMarginTagFuel :=
+;
+param default 0 : ReserveMarginTagTechnology :=
+;
+param default 0 : ResidualCapacity :=
+BB gas_plant 2016 3.1101
+;
+param default 999 : ResidualStorageCapacity :=
+;
+set SEASON :=
+;
+set STORAGE :=
+;
+param default 0 : SpecifiedAnnualDemand :=
+BB electricity 2016 2.1101
+;
+param default 0 : SpecifiedDemandProfile :=
+BB electricity x 2016 1
+;
+param default 0 : StorageLevelStart :=
+;
+param default 0 : StorageMaxChargeRate :=
+;
+param default 0 : StorageMaxDischargeRate :=
+;
+set TECHNOLOGY :=
+gas_import
+gas_plant
+;
+set TIMESLICE :=
+x
+;
+param default 0 : TechnologyFromStorage :=
+;
+param default 0 : TechnologyToStorage :=
+;
+param default -1 : TotalAnnualMaxCapacity :=
+;
+param default -1 : TotalAnnualMaxCapacityInvestment :=
+;
+param default 0 : TotalAnnualMinCapacity :=
+;
+param default 0 : TotalAnnualMinCapacityInvestment :=
+;
+param default 0 : TotalTechnologyAnnualActivityLowerLimit :=
+;
+param default -1 : TotalTechnologyAnnualActivityUpperLimit :=
+;
+param default 0 : TotalTechnologyModelPeriodActivityLowerLimit :=
+;
+param default -1 : TotalTechnologyModelPeriodActivityUpperLimit :=
+;
+param default 0 : TradeRoute :=
+;
+param default 0 : VariableCost :=
+BB gas_plant 1 2016 9.1202
+;
+set YEAR :=
+2016
+;
+param default 0 : YearSplit :=
+x 2016 1
+;
+set _REGION :=
+BB
+;
+end;

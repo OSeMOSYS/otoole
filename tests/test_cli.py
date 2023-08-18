@@ -7,6 +7,35 @@ from pytest import mark
 from otoole import __version__
 
 
+class TestResults:
+    """Test the conversion of results via the command line interface"""
+
+    def test_convert_results(self):
+        """Test converting CBC solution file to folder of CSVs"""
+        config = os.path.join("tests", "fixtures", "super_simple", "super_simple.yaml")
+        super_simple_csvs = os.path.join("tests", "fixtures", "super_simple", "csv")
+        from_format = "cbc"
+        to_format = "csv"
+        from_path = os.path.join(
+            "tests", "fixtures", "super_simple", "super_simple_gnu.sol"
+        )
+        to_path = mkdtemp()
+        commands = [
+            "otoole",
+            "results",
+            from_format,
+            to_format,
+            from_path,
+            to_path,
+            "csv",
+            super_simple_csvs,
+            config,
+        ]
+        actual = run(commands, capture_output=True)
+        assert actual.returncode == 0, print(actual.stdout)
+        assert os.path.exists(os.path.join(to_path, "NewCapacity.csv"))
+
+
 class TestConvert:
     def test_version(self):
         result = run(["otoole", "--version"], capture_output=True)

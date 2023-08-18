@@ -131,7 +131,7 @@ Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use ``otoole``'s ``result`` package to generate the results file::
 
-    $ otoole results cbc csv simplicity.sol results config.yaml
+    $ otoole results cbc csv simplicity.sol results datafile simplicity.txt config.yaml
 
 5. View Results
 ~~~~~~~~~~~~~~~
@@ -181,7 +181,7 @@ Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use ``otoole``'s ``result`` package to generate the result CSVs::
 
-    $ otoole results cbc csv simplicity.sol results config.yaml
+    $ otoole results cbc csv simplicity.sol results datafile simplicity.txt config.yaml
 
 Model Visualization
 -------------------
