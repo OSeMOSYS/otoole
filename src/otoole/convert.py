@@ -46,7 +46,7 @@ def read_results(
     input_path: str
         Path to input data
     glpk_model : str
-        Path to *.glp model file
+        Path to ``*.glp`` model file
 
     Returns
     -------
@@ -102,7 +102,7 @@ def convert_results(
     write_defaults : bool
         Write default values to CSVs
     glpk_model : str
-        Path to *.glp model file
+        Path to ``*.glp`` model file
 
     Returns
     -------
@@ -155,7 +155,7 @@ def _get_read_result_strategy(
     from_format : str
         Available options are 'cbc', 'gurobi', 'cplex', and 'glpk'
     glpk_model : str
-        Path to *.glp model file
+        Path to ``*.glp`` model file
 
     Returns
     -------

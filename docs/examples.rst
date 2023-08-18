@@ -189,21 +189,28 @@ Data Processing with GLPK
 Objective
 ~~~~~~~~~
 
-Build and solve a model using only GLPK and otoole
+Build and solve a model using GLPK and otoole
 
 1. Build the solve the model using GLPK
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use GLPK_ to build the model, save it as ``simplicity.lp``, solve the model,
+Use GLPK_ to build the model, save the problem as ``simplicity.glp``, solve the model,
 and save the solution as ``simplicity.sol```::
 
-    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wglp simplicity.lp --write simplicity.sol
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wglp simplicity.glp --write simplicity.sol
 
 2. Use otoole to process the solution in CSVs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-When processing solutions from GLPK, both the model file (``*.lp``) and solution
-file (``*.sol``) must be passed::
+Use ``otoole``'s ``results`` command to transform the soltuion file into a folder of CSVs
+under the directory ``results-glpk``. When processing solutions from GLPK, the model file (``*.glp``)
+must also be passed::
 
-    $ otoole results glpk csv simplicity.sol results config.yaml --glpk_model simplicity.lp --input_datafile simplicity.txt
+    $ otoole results glpk csv simplicity.sol results-glpk datafile simplicity.txt config.yaml --glpk_model simplicity.glp
+
+.. NOTE::
+   By default, MathProg OSeMOSYS models will write out folder of CSV results to a ``results/``
+   directory if solving via GLPK. However, for programatically accessing results, using ``otoole``
+   to control the read/write location, and for supporting future implementations of OSeMOSYS,
+   using ``otoole`` can be benifical.
 
 
 Model Visualization

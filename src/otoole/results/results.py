@@ -452,11 +452,11 @@ class ReadGlpk(ReadWideResults):
 
         ROW is the ordinal number of the row
         ST is one of:
-            b = inactive constraint;
-            l = inequality constraint active on its lower bound;
-            u = inequality constraint active on its upper bound;
-            f = active free (unounded) row;
-            s = active equality constraint.
+        - b = inactive constraint;
+        - l = inequality constraint active on its lower bound;
+        - u = inequality constraint active on its upper bound;
+        - f = active free (unounded) row;
+        - s = active equality constraint.
         PRIM specifies the row primal value (float)
         DUAL specifies the row dual value (float)
 
@@ -466,11 +466,11 @@ class ReadGlpk(ReadWideResults):
 
         COL specifies the column ordinal number
         ST contains one of the following lower-case letters that specifies the column status in the basic solution:
-            b = basic variable
-            l = non-basic variable having its lower bound active
-            u = non-basic variable having its upper bound active
-            f = non-basic free (unbounded) variable
-            s = non-basic fixed variable.
+        - b = basic variable
+        - l = non-basic variable having its lower bound active
+        - u = non-basic variable having its upper bound active
+        - f = non-basic free (unbounded) variable
+        - s = non-basic fixed variable.
         PRIM field contains column primal value (float)
         DUAL field contains the column dual value (float)
         """
