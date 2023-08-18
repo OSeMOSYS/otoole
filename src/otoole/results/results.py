@@ -333,17 +333,14 @@ class ReadCbc(ReadResultsCBC):
 class ReadGlpk(ReadResultsCBC):
     """Reads a GLPK Solution file into memory
 
-    The user must provide both the solution file (results.sol) and the glpk
-    model file (model.lp) to generate the complete solution.
-
-    glpsol --wglp model.lp -m osemosys.txt -d simplicity.txt --write results.sol
+    Arguments
+    ---------
+    user_config
+    glpk_model: Union[str, TextIO]
+        Path to GLPK model file. Can be created using the `--wglp` flag.
     """
 
     def __init__(self, user_config: Dict[str, Dict], glpk_model: Union[str, TextIO]):
-        """
-        glpk_model: Union[str, TextIO]
-            Path to GLPK model file. Can be created using the `--wglp` flag.
-        """
         super().__init__(user_config)
 
         if isinstance(glpk_model, str):

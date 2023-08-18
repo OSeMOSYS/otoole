@@ -80,6 +80,7 @@ def _result_matrix(args):
         args.input_format,
         args.input_path,
         write_defaults=args.write_defaults,
+        glpk_model=args.glpk_model,
     )
 
 
