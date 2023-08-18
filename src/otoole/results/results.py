@@ -75,7 +75,7 @@ class ReadResults(ReadStrategy):
         return results
 
 
-class ReadResultsCBC(ReadResults):
+class ReadWideResults(ReadResults):
     def get_results_from_file(self, filepath, input_data):
         cbc = self._convert_to_dataframe(filepath)
         available_results = self._convert_wide_to_long(cbc)
@@ -266,7 +266,7 @@ class ReadCplex(ReadResults):
         return df
 
 
-class ReadGurobi(ReadResultsCBC):
+class ReadGurobi(ReadWideResults):
     """Read a Gurobi solution file into memory"""
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
@@ -290,7 +290,7 @@ class ReadGurobi(ReadResultsCBC):
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
-class ReadCbc(ReadResultsCBC):
+class ReadCbc(ReadWideResults):
     """Read a CBC solution file into memory
 
     Arguments
@@ -328,3 +328,208 @@ class ReadCbc(ReadResultsCBC):
         df["Index"] = df["Index"].str.replace(")", "", regex=False)
         df = df.drop(columns=["indexvalue"])
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
+
+
+class ReadGlpk(ReadWideResults):
+    """Reads a GLPK Solution file into memory
+
+    Arguments
+    ---------
+    user_config
+    glpk_model: Union[str, TextIO]
+        Path to GLPK model file. Can be created using the `--wglp` flag.
+    """
+
+    def __init__(self, user_config: Dict[str, Dict], glpk_model: Union[str, TextIO]):
+        super().__init__(user_config)
+
+        if isinstance(glpk_model, str):
+            with open(glpk_model, "r") as model_file:
+                self.model = self.read_model(model_file)
+        elif isinstance(glpk_model, StringIO):
+            self.model = self.read_model(glpk_model)
+        else:
+            raise TypeError("Argument filepath type must be a string or an open file")
+
+    def _convert_to_dataframe(self, glpk_sol: Union[str, TextIO]) -> pd.DataFrame:
+        """Creates a wide formatted dataframe from GLPK solution
+
+        Arguments
+        ---------
+        glpk_sol: Union[str, TextIO]
+            Path to GLPK solution file. Can be created using the `--write` flag
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+
+        if isinstance(glpk_sol, str):
+            with open(glpk_sol, "r"):
+                _, sol = self.read_solution(glpk_sol)
+        elif isinstance(glpk_sol, StringIO):
+            _, sol = self.read_solution(glpk_sol)
+        else:
+            raise TypeError("Argument filepath type must be a string or an open file")
+
+        return self._merge_model_sol(sol)
+
+    def read_model(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        """Reads in a GLPK Model File
+
+        Arguments
+        ---------
+        file_path: Union[str, TextIO]
+            Path to GLPK model file. Can be created using the `--wglp` flag.
+
+        Returns
+        -------
+        pd.DataFrame
+
+           ID  NUM  NAME                      INDEX
+        0  i   1    CAa4_Constraint_Capacity  "SIMPLICITY,ID,BACKSTOP1,2015"
+        1  j   2    NewCapacity               "SIMPLICITY,WINDPOWER,2039"
+
+        Notes
+        -----
+
+        -> GENERAL LAYOUT OF SOLUTION FILE
+
+        n p NAME # p = problem instance
+        n z NAME # z = objective function
+        n i ROW NAME # i = constraint name, ROW is the row ordinal number
+        n j COL NAME # j = variable name, COL is the column ordinal number
+        """
+
+        df = pd.read_csv(
+            file_path,
+            header=None,
+            sep=r"\s+",
+            index_col=0,
+            names=["ID", "NUM", "value", 4, 5],
+        ).drop(columns=[4, 5])
+
+        df = df[(df["ID"].isin(["i", "j"])) & (df["value"] != "cost")]
+
+        df[["NAME", "INDEX"]] = df["value"].str.split("[", expand=True)
+        df["INDEX"] = df["INDEX"].map(lambda x: x.split("]")[0])
+        df = (
+            df[["ID", "NUM", "NAME", "INDEX"]]
+            .astype({"ID": str, "NUM": int, "NAME": str, "INDEX": str})
+            .reset_index(drop=True)
+        )
+
+        return df
+
+    def read_solution(
+        self, file_path: Union[str, TextIO]
+    ) -> Tuple[Dict[str, Union[str, float]], pd.DataFrame]:
+        """Reads a GLPK solution file
+
+        Arguments
+        ---------
+        file_path: Union[str, TextIO]
+            Path to GLPK solution file. Can be created using the `--write` flag
+
+        Returns
+        -------
+        Tuple[Dict[str,Union[str, float]], pd.DataFrame]
+            Dict[str,Union[str, float]] -> Problem name, status, and objective value
+            pd.DataFrame -> Variables and constraints
+
+        {"name":"osemosys", "status":"OPTIMAL", "objective":4497.31976}
+
+           ID  NUM  STATUS PRIM DUAL
+        0  i   1    b      5    0
+        1  j   2    l      0    2
+
+        Notes
+        -----
+
+        -> ROWS IN SOLUTION FILE
+
+        i ROW ST PRIM DUAL
+
+        ROW is the ordinal number of the row
+        ST is one of:
+        - b = inactive constraint;
+        - l = inequality constraint active on its lower bound;
+        - u = inequality constraint active on its upper bound;
+        - f = active free (unounded) row;
+        - s = active equality constraint.
+        PRIM specifies the row primal value (float)
+        DUAL specifies the row dual value (float)
+
+        -> COLUMNS IN SOLUTION FILE
+
+        j COL ST PRIM DUAL
+
+        COL specifies the column ordinal number
+        ST contains one of the following lower-case letters that specifies the column status in the basic solution:
+        - b = basic variable
+        - l = non-basic variable having its lower bound active
+        - u = non-basic variable having its upper bound active
+        - f = non-basic free (unbounded) variable
+        - s = non-basic fixed variable.
+        PRIM field contains column primal value (float)
+        DUAL field contains the column dual value (float)
+        """
+
+        df = pd.read_csv(file_path, header=None, sep=":")
+
+        # get status information
+        status = {}
+        df_status = df.loc[:8].set_index(0)
+        status["name"] = df_status.loc["c Problem", 1].strip()
+        status["status"] = df_status.loc["c Status", 1].strip()
+        status["objective"] = float(df_status.loc["c Objective", 1].split()[2])
+
+        # get solution infromation
+        data = df.iloc[8:-1].copy()
+        data[["ID", "NUM", "STATUS", "PRIM", "DUAL"]] = data[0].str.split(
+            " ", expand=True
+        )
+
+        data = (
+            data[["ID", "NUM", "STATUS", "PRIM", "DUAL"]]
+            .astype(
+                {"ID": str, "NUM": int, "STATUS": str, "PRIM": float, "DUAL": float}
+            )
+            .reset_index(drop=True)
+        )
+
+        return status, data
+
+    def _merge_model_sol(self, sol: pd.DataFrame) -> pd.DataFrame:
+        """Merges GLPK model and solution file into one dataframe
+
+        Arguments
+        ---------
+        sol: pd.DataFrame
+            see output from ReadGlpk.read_solution(...)
+
+        Returns
+        -------
+        pd.DataFrame
+
+        >>> pd.DataFrame(data=[
+                ['TotalDiscountedCost', "SIMPLICITY,2015", 187.01576],
+                ['TotalDiscountedCost', "SIMPLICITY,2016", 183.30788]],
+                columns=['Variable', 'Index', 'Value'])
+        """
+
+        model = self.model.copy()
+        model.index = model["ID"].str.cat(model["NUM"].astype(str))
+        model = model.drop(columns=["ID", "NUM"])
+
+        sol.index = sol["ID"].str.cat(sol["NUM"].astype(str))
+        sol = sol.drop(columns=["ID", "NUM", "STATUS", "DUAL"])
+
+        df = model.join(sol)
+        df = (
+            df[df.index.str.startswith("j")]
+            .reset_index(drop=True)
+            .rename(columns={"NAME": "Variable", "INDEX": "Index", "PRIM": "Value"})
+        )
+
+        return df

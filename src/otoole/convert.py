@@ -13,9 +13,10 @@ from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 
+from otoole.exceptions import OtooleError
 from otoole.input import Context, ReadStrategy, WriteStrategy
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel
-from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi, ReadResults
+from otoole.results.results import ReadCbc, ReadCplex, ReadGlpk, ReadGurobi, ReadResults
 from otoole.utils import _read_file, read_deprecated_datapackage, validate_config
 from otoole.write_strategies import WriteCsv, WriteDatafile, WriteExcel
 
@@ -23,7 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 def read_results(
-    config: str, from_format: str, from_path: str, input_format: str, input_path: str
+    config: str,
+    from_format: str,
+    from_path: str,
+    input_format: str,
+    input_path: str,
+    glpk_model: str = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS results from CBC, GLPK or Gurobi results files
 
@@ -32,16 +38,15 @@ def read_results(
     config : str
         Path to config file
     from_format : str
-        Available options are 'datafile', 'csv', 'excel' and 'datapackage' [deprecated]
+        Available options are 'cbc', 'gurobi', 'cplex', and 'glpk'
     from_path : str
         Path to source file (if datafile or excel) or folder (csv)
     input_format: str
         Format of input data. Available options are 'datafile', 'csv' and 'excel'
     input_path: str
-        Path to input data    input_format: str
-        Format of input data. Available options are 'datafile', 'csv' and 'excel'
-    input_path: str
         Path to input data
+    glpk_model : str
+        Path to ``*.glp`` model file
 
     Returns
     -------
@@ -50,7 +55,7 @@ def read_results(
     """
     user_config = _get_user_config(config)
     input_strategy = _get_read_strategy(user_config, input_format)
-    result_strategy = _get_read_result_strategy(user_config, from_format)
+    result_strategy = _get_read_result_strategy(user_config, from_format, glpk_model)
 
     if input_strategy:
         input_data, _ = input_strategy.read(input_path)
@@ -73,9 +78,10 @@ def convert_results(
     to_path: str,
     input_format: str,
     input_path: str,
-    write_defaults=False,
+    write_defaults: bool = False,
+    glpk_model: str = None,
 ) -> bool:
-    """Post-process results from a CBC, CPLEX or Gurobi solution file into CSV format
+    """Post-process results from a CBC, CPLEX, Gurobi, or GLPK solution file into CSV format
 
     Arguments
     ---------
@@ -93,8 +99,10 @@ def convert_results(
         Format of input data. Available options are 'datafile', 'csv' and 'excel'
     input_path: str
         Path to input data
-    write_defaults : str
+    write_defaults : bool
         Write default values to CSVs
+    glpk_model : str
+        Path to ``*.glp`` model file
 
     Returns
     -------
@@ -110,7 +118,7 @@ def convert_results(
 
     # set read strategy
 
-    read_strategy = _get_read_result_strategy(user_config, from_format)
+    read_strategy = _get_read_result_strategy(user_config, from_format, glpk_model)
 
     # set write strategy
 
@@ -135,15 +143,19 @@ def convert_results(
     return True
 
 
-def _get_read_result_strategy(user_config, from_format) -> Union[ReadResults, None]:
-    """Get ``ReadResults`` for gurobi, cbc and cplex formats
+def _get_read_result_strategy(
+    user_config, from_format, glpk_model=None
+) -> Union[ReadResults, None]:
+    """Get ``ReadResults`` for gurobi, cbc, cplex, and glpk formats
 
     Arguments
     ---------
     config : dict
         User configuration describing parameters and sets
     from_format : str
-        Available options are 'cbc', 'gurobi', and 'cplex'
+        Available options are 'cbc', 'gurobi', 'cplex', and 'glpk'
+    glpk_model : str
+        Path to ``*.glp`` model file
 
     Returns
     -------
@@ -158,6 +170,10 @@ def _get_read_result_strategy(user_config, from_format) -> Union[ReadResults, No
         read_strategy = ReadGurobi(user_config=user_config)
     elif from_format == "cplex":
         read_strategy = ReadCplex(user_config=user_config)
+    elif from_format == "glpk":
+        if not glpk_model:
+            raise OtooleError(resource="Read GLPK", message="Provide glpk model file")
+        read_strategy = ReadGlpk(user_config=user_config, glpk_model=glpk_model)
     else:
         return None
 

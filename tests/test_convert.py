@@ -8,6 +8,7 @@ import pandas as pd
 from pytest import raises
 
 from otoole import convert, convert_results, read, read_results, write
+from otoole.exceptions import OtooleError
 
 
 class TestRead:
@@ -234,3 +235,16 @@ class TestConvertResults:
                 "csv",
                 "not_a_path",
             )
+
+
+class TestGetReadResultsStrategy:
+    def test_read_results_glpk_raises(self):
+        """Checks for .glp model file"""
+        config = os.path.join("tests", "fixtures", "super_simple", "super_simple.yaml")
+        input_path = ""
+        input_format = "csv"
+        from_format = "glpk"
+        from_path = ""
+
+        with raises(OtooleError):
+            read_results(config, from_format, from_path, input_format, input_path)

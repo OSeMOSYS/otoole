@@ -80,6 +80,7 @@ def _result_matrix(args):
         args.input_format,
         args.input_path,
         write_defaults=args.write_defaults,
+        glpk_model=args.glpk_model,
     )
 
 
@@ -166,7 +167,7 @@ def get_parser():
     result_parser.add_argument(
         "from_format",
         help="Result data format to convert from",
-        choices=sorted(["cbc", "cplex", "gurobi"]),
+        choices=sorted(["cbc", "cplex", "gurobi", "glpk"]),
     )
     result_parser.add_argument(
         "to_format",
@@ -185,6 +186,11 @@ def get_parser():
     )
     result_parser.add_argument("input_path", help="Path to input_data")
     result_parser.add_argument("config", help="Path to config YAML file")
+    result_parser.add_argument(
+        "--glpk_model",
+        help="GLPK model file required for processing GLPK results",
+        default=None,
+    )
     result_parser.add_argument(
         "--write_defaults",
         help="Writes default values",
