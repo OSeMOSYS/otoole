@@ -75,7 +75,7 @@ class ReadResults(ReadStrategy):
         return results
 
 
-class ReadResultsCBC(ReadResults):
+class ReadWideResults(ReadResults):
     def get_results_from_file(self, filepath, input_data):
         cbc = self._convert_to_dataframe(filepath)
         available_results = self._convert_wide_to_long(cbc)
@@ -266,7 +266,7 @@ class ReadCplex(ReadResults):
         return df
 
 
-class ReadGurobi(ReadResultsCBC):
+class ReadGurobi(ReadWideResults):
     """Read a Gurobi solution file into memory"""
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
@@ -290,7 +290,7 @@ class ReadGurobi(ReadResultsCBC):
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
-class ReadCbc(ReadResultsCBC):
+class ReadCbc(ReadWideResults):
     """Read a CBC solution file into memory
 
     Arguments
@@ -330,7 +330,7 @@ class ReadCbc(ReadResultsCBC):
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
-class ReadGlpk(ReadResultsCBC):
+class ReadGlpk(ReadWideResults):
     """Reads a GLPK Solution file into memory
 
     Arguments
