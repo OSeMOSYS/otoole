@@ -301,17 +301,6 @@ class TestExpandDefaults:
         )
         assert_frame_equal(actual[result_data[1]], result_data[2])
 
-    def test_expand_defaults_exception(
-        self, user_config, simple_default_values, result_data
-    ):
-        write_strategy = DummyWriteStrategy(
-            user_config=user_config, default_values=simple_default_values
-        )
-        with raises(KeyError):
-            write_strategy._expand_defaults(
-                result_data[0], write_strategy.default_values
-            )
-
 
 class TestReadStrategy:
 

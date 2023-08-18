@@ -293,10 +293,6 @@ class WriteStrategy(Strategy):
         Dict[str, pd.DataFrame]
             Input data with expanded default values replacing missing entries
 
-        Raises
-        ------
-        KeyError
-            If set definitions are not in input_data and input_data is not supplied
         """
 
         sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
@@ -319,11 +315,7 @@ class WriteStrategy(Strategy):
             # save set information for each parameter
             index_data = {}
             for index in data.index.names:
-                try:
-                    index_data[index] = self.input_data[index]["VALUE"].to_list()
-                except KeyError as ex:
-                    logger.info("Can not write default values. Supply input data")
-                    raise KeyError(ex)
+                index_data[index] = self.input_data[index]["VALUE"].to_list()
 
             # set index
             if len(index_data) > 1:

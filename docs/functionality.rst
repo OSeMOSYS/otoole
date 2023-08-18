@@ -114,13 +114,14 @@ Gurobi_ or CPLEX_ solution file together with the input data::
 
 .. versionadded:: v1.1.0
     The ``input_data_format`` and ``input_path`` positional arguments are now required
+    supporting any supported format of input data for results processing.
 
 .. deprecated:: v1.0.0
     The ``--input_datapackage`` flag is no longer supported
 
 .. deprecated:: v1.1.0
-    The ``--input_datapackage``, ``--input_csvs`` and ``--input_datafile`` flags
-    have been replaced by new positional arguments ``input data format`` and ``input_path``
+    The ``--input_datapackage`` and ``--input_datafile`` flags
+    have been replaced by new positional arguments ``input_data_format`` and ``input_path``
 
 .. WARNING::
     If using CPLEX_, you will need to transform and sort the solution file before
