@@ -519,27 +519,17 @@ class ReadGlpk(ReadWideResults):
         """
 
         model = self.model.copy()
+        model.index = model["ID"].str.cat(model["NUM"].astype(str))
+        model = model.drop(columns=["ID", "NUM"])
 
-        # create lookup ids using the id and num columns to coordinate merge
-        model["lookup"] = model["ID"].str.cat(model["NUM"].astype(str))
-        model = model.set_index("lookup")
-        model_lookup = model.to_dict(orient="index")
+        sol.index = sol["ID"].str.cat(sol["NUM"].astype(str))
+        sol = sol.drop(columns=["ID", "NUM", "STATUS", "DUAL"])
 
-        sol = sol.loc[sol["ID"] == "j"]  # remove constraints and leave variables
-        vars = sol.copy()  # setting with copy warning
-        vars["lookup"] = vars["ID"].str.cat(vars["NUM"].astype(str))
-        vars = vars.set_index("lookup")
-        vars_lookup = vars.to_dict(orient="index")
+        df = model.join(sol)
+        df = (
+            df[df.index.str.startswith("j")]
+            .reset_index(drop=True)
+            .rename(columns={"NAME": "Variable", "INDEX": "Index", "PRIM": "Value"})
+        )
 
-        # assemble dataframe
-        data = []
-        for lookup_id, lookup_values in vars_lookup.items():
-            data.append(
-                [
-                    model_lookup[lookup_id]["NAME"],
-                    model_lookup[lookup_id]["INDEX"],
-                    lookup_values["PRIM"],
-                ]
-            )
-
-        return pd.DataFrame(data, columns=["Variable", "Index", "Value"])
+        return df
