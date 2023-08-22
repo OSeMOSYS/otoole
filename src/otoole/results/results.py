@@ -6,8 +6,6 @@ from typing import Any, Dict, List, Set, TextIO, Tuple, Union
 import pandas as pd
 
 from otoole.input import ReadStrategy
-
-# from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.result_package import ResultsPackage
 
 LOGGER = logging.getLogger(__name__)
@@ -22,7 +20,7 @@ class ReadResults(ReadStrategy):
         Arguments
         ---------
         filepath : str, TextIO
-            A path name or file buffer pointing to the CBC solution file
+            A path name or file buffer pointing to the solution file
         input_data : dict, default=None
             dict of dataframes
 
@@ -89,13 +87,13 @@ class ReadWideResults(ReadResults):
     def _convert_wide_to_long(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         """Convert from wide to long format
 
-        Converts a pandas DataFrame containing all CBC results to reformatted
+        Converts a pandas DataFrame containing all wide format results to reformatted
         dictionary of pandas DataFrames in long format ready to write out
 
         Arguments
         ---------
         data : pandas.DataFrame
-            CBC results stored in a dataframe
+            results stored in a dataframe
 
         Example
         -------

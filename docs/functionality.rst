@@ -89,25 +89,26 @@ so as to speed up the model matrix generation and solution times.
 ``otoole results``
 ~~~~~~~~~~~~~~~~~~
 
-The ``results`` command creates a folder of CSV result files from a CBC_, CLP_,
+The ``results`` command creates a folder of CSV result files from a GLPK_, CBC_, CLP_,
 Gurobi_ or CPLEX_ solution file together with the input data::
 
     $ otoole results --help
-    usage: otoole results [-h] [--write_defaults]
+    usage: otoole results [-h] [--glpk_model GLPK_MODEL] [--write_defaults]
                         {cbc,cplex,gurobi} {csv} from_path to_path {csv,datafile,excel} input_path config
 
     positional arguments:
-    {cbc,cplex,glpk,gurobi}    Result data format to convert from
-    {csv}                 Result data format to convert to
-    from_path             Path to file or folder to convert from
-    to_path               Path to file or folder to convert to
-    {csv,datafile,excel}  Input data format
-    input_path            Path to input_data
-    config                Path to config YAML file
+    {cbc,cplex,glpk,gurobi}  Result data format to convert from
+    {csv}                    Result data format to convert to
+    from_path                Path to file or folder to convert from
+    to_path                  Path to file or folder to convert to
+    {csv,datafile,excel}     Input data format
+    input_path               Path to input_data
+    config                   Path to config YAML file
 
     optional arguments:
-    -h, --help            show this help message and exit
-    --write_defaults      Writes default values
+    -h, --help                show this help message and exit
+    --glpk_model GLPK_MODEL   GLPK model file required for processing GLPK results
+    --write_defaults          Writes default values
 
 .. versionadded:: v1.0.0
     The ``config`` positional argument is now required
