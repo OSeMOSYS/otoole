@@ -188,7 +188,8 @@ class ReadCplex(ReadWideResults):
 
         Arguments
         ---------
-        file_path : str
+        user_config : Dict[str, Dict]
+        file_path : Union[str, TextIO]
         """
         df = pd.read_xml(file_path, xpath=".//variable", parser="etree")
         df[["Variable", "Index"]] = df["name"].str.split("(", expand=True)
@@ -206,7 +207,8 @@ class ReadGurobi(ReadWideResults):
 
         Arguments
         ---------
-        file_path : str
+        user_config : Dict[str, Dict]
+        file_path : Union[str, TextIO]
         """
         df = pd.read_csv(
             file_path,
@@ -227,8 +229,8 @@ class ReadCbc(ReadWideResults):
 
     Arguments
     ---------
-    user_config
-    results_config
+    user_config : Dict[str, Dict]
+    results_config : Dict[str, Dict]
     """
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
@@ -267,7 +269,7 @@ class ReadGlpk(ReadWideResults):
 
     Arguments
     ---------
-    user_config
+    user_config : Dict[str, Dict]
     glpk_model: Union[str, TextIO]
         Path to GLPK model file. Can be created using the `--wglp` flag.
     """
