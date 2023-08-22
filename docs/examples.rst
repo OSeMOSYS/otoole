@@ -6,7 +6,7 @@ Examples
 
 This page will present examples to show the full functionality of ``otoole``. It will
 walk through the ``convert``, ``results``, ``setup``, ``viz`` and ``validate``
-functionality in seperate simple use cases.
+functionality in separate simple use cases.
 
 .. NOTE::
     To follow these examples, clone the Simplicity_ repository and run all commands
@@ -34,12 +34,12 @@ abbreviated instructions are shown below
 
 To install GLPK on **Linux**, run the command::
 
-    sudo apt-get update
-    sudo apt-get install glpk glpk-utils
+    $ sudo apt-get update
+    $ sudo apt-get install glpk glpk-utils
 
 To install GLPK on **Mac**, run the command::
 
-    brew install glpk
+    $ brew install glpk
 
 To install GLPK on **Windows**, follow the instructions on the
 `GLPK Website`_. Be sure to add GLPK to
@@ -48,7 +48,7 @@ your environment variables after installation
 Alternatively, if you use Anaconda_ to manage
 your Python packages, you can install GLPK via the command::
 
-    conda install -c conda-forge glpk
+    $ conda install -c conda-forge glpk
 
 2. Test the GLPK install
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,6 +57,9 @@ Once installed, you should be able to call the ``glpsol`` command::
     $ glpsol
     GLPSOL: GLPK LP/MIP Solver, v4.65
     No input problem file specified; try glpsol --help
+
+.. TIP::
+    See the `GLPK Wiki`_ for more information on the ``glpsol`` command
 
 3. Install CBC
 ~~~~~~~~~~~~~~
@@ -67,11 +70,11 @@ instructions are shown below
 
 To install CBC on **Linux**, run the command::
 
-    sudo apt-get install coinor-cbc coinor-libcbc-dev
+    $ sudo apt-get install coinor-cbc coinor-libcbc-dev
 
 To install CBC on **Mac**, run the command::
 
-    brew install coin-or-tools/coinor/cbc
+    $ brew install coin-or-tools/coinor/cbc
 
 To install CBC on **Windows**, follow the install instruction on the CBC_
 website.
@@ -79,7 +82,7 @@ website.
 Alternatively, if you use Anaconda_ to manage
 your Python packages, you can install CBC via the command::
 
-    conda install -c conda-forge coincbc
+    $ conda install -c conda-forge coincbc
 
 4. Test the CBC install
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,122 +99,103 @@ Once installed, you should be able to directly call CBC::
 
 You can exit the solver by typing ``quit``
 
-Data Conversion with CSVs
--------------------------
+Input Data Conversion
+---------------------
 
 Objective
 ~~~~~~~~~
 
-Use a folder of CSV data to build and solve an OSeMOSYS model with CBC_. Generate
-the full suite of OSeMOSYS results.
+Convert input data between CSV, Excel, and GNU MathProg data formats.
 
-1. ``otoole`` Convert
-~~~~~~~~~~~~~~~~~~~~~
-We first want to convert the folder of Simplicity_ CSVs into
-an OSeMOSYS datafile called ``simplicity.txt``::
+1. Clone ``Simplicity``
+~~~~~~~~~~~~~~~~~~~~~~~
+If not already done so, clone the Simplicity_ repository::
+
+    $ git clone https://github.com/OSeMOSYS/simplicity.git
+    $ cd simplicity
+
+.. NOTE::
+    Further information on the ``config.yaml`` file is in the :ref:`template-setup` section
+
+2. Convert CSV data into MathProg data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Convert the folder of Simplicity_ CSVs (``data/``) into an OSeMOSYS datafile called ``simplicity.txt``::
 
     $ otoole convert csv datafile data simplicity.txt config.yaml
 
-2. Build the Model
-~~~~~~~~~~~~~~~~~~~
-Use GLPK_ to build the model and save it as ``simplicity.lp``::
+3. Convert MathProg data into Excel Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Convert the new Simplicity_ datafile (``simplicity.txt``) into Excel data called ``simplicity.xlsx``::
 
-    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
+    $ otoole convert datafile excel simplicity.txt simplicity.xlsx config.yaml
 
 .. TIP::
-    See the `GLPK Wiki`_ for more information on the ``glpsol`` command
+    Excel workbooks are an easy way for humans to interface with OSeMOSYS data!
 
-3. Solve the Model
-~~~~~~~~~~~~~~~~~~
-Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
-
-    $ cbc simplicity.lp solve -solu simplicity.sol
-
-4. Generate the full set of results
+4. Convert Excel Data into CSV data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use ``otoole``'s ``result`` package to generate the results file::
+Convert the new Simplicity_ excel data (``simplicity.xlsx``) into a folder of CSV data
+called ``simplicity/``. Note that this data will be the exact same as the original CSV data folder (``data/``)::
 
-    $ otoole results cbc csv simplicity.sol results datafile simplicity.txt config.yaml
+    $ otoole convert excel csv simplicity.xlsx simplicity config.yaml
 
-5. View Results
-~~~~~~~~~~~~~~~
-Results are now viewable in the files ``results/*.csv``
-
-.. TIP::
-    Before moving onto the next section, remove all the generated files::
-
-        $ rm simplicity.lp simplicity.sol simplicity.txt results/*
-
-Data Conversion with Excel
---------------------------
+Process Solutions from Different Solvers
+----------------------------------------
 
 Objective
 ~~~~~~~~~
 
-Use an excel worksheet to build and solve an OSeMOSYS model with CBC.
+Process solutions from GLPK_, CBC_, Gurobi_, and CPLEX_. This example assumes
+you have an existing GNU MathProg datafile called ``simplicity.txt`` (from the
+previous example).
 
-1. Create the Excel Workbook
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use the example CSV data to create an Excel Workbook using ``otoole convert``::
-
-    $ otoole convert csv excel data simplicity.xlsx config.yaml
-
-Excel workbooks are an easy way for humans to interface with OSeMOSYS data!
-
-2. Create the MathProg datafile
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Next, we want to convert the excel workbook (``simplicity.xlsx``) into
-an OSeMOSYS datafile (``simplicity.txt``)::
-
-    $ otoole convert excel datafile simplicity.xlsx simplicity.txt config.yaml
-
-3. Build the Model
-~~~~~~~~~~~~~~~~~~
-Use GLPK_ to build the model and save it as ``simplicity.lp``::
-
-    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
-
-4. Solve the Model
-~~~~~~~~~~~~~~~~~~
-Use CBC_ to solve the model and save the solution file as ``simplicity.sol``::
-
-    $ cbc simplicity.lp solve -solu simplicity.sol
-
-5. Generate the selected results
+1. Process a solution from GLPK
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use ``otoole``'s ``result`` package to generate the result CSVs::
-
-    $ otoole results cbc csv simplicity.sol results datafile simplicity.txt config.yaml
-
-Data Processing with GLPK
--------------------------
-
-Objective
-~~~~~~~~~
-
-Build and solve a model using GLPK and otoole
-
-1. Build the solve the model using GLPK
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use GLPK_ to build the model, save the problem as ``simplicity.glp``, solve the model,
-and save the solution as ``simplicity.sol```::
+Use GLPK_ to build the model, save the problem as ``simplicity.glp``, solve the model, and
+save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results-glpk/``.
+When processing solutions from GLPK, the model file (``*.glp``) must also be passed::
 
     $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wglp simplicity.glp --write simplicity.sol
-
-2. Use otoole to process the solution in CSVs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use ``otoole``'s ``results`` command to transform the soltuion file into a folder of CSVs
-under the directory ``results-glpk``. When processing solutions from GLPK, the model file (``*.glp``)
-must also be passed::
 
     $ otoole results glpk csv simplicity.sol results-glpk datafile simplicity.txt config.yaml --glpk_model simplicity.glp
 
 .. NOTE::
    By default, MathProg OSeMOSYS models will write out folder of CSV results to a ``results/``
-   directory if solving via GLPK. However, for programatically accessing results, using ``otoole``
-   to control the read/write location, and for supporting future implementations of OSeMOSYS,
-   using ``otoole`` can be benifical.
+   directory if solving via GLPK. However, using ``otoole`` allows the user to programmatically access results
+   and control read/write locations
 
+2. Process a solution from CBC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use CBC_ to solve the model and
+save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/`` from the solution file::
+
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
+
+    $ cbc simplicity.lp solve -solu simplicity.sol
+
+    $ otoole results cbc csv simplicity.sol results csv data config.yaml
+
+3. Process a solution from Gurobi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use Gurobi_ to solve the model and
+save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/`` from the solution file::
+
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
+
+    $ gurobi_cl ResultFile=simplicity.sol simplicity.lp
+
+    $ otoole results gurobi csv simplicity.sol results csv data config.yaml
+
+4. Process a solution from CPLEX
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use CPLEX_ to solve the model and
+save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/`` from the solution file::
+
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
+
+    $ cplex -c "read simplicity.lp" "optimize" "write simplicity.sol"
+
+    $ otoole results cplex csv simplicity.sol results csv data config.yaml
 
 Model Visualization
 -------------------
@@ -237,6 +221,8 @@ Open the newly created file, ``res.png`` and the following image should be
 displayed
 
 .. image:: _static/simplicity_res.png
+
+.. _template-setup:
 
 Template Setup
 --------------
@@ -284,13 +270,12 @@ horizon. For example, if the model horizon is from 2020 to 2050, the
 
 .. NOTE::
    While this step in not technically required, by filling out the years in
-   CSV format, ``otoole`` will pivot all the Excel sheets on the years
-   during the conversion process. This will save significant formatting time!
+   CSV format ``otoole`` will pivot all the Excel sheets on these years.
+   This will save significant formatting time!
 
 4. Convert the CSV Template Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To convert the template CSV data into Excel formatted data, run the following
-``convert`` command::
+Convert the template CSV data into Excel formatted data::
 
     $ otoole convert csv excel template_data template.xlsx template_config.yaml
 
@@ -500,3 +485,4 @@ will also flag it as an isolated fuel. This means the fuel is unconnected from t
 .. _CBC: https://github.com/coin-or/Cbc
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
 .. _Anaconda: https://www.anaconda.com/
+.. _Gurobi: https://www.gurobi.com/
