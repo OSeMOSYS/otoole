@@ -8,8 +8,7 @@ from amply import Amply
 from pytest import mark, raises
 
 from otoole.exceptions import OtooleDeprecationError, OtooleError
-
-# from otoole.preprocess.longify_data import check_datatypes
+from otoole.preprocess.longify_data import check_datatypes
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
 from otoole.results.results import (
     ReadCbc,
@@ -1164,3 +1163,43 @@ class TestReadTabular:
         reader = ReadCsv(user_config=user_config, keep_whitespace=keep_whitespace)
         actual = reader._whitespace_converter(indices)
         assert actual == expected
+
+
+class TestLongifyData:
+    """Tests for the preprocess.longify_data module"""
+
+    # example availability factor data
+    data_valid = pd.DataFrame(
+        [
+            ["SIMPLICITY", "ETH", 2014, 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+            ["SIMPLICITY", "ETH", 2015, 1.03],
+            ["SIMPLICITY", "RAWSUG", 2015, 0.51],
+            ["SIMPLICITY", "ETH", 2016, 1.061],
+            ["SIMPLICITY", "RAWSUG", 2016, 0.519],
+        ],
+        columns=["REGION", "FUEL", "YEAR", "VALUE"],
+    )
+
+    data_invalid = pd.DataFrame(
+        [
+            ["SIMPLICITY", "ETH", "invalid", 1.0],
+            ["SIMPLICITY", "RAWSUG", 2014, 0.5],
+        ],
+        columns=["REGION", "FUEL", "YEAR", "VALUE"],
+    )
+
+    def test_check_datatypes_valid(self, user_config):
+        df = self.data_valid.astype(
+            {"REGION": str, "FUEL": str, "YEAR": int, "VALUE": float}
+        )
+        actual = check_datatypes(df, user_config, "AvailabilityFactor")
+        expected = df.copy()
+
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_check_datatypes_invalid(self, user_config):
+        df = self.data_invalid
+
+        with raises(ValueError):
+            check_datatypes(df, user_config, "AvailabilityFactor")
