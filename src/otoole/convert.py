@@ -31,7 +31,7 @@ def read_results(
     input_path: str,
     glpk_model: str = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
-    """Read OSeMOSYS results from CBC, GLPK or Gurobi results files
+    """Read OSeMOSYS results from CBC, GLPK, Gurobi, or CPLEX results files
 
     Arguments
     ---------

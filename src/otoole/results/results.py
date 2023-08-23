@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Set, TextIO, Tuple, Union
 import pandas as pd
 
 from otoole.input import ReadStrategy
-from otoole.preprocess.longify_data import check_datatypes
 from otoole.results.result_package import ResultsPackage
 
 LOGGER = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ class ReadResults(ReadStrategy):
         Arguments
         ---------
         filepath : str, TextIO
-            A path name or file buffer pointing to the CBC solution file
+            A path name or file buffer pointing to the solution file
         input_data : dict, default=None
             dict of dataframes
 
@@ -88,13 +87,13 @@ class ReadWideResults(ReadResults):
     def _convert_wide_to_long(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         """Convert from wide to long format
 
-        Converts a pandas DataFrame containing all CBC results to reformatted
+        Converts a pandas DataFrame containing all wide format results to reformatted
         dictionary of pandas DataFrames in long format ready to write out
 
         Arguments
         ---------
         data : pandas.DataFrame
-            CBC results stored in a dataframe
+            results stored in a dataframe
 
         Example
         -------
@@ -179,91 +178,23 @@ def rename_duplicate_column(index: List) -> List:
     return column
 
 
-class ReadCplex(ReadResults):
-    """ """
+class ReadCplex(ReadWideResults):
+    """Read a CPLEX solution file into memeory"""
 
-    def get_results_from_file(
-        self, filepath: Union[str, TextIO], input_data
-    ) -> Dict[str, pd.DataFrame]:
+    def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        """Reads a Cplex solution file into a pandas DataFrame
 
-        if input_data:
-            years = input_data["YEAR"].values  # type: List
-            start_year = int(years[0])
-            end_year = int(years[-1])
-        else:
-            raise RuntimeError("To process CPLEX results please provide the input file")
-
-        if isinstance(filepath, str):
-            with open(filepath, "r") as sol_file:
-                data = self.extract_rows(sol_file, start_year, end_year)
-        elif isinstance(filepath, StringIO):
-            data = self.extract_rows(filepath, start_year, end_year)
-        else:
-            raise TypeError("Argument filepath type must be a string or an open file")
-
-        results = {}
-
-        for name in data.keys():
-            results[name] = self.convert_df(data[name], name, start_year, end_year)
-
-        return results
-
-    def extract_rows(
-        self, sol_file: TextIO, start_year: int, end_year: int
-    ) -> Dict[str, List[List[str]]]:
-        """ """
-        data = {}  # type: Dict[str, List[List[str]]]
-        for linenum, line in enumerate(sol_file):
-            line = line.replace("\n", "")
-            try:
-                row_as_list = line.split("\t")  # type: List[str]
-                name = row_as_list[0]  # type: str
-
-                if name in data.keys():
-                    data[name].append(row_as_list)
-                else:
-                    data[name] = [row_as_list]
-            except ValueError as ex:
-                msg = "Error caused at line {}: {}. {}"
-                raise ValueError(msg.format(linenum, line, ex))
-        return data
-
-    def extract_variable_dimensions_values(self, data: List) -> Tuple[str, Tuple, List]:
-        """Extracts useful information from a line of a results file"""
-        variable = data[0]
-        try:
-            number = len(self.results_config[variable]["indices"])
-        except KeyError as ex:
-            print(data)
-            raise KeyError(ex)
-        dimensions = tuple(data[1:(number)])
-        values = data[(number):]
-        return (variable, dimensions, values)
-
-    def convert_df(
-        self, data: List[List[str]], variable: str, start_year: int, end_year: int
-    ) -> pd.DataFrame:
-        """Read the cplex lines into a pandas DataFrame"""
-        index = self.results_config[variable]["indices"]
-        columns = ["variable"] + index[:-1] + list(range(start_year, end_year + 1, 1))
-        df = pd.DataFrame(data=data, columns=columns)
-        df, index = check_duplicate_index(df, columns, index)
-        df = df.drop(columns="variable")
-
-        LOGGER.debug(
-            f"Attempting to set index for {variable} with columns {index[:-1]}"
-        )
-        try:
-            df = df.set_index(index[:-1])
-        except NotImplementedError as ex:
-            LOGGER.error(f"Error setting index for {df.head()}")
-            raise NotImplementedError(ex)
-        df = df.melt(var_name="YEAR", value_name="VALUE", ignore_index=False)
-        df = df.reset_index()
-        df = check_datatypes(df, self.user_config, variable)
-        df = df.set_index(index)
-        df = df[(df != 0).any(axis=1)]
-        return df
+        Arguments
+        ---------
+        user_config : Dict[str, Dict]
+        file_path : Union[str, TextIO]
+        """
+        df = pd.read_xml(file_path, xpath=".//variable", parser="etree")
+        df[["Variable", "Index"]] = df["name"].str.split("(", expand=True)
+        df["Index"] = df["Index"].str.replace(")", "", regex=False)
+        LOGGER.debug(df)
+        df = df[(df["value"] != 0)].reset_index().rename(columns={"value": "Value"})
+        return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
 class ReadGurobi(ReadWideResults):
@@ -274,7 +205,8 @@ class ReadGurobi(ReadWideResults):
 
         Arguments
         ---------
-        file_path : str
+        user_config : Dict[str, Dict]
+        file_path : Union[str, TextIO]
         """
         df = pd.read_csv(
             file_path,
@@ -295,8 +227,8 @@ class ReadCbc(ReadWideResults):
 
     Arguments
     ---------
-    user_config
-    results_config
+    user_config : Dict[str, Dict]
+    results_config : Dict[str, Dict]
     """
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
@@ -335,7 +267,7 @@ class ReadGlpk(ReadWideResults):
 
     Arguments
     ---------
-    user_config
+    user_config : Dict[str, Dict]
     glpk_model: Union[str, TextIO]
         Path to GLPK model file. Can be created using the `--wglp` flag.
     """
