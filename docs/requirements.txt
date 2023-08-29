@@ -4,7 +4,7 @@ flatten_dict
 Jinja2<3.1
 networkx
 openpyxl
-pandas>=1.1
+pandas>=1.1,<2.1
 pydantic>=2
 pydot
 pyyaml

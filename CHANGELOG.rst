@@ -2,6 +2,17 @@
 Changelog
 =========
 
+Version 1.1.0
+=============
+- Public Python API added to call otoole directly in Python files
+- ReadCplex directly reads in CPLEX solution files. Drops the need to transform and sort solution files
+- ReadGlpk class added to process GLPK solution files
+- Update to Pydantic v2.0
+- ReadResultsCbc renamed to ReadWideResults
+- Model validation instructions updated in documentation
+- The ``--input_datafile`` argument is deprecated, and the user now must supply the input data to process results
+- Locks pandas to <2.1
+
 Version 1.0.4
 =============
 - Fixed issue with pydantic v2.0.0
