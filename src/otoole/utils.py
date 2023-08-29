@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from importlib.resources import files
 from typing import Any, Dict, List, Union
 
 import pandas as pd
@@ -15,18 +16,12 @@ from otoole.preprocess.validate_config import (
     UserDefinedValue,
 )
 
-try:
-    import importlib.resources as resources
-except ImportError:
-    # Try backported to PY<37 `importlib_resources`.
-    import importlib_resources as resources  # type: ignore
-
 logger = logging.getLogger(__name__)
 
 
 def _read_file(open_file, ending):
     if ending == ".yaml" or ending == ".yml":
-        contents = load(open_file, Loader=UniqueKeyLoader)  # typing: Dict
+        contents = load(open_file, Loader=UniqueKeyLoader)  # typing: Dict[str, Any]
     elif ending == ".json":
         contents = json.load(open_file)  # typing: Dict
     else:
@@ -42,7 +37,7 @@ def read_packaged_file(filename: str, module_name: str = None):
         with open(filename, "r") as open_file:
             contents = _read_file(open_file, ending)
     else:
-        with resources.open_text(module_name, filename) as open_file:
+        with files(module_name).joinpath(filename).open("r") as open_file:
             contents = _read_file(open_file, ending)
 
     return contents

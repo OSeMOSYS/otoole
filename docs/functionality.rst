@@ -17,7 +17,7 @@ Gurobi_, is called results and post-processing.
 .. image:: _static/workflow.png
 
 .. NOTE::
-    While ``otoole`` is targetted at OSeMOSYS users, the functionality can eaisly be extended
+    While ``otoole`` is targeted at OSeMOSYS users, the functionality can easily be extended
     to work with any workflow that involves the use of a MathProg file!
 
 Data Conversion
@@ -38,7 +38,7 @@ conversion between the following formats:
 ``otoole convert``
 ~~~~~~~~~~~~~~~~~~
 
-THe ``otoole convert``` command allows you to convert between various different
+The ``otoole convert``` command allows you to convert between various different
 input formats::
 
     $ otoole convert --help
@@ -75,7 +75,7 @@ apparent. CBC_ is an alternative open-source solver which offers better performa
 GLPK_ and can handle much larger models. However, CBC_ has no way of knowing how to write
 out the CSV files you were used to dealing with when using GLPK_. ``otoole`` to the rescue!
 
-``otoole`` currently supports using CBC_, CPLEX_ or Gurobi_ with all three versions of
+``otoole`` currently supports using GLPK_, CBC_, CPLEX_ or Gurobi_ with all versions of
 GNU MathProg OSeMOSYS - the long, short and fast versions.
 
 The long version includes all results as variables within the formulation, so the
@@ -89,32 +89,40 @@ so as to speed up the model matrix generation and solution times.
 ``otoole results``
 ~~~~~~~~~~~~~~~~~~
 
-The ``results`` command creates a folder of CSV result files from a CBC_, CLP_,
-Gurobi_ or CPLEX_ solution file::
+The ``results`` command creates a folder of CSV result files from a GLPK_, CBC_, CLP_,
+Gurobi_ or CPLEX_ solution file together with the input data::
 
     $ otoole results --help
-    usage: otoole results [-h] [--input_datafile INPUT_DATAFILE] [--input_datapackage INPUT_DATAPACKAGE] [--write_defaults] {cbc,cplex,gurobi} {csv} from_path to_path config
+    usage: otoole results [-h] [--glpk_model GLPK_MODEL] [--write_defaults]
+                        {cbc,cplex,gurobi} {csv} from_path to_path {csv,datafile,excel} input_path config
 
     positional arguments:
-    {cbc,cplex,gurobi}    Result data format to convert from
-    {csv}                 Result data format to convert to
-    from_path             Path to file or folder to convert from
-    to_path               Path to file or folder to convert to
-    config                Path to config YAML file
+    {cbc,cplex,glpk,gurobi}  Result data format to convert from
+    {csv}                    Result data format to convert to
+    from_path                Path to file or folder to convert from
+    to_path                  Path to file or folder to convert to
+    {csv,datafile,excel}     Input data format
+    input_path               Path to input_data
+    config                   Path to config YAML file
 
     optional arguments:
-        -h, --help            show this help message and exit
-        --input_datafile INPUT_DATAFILE
-                                Input GNUMathProg datafile required for OSeMOSYS short or fast results
-        --input_datapackage INPUT_DATAPACKAGE
-                                Deprecated
-        --write_defaults      Writes default values
+    -h, --help                show this help message and exit
+    --glpk_model GLPK_MODEL   GLPK model file required for processing GLPK results
+    --write_defaults          Writes default values
 
 .. versionadded:: v1.0.0
     The ``config`` positional argument is now required
 
+.. versionadded:: v1.1.0
+    The ``input_data_format`` and ``input_path`` positional arguments are now required
+    supporting any supported format of input data for results processing.
+
 .. deprecated:: v1.0.0
     The ``--input_datapackage`` flag is no longer supported
+
+.. deprecated:: v1.1.0
+    The ``--input_datapackage`` and ``--input_datafile`` flags
+    have been replaced by new positional arguments ``input_data_format`` and ``input_path``
 
 .. WARNING::
     If using CPLEX_, you will need to transform and sort the solution file before

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.0.4
+=============
+- Fixed issue with pydantic v2.0.0
+- Dropped support for Python 3.8. Otoole now requires Python 3.9 or later
+
 Version 1.0.3
 =============
 - Improved error message for multiple names mismatches
