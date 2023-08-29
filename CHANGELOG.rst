@@ -11,6 +11,7 @@ Version 1.1.0
 - ReadResultsCbc renamed to ReadWideResults
 - Model validation instructions updated in documentation
 - The ``--input_datafile`` argument is deprecated, and the user now must supply the input data to process results
+- Locks pandas to <2.1
 
 Version 1.0.4
 =============
