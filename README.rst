@@ -12,6 +12,10 @@ otoole: OSeMOSYS tools for energy work
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
+.. image:: https://joss.theoj.org/papers/e93a191ae795b171beff782a68fdc467/status.svg
+    :target: https://joss.theoj.org/papers/e93a191ae795b171beff782a68fdc467
+    :alt: JOSS status
+
 A Python toolkit to support use of OSeMOSYS
 
 Description
