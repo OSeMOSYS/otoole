@@ -27,7 +27,7 @@ The ``convert_results`` function creates a folder of CSV result files from a CBC
 Gurobi_ or CPLEX_ solution file::
 
 >>> from otoole import convert_results
->>> convert_results('my_model.yaml', 'cbc', 'csv', 'my_model.sol', 'my_model_csvs', input_datafile='my_model.dat')
+>>> convert_results('my_model.yaml', 'cbc', 'csv', 'my_model.sol', 'my_model_csvs', 'datafile', 'my_model.dat')
 
 See :func:`otoole.convert.convert_results` for more details
 

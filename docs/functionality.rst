@@ -124,12 +124,6 @@ Gurobi_ or CPLEX_ solution file together with the input data::
     The ``--input_datapackage`` and ``--input_datafile`` flags
     have been replaced by new positional arguments ``input_data_format`` and ``input_path``
 
-.. WARNING::
-    If using CPLEX_, you will need to transform and sort the solution file before
-    processing it with ``otoole``. Instructions on how to run the transformation
-    script are on the `OSeMOSYS Repository`_. After transformation, sort the file
-    with the command ``sort <solution_file> > <sorted_file>``.
-
 Setup
 -----
 The ``setup`` module in ``otoole`` allows you to generate template files to
