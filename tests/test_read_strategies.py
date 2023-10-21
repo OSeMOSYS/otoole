@@ -700,7 +700,7 @@ class TestCleanOnRead:
         assert actual == {
             "REGION": "str",
             "FUEL": "str",
-            "YEAR": "int",
+            "YEAR": "int64",
             "VALUE": "float",
         }
 
@@ -834,7 +834,7 @@ class TestConfig:
                 "FUEL": "str",
                 "REGION": "str",
                 "VALUE": "float",
-                "YEAR": "int",
+                "YEAR": "int64",
             },
         }
         assert actual["AccumulatedAnnualDemand"] == expected
