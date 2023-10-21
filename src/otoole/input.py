@@ -492,7 +492,7 @@ class ReadStrategy(Strategy):
             except ValueError:  # ValueError: invalid literal for int() with base 10:
                 df = df.dropna(axis=0, how="all").reset_index()
                 for index, dtype in config["index_dtypes"].items():
-                    if dtype == "int":
+                    if dtype == "int64":
                         df[index] = df[index].astype(float).astype("int64")
                     else:
                         df[index] = df[index].astype(dtype)
