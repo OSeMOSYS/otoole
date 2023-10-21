@@ -142,6 +142,8 @@ class Strategy(ABC):
                     else:
                         dtypes[column] = config[column]["dtype"] if config[column]["dtype"] != "int" else "int64"
                 details["index_dtypes"] = dtypes
+            elif details["type"] == "set":
+                details["dtype"] = details["dtype"] if details["dtype"] != "int" else "int64"
         return config
 
     @property
@@ -481,7 +483,6 @@ class ReadStrategy(Strategy):
             logger.debug(df.head())
             # Drop empty rows
             try:
-                dtype = config["index_dtypes"] if config["index_dtypes"] != "int" else "int64" 
                 df = (
                     df.dropna(axis=0, how="all")
                     .reset_index()
