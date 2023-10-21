@@ -138,12 +138,20 @@ class Strategy(ABC):
                 dtypes = {}
                 for column in details["indices"] + ["VALUE"]:
                     if column == "VALUE":
-                        dtypes["VALUE"] = details["dtype"] if details["dtype"] != "int" else "int64"
+                        dtypes["VALUE"] = (
+                            details["dtype"] if details["dtype"] != "int" else "int64"
+                        )
                     else:
-                        dtypes[column] = config[column]["dtype"] if config[column]["dtype"] != "int" else "int64"
+                        dtypes[column] = (
+                            config[column]["dtype"]
+                            if config[column]["dtype"] != "int"
+                            else "int64"
+                        )
                 details["index_dtypes"] = dtypes
             elif details["type"] == "set":
-                details["dtype"] = details["dtype"] if details["dtype"] != "int" else "int64"
+                details["dtype"] = (
+                    details["dtype"] if details["dtype"] != "int" else "int64"
+                )
         return config
 
     @property
