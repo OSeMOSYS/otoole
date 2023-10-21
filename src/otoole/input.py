@@ -116,7 +116,6 @@ class Context:
 
 class Strategy(ABC):
     """
-
     Arguments
     ---------
     user_config : dict, default=None
@@ -139,9 +138,9 @@ class Strategy(ABC):
                 dtypes = {}
                 for column in details["indices"] + ["VALUE"]:
                     if column == "VALUE":
-                        dtypes["VALUE"] = details["dtype"]
+                        dtypes["VALUE"] = details["dtype"] if details["dtype"] != "int" else "int64"
                     else:
-                        dtypes[column] = config[column]["dtype"]
+                        dtypes[column] = config[column]["dtype"] if config[column]["dtype"] != "int" else "int64"
                 details["index_dtypes"] = dtypes
         return config
 
@@ -482,6 +481,7 @@ class ReadStrategy(Strategy):
             logger.debug(df.head())
             # Drop empty rows
             try:
+                dtype = config["index_dtypes"] if config["index_dtypes"] != "int" else "int64" 
                 df = (
                     df.dropna(axis=0, how="all")
                     .reset_index()
@@ -492,7 +492,7 @@ class ReadStrategy(Strategy):
                 df = df.dropna(axis=0, how="all").reset_index()
                 for index, dtype in config["index_dtypes"].items():
                     if dtype == "int":
-                        df[index] = df[index].astype(float).astype(int)
+                        df[index] = df[index].astype(float).astype("int64")
                     else:
                         df[index] = df[index].astype(dtype)
                 df = df.set_index(config["indices"])
