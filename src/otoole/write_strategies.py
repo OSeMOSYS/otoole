@@ -156,7 +156,7 @@ class WriteDatafile(WriteStrategy):
             df = self._form_parameter(df, default)
         handle.write("param default {} : {} :=\n".format(default, parameter_name))
         df.to_csv(
-            path_or_buf=handle, sep=" ", header=False, index=True, float_format="%g"
+            path_or_buf=handle, sep=" ", header=False, index=True, float_format="%g", lineterminator="\n"
         )
         handle.write(";\n")
 
@@ -171,7 +171,7 @@ class WriteDatafile(WriteStrategy):
         """
         handle.write("set {} :=\n".format(set_name))
         df.to_csv(
-            path_or_buf=handle, sep=" ", header=False, index=False, float_format="%g"
+            path_or_buf=handle, sep=" ", header=False, index=False, float_format="%g", lineterminator="\n"
         )
         handle.write(";\n")
 
