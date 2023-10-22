@@ -108,7 +108,7 @@ class TestReadCplex:
                 ],
                 columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
             )
-            .astype({"REGION": str, "TECHNOLOGY": str, "YEAR": int, "VALUE": float})
+            .astype({"REGION": str, "TECHNOLOGY": str, "YEAR": "int64", "VALUE": float})
             .set_index(["REGION", "TECHNOLOGY", "YEAR"])
         )
 
@@ -135,8 +135,8 @@ class TestReadCplex:
                     "REGION": str,
                     "TIMESLICE": str,
                     "TECHNOLOGY": str,
-                    "MODE_OF_OPERATION": int,
-                    "YEAR": int,
+                    "MODE_OF_OPERATION": "int64",
+                    "YEAR": "int64",
                     "VALUE": float,
                 }
             )
@@ -202,7 +202,7 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
                 ],
                 columns=["REGION", "YEAR", "VALUE"],
             )
-            .astype({"YEAR": int, "VALUE": float})
+            .astype({"YEAR": "int64", "VALUE": float})
             .set_index(["REGION", "YEAR"])
         )
 
@@ -225,7 +225,7 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
                     "VALUE",
                 ],
             )
-            .astype({"YEAR": int, "VALUE": float, "MODE_OF_OPERATION": int})
+            .astype({"YEAR": "int64", "VALUE": float, "MODE_OF_OPERATION": "int64"})
             .set_index(
                 ["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"]
             )
@@ -623,7 +623,7 @@ e o f
                 ["j", 1028, "RateOfActivity", "SIMPLICITY,IN,BACKSTOP1,1,2014"],
             ],
             columns=["ID", "NUM", "NAME", "INDEX"],
-        )
+        ).astype({"ID": str, "NUM": "int64", "NAME": str, "INDEX": str})
 
         pd.testing.assert_frame_equal(actual, expected)
 
@@ -726,7 +726,7 @@ class TestCleanOnRead:
                 ],
                 columns=["REGION", "FUEL", "YEAR", "VALUE"],
             )
-            .astype({"REGION": str, "FUEL": str, "YEAR": int, "VALUE": float})
+            .astype({"REGION": str, "FUEL": str, "YEAR": "int64", "VALUE": float})
             .set_index(["REGION", "FUEL", "YEAR"])
         }
 
@@ -757,7 +757,7 @@ class TestCleanOnRead:
                 ],
                 columns=["REGION", "FUEL", "YEAR", "VALUE"],
             )
-            .astype({"REGION": str, "FUEL": str, "YEAR": int, "VALUE": float})
+            .astype({"REGION": str, "FUEL": str, "YEAR": "int64", "VALUE": float})
             .set_index(["REGION", "FUEL", "YEAR"])
         }
 
