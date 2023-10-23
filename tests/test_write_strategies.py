@@ -1,4 +1,5 @@
 import io
+import os
 from tempfile import NamedTemporaryFile
 
 import pandas as pd
@@ -114,15 +115,20 @@ class TestWriteExcel:
 
     def test_write_out_empty_dataframe(self, user_config):
 
-        temp_excel = NamedTemporaryFile(suffix=".xlsx")
-        handle = pd.ExcelWriter(temp_excel.name)
-        convert = WriteExcel(user_config)
+        temp_excel = NamedTemporaryFile(suffix=".xlsx", delete=False, mode="w")
+        try:
+            handle = pd.ExcelWriter(temp_excel.name)
+            convert = WriteExcel(user_config)
 
-        df = pd.DataFrame(
-            data=None, columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+            df = pd.DataFrame(
+                data=None, columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+            ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
-        convert._write_parameter(df, "AvailabilityFactor", handle, default=0)
+            convert._write_parameter(df, "AvailabilityFactor", handle, default=0)
+        finally:
+            handle.close()
+            temp_excel.close()
+            os.unlink(temp_excel.name)
 
 
 class TestWriteDatafile:
