@@ -59,21 +59,32 @@ class TestWrite:
     def test_write_datafile(self):
         """Test writing data to a file"""
         data = {"REGION": pd.DataFrame({"VALUE": ["BB"]})}
-        temp = NamedTemporaryFile()
-        assert write(
-            os.path.join("tests", "fixtures", "config.yaml"),
-            "datafile",
-            temp.name,
-            data,
-        )
+        temp = NamedTemporaryFile(delete=False, mode="w")
+        try:
+            assert write(
+                os.path.join("tests", "fixtures", "config.yaml"),
+                "datafile",
+                temp.name,
+                data,
+            )
+        finally:
+            temp.close()
+            os.unlink(temp.name)
 
     def test_write_excel(self):
         """Test writing data to an Excel file"""
         data = {"REGION": pd.DataFrame({"VALUE": ["BB"]})}
-        temp = NamedTemporaryFile(suffix=".xlsx")
-        assert write(
-            os.path.join("tests", "fixtures", "config.yaml"), "excel", temp.name, data
-        )
+        temp = NamedTemporaryFile(suffix=".xlsx", delete=False, mode="w")
+        try:
+            assert write(
+                os.path.join("tests", "fixtures", "config.yaml"),
+                "excel",
+                temp.name,
+                data,
+            )
+        finally:
+            temp.close()
+            os.unlink(temp.name)
 
     def test_write_csv(self):
         """Test writing data to a CSV file"""
@@ -92,21 +103,22 @@ class TestConvert:
 
     def test_convert_excel_to_datafile(self):
         """Test converting from Excel to datafile"""
-
         user_config = os.path.join("tests", "fixtures", "config.yaml")
-        tmpfile = NamedTemporaryFile()
         from_path = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        tmpfile = NamedTemporaryFile(delete=False, mode="w+b")
 
-        convert(user_config, "excel", "datafile", from_path, tmpfile.name)
+        try:
+            convert(user_config, "excel", "datafile", from_path, tmpfile.name)
+            tmpfile.seek(0)
+            actual = tmpfile.readlines()
 
-        tmpfile.seek(0)
-        actual = tmpfile.readlines()
-        tmpfile.close()
-
-        assert actual[-1] == b"end;\n"
-        assert actual[0] == b"# Model file written by *otoole*\n"
-        assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.8921\n"
-        assert actual[8996] == b"param default 1 : DepreciationMethod :=\n"
+            assert actual[-1] == b"end;\n"
+            assert actual[0] == b"# Model file written by *otoole*\n"
+            assert actual[2] == b"09_ROK d_bld_2_coal_products 2017 20.8921\n"
+            assert actual[8996] == b"param default 1 : DepreciationMethod :=\n"
+        finally:
+            tmpfile.close()
+            os.unlink(tmpfile.name)
 
     def test_convert_excel_to_csv(self):
         """Test converting from Excel to CSV"""
