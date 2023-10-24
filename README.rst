@@ -53,5 +53,7 @@ Contributing
 
 New ideas and bugs `should be submitted <https://github.com/OSeMOSYS/otoole/issues/new>`_
 to the repository issue tracker. Please do contribute by discussing and developing these
-ideas further. To contribute directly to the documentation of code development, please see
-the contribution guidelines document.
+ideas further.
+
+To contribute directly to the code and documentation development, please see
+the `contribution guidelines <https://otoole.readthedocs.io/en/latest/contributing.html>`_.
