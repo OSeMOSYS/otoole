@@ -1,6 +1,5 @@
 amply>=0.1.4
 docutils<0.18
-graphviz
 flatten_dict
 Jinja2<3.1
 networkx

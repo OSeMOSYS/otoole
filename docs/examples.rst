@@ -216,20 +216,19 @@ Run the following command, where the RES will be saved as the file ``res.png``::
     $ otoole viz res excel simplicity.xlsx res.png config.yaml
 
 .. WARNING::
-    If you encounter a ``graphviz`` dependency error, please install it in your
-    virtual environment through::
-
-        pip install graphviz # if using pip
-        conda install graphviz # if using conda
-
-    Alternatively, you can install it on your system via the commands::
+    If you encounter a ``graphviz`` dependency error, install it on your system
+    from the graphviz_ website (if on Windows) or via the command::
 
         sudo apt install graphviz # if on Ubuntu
         brew install graphviz # if on Mac
 
-    Or from the graphviz_ website if on Windows.
+    To check that ``graphviz`` installed correctly, run ``dot -V`` to check the
+    version::
 
-2. View the RES
+        ~$ dot -V
+        dot - graphviz version 2.43.0 (0)
+
+1. View the RES
 ~~~~~~~~~~~~~~~
 Open the newly created file, ``res.png`` and the following image should be
 displayed
