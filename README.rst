@@ -14,14 +14,15 @@ otoole: OSeMOSYS tools for energy work
     :target: https://github.com/psf/black
     :alt: Code Style
 
-.. image:: https://img.shields.io/badge/python-3.9|3.10|3.11-blue.svg
+.. image:: https://img.shields.io/badge/python-3.9_|_3.10_|_3.11-blue.svg
     :target: https://crate.io/packages/otoole/
     :alt: Python Version
 
-.. image:: https://img.shields.io/badge/License-MIT-yellow.svg
+.. image:: https://img.shields.io/badge/License-MIT-green.svg
     :target: https://opensource.org/licenses/MIT
     :alt: License
 
+|
 
 .. image:: https://coveralls.io/repos/github/OSeMOSYS/otoole/badge.svg?branch=master&kill_cache=1
     :target: https://coveralls.io/github/OSeMOSYS/otoole?branch=master
