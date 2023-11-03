@@ -215,7 +215,20 @@ Run the following command, where the RES will be saved as the file ``res.png``::
 
     $ otoole viz res excel simplicity.xlsx res.png config.yaml
 
-2. View the RES
+.. WARNING::
+    If you encounter a ``graphviz`` dependency error, install it on your system
+    from the graphviz_ website (if on Windows) or via the command::
+
+        sudo apt install graphviz # if on Ubuntu
+        brew install graphviz # if on Mac
+
+    To check that ``graphviz`` installed correctly, run ``dot -V`` to check the
+    version::
+
+        ~$ dot -V
+        dot - graphviz version 2.43.0 (0)
+
+1. View the RES
 ~~~~~~~~~~~~~~~
 Open the newly created file, ``res.png`` and the following image should be
 displayed
@@ -486,3 +499,4 @@ will also flag it as an isolated fuel. This means the fuel is unconnected from t
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
 .. _Anaconda: https://www.anaconda.com/
 .. _Gurobi: https://www.gurobi.com/
+.. _graphviz: https://www.graphviz.org/download/
