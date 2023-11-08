@@ -324,7 +324,11 @@ The MathProg datafile describing this model can be found on the
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Create a configuration validation ``yaml`` file::
 
+    # on UNIX
     $ touch validate.yaml
+
+    # on Windows
+    > type nul > validate.yaml
 
 3. Create ``FUEL`` Codes
 ~~~~~~~~~~~~~~~~~~~~~~~~
