@@ -116,7 +116,6 @@ class Context:
 
 class Strategy(ABC):
     """
-
     Arguments
     ---------
     user_config : dict, default=None
@@ -139,10 +138,20 @@ class Strategy(ABC):
                 dtypes = {}
                 for column in details["indices"] + ["VALUE"]:
                     if column == "VALUE":
-                        dtypes["VALUE"] = details["dtype"]
+                        dtypes["VALUE"] = (
+                            details["dtype"] if details["dtype"] != "int" else "int64"
+                        )
                     else:
-                        dtypes[column] = config[column]["dtype"]
+                        dtypes[column] = (
+                            config[column]["dtype"]
+                            if config[column]["dtype"] != "int"
+                            else "int64"
+                        )
                 details["index_dtypes"] = dtypes
+            elif details["type"] == "set":
+                details["dtype"] = (
+                    details["dtype"] if details["dtype"] != "int" else "int64"
+                )
         return config
 
     @property
@@ -491,8 +500,8 @@ class ReadStrategy(Strategy):
             except ValueError:  # ValueError: invalid literal for int() with base 10:
                 df = df.dropna(axis=0, how="all").reset_index()
                 for index, dtype in config["index_dtypes"].items():
-                    if dtype == "int":
-                        df[index] = df[index].astype(float).astype(int)
+                    if dtype == "int64":
+                        df[index] = df[index].astype(float).astype("int64")
                     else:
                         df[index] = df[index].astype(dtype)
                 df = df.set_index(config["indices"])

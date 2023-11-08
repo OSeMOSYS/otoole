@@ -347,7 +347,7 @@ class ReadGlpk(ReadWideResults):
         df["INDEX"] = df["INDEX"].map(lambda x: x.split("]")[0])
         df = (
             df[["ID", "NUM", "NAME", "INDEX"]]
-            .astype({"ID": str, "NUM": int, "NAME": str, "INDEX": str})
+            .astype({"ID": str, "NUM": "int64", "NAME": str, "INDEX": str})
             .reset_index(drop=True)
         )
 
@@ -425,7 +425,7 @@ class ReadGlpk(ReadWideResults):
         data = (
             data[["ID", "NUM", "STATUS", "PRIM", "DUAL"]]
             .astype(
-                {"ID": str, "NUM": int, "STATUS": str, "PRIM": float, "DUAL": float}
+                {"ID": str, "NUM": "int64", "STATUS": str, "PRIM": float, "DUAL": float}
             )
             .reset_index(drop=True)
         )
