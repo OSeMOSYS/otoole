@@ -4,7 +4,7 @@ Changelog
 
 Version 1.1.2
 =============
-- Update citation information for JOSS
+- Update zenodo metadata for JOSS
 
 Version 1.1.1
 =============
