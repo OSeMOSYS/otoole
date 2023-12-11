@@ -31,6 +31,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ matrix.os }} == 'ubuntu-latest' && ${{ matrix.python-version }} == '3.11'
-        run: |
-          pip install --upgrade coveralls
-          coveralls --service=github
+        uses: coverallsapp/github-action@v2
+        # run: |
+        #   pip install --upgrade coveralls
+        #   coveralls --service=github
