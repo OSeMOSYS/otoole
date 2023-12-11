@@ -30,8 +30,7 @@ jobs:
       - name: Upload coverage data to converalls.io
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: coverallsapp/github-action@v2
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-        # run: |
-        #   pip install --upgrade coveralls
-        #   coveralls --service=github
+        run: |
+          pip install --upgrade coveralls
+          coveralls --service=github
