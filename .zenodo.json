@@ -1,6 +1,5 @@
 {
     "title": "otoole: OSeMOSYS Tools for Energy Work",
-    "description": "A Python package to provide commonly used pre- and post-processing steps when working with OSeMOSYS models",
     "license": "MIT",
     "upload_type": "software",
     "creators": [
