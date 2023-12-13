@@ -2,6 +2,17 @@
 Changelog
 =========
 
+Version 1.1.2
+=============
+- Update zenodo metadata for JOSS
+
+Version 1.1.1
+=============
+- Fixes CPLEX result processing docs
+- Added joss status badge to readme
+- Fix Tests on Windows
+- Update graphviz install instructions
+
 Version 1.1.0
 =============
 - Public Python API added to call otoole directly in Python files
