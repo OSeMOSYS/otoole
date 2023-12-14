@@ -2,6 +2,10 @@
 Changelog
 =========
 
+(Development) Version 1.1.3
+===========================
+- Lock pandas to 2.1.4 or later
+
 Version 1.1.2
 =============
 - Update zenodo metadata for JOSS
