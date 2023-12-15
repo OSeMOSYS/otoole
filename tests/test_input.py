@@ -265,7 +265,7 @@ class TestExpandDefaults:
         input_data_single_index_empty(region),
     ]
     parameter_test_data_ids = [
-        "multi_index_no_defaluts",
+        "multi_index_no_defaults",
         "multi_index",
         "multi_index_empty",
         "single_index",
