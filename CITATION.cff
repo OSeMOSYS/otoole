@@ -17,3 +17,21 @@ title: "otoole: OSeMOSYS tools for energy work"
 version: 1.1.1
 doi: 10.5281/zenodo.10292217
 date-released: 2023-02-26
+preferred-citation:
+  type: article
+  authors:
+  - family-names: Usher
+    given-names: Will
+    orcid: https://orcid.org/0000-0001-9367-1791
+  - family-names: Barnes
+    given-names: Trevor
+    orcid: https://orcid.org/0000-0003-2458-2968
+  doi: "0.5281/zenodo.10292217"
+  journal: "Journal of Open Source Software"
+  month: 5
+  start: 1 # First page number
+  end: 15 # Last page number
+  title: "otoole: OSeMOSYS tools for energy work"
+  issue: 1
+  volume: 4
+  year: 2023
