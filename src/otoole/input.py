@@ -341,8 +341,11 @@ class WriteStrategy(Strategy):
             df_default["VALUE"] = default_values[name]
 
             # combine result and default value dataframe
-            df = pd.concat([data, df_default])
-            df = df[~df.index.duplicated(keep="first")]
+            if not data.empty:
+                df = pd.concat([data, df_default])
+                df = df[~df.index.duplicated(keep="first")]
+            else:
+                df = df_default
             df = df.sort_index()
             output[name] = df
 
