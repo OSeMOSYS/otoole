@@ -768,7 +768,7 @@ def capital_recovery_factor(
                 (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
     """
 
-    def calc_crf(df, operational_life):
+    def calc_crf(df: pd.DataFrame, operational_life: pd.Series) -> pd.Series:
         rate = df["VALUE"] + 1
         numerator = 1 - rate.pow(-1)
         denominator = 1 - rate.pow(-operational_life)
@@ -793,7 +793,7 @@ def capital_recovery_factor(
         crf = discount_rate_idv.reindex(index)
         # This is a hack to get around the fact that the discount rate is
         # indexed by REGION and not REGION, TECHNOLOGY
-        crf[::1] = values
+        crf[:] = values
         crf["VALUE"] = calc_crf(crf, operational_life["VALUE"])
 
     return crf.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
