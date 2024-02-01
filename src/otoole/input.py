@@ -256,14 +256,17 @@ class WriteStrategy(Strategy):
         handle = self._header()
         logger.debug(default_values)
 
-        self.input_data = inputs
+        self.inputs = inputs # parameter/set data OR result data
+        input_data = kwargs.get("input_data", None)
+        
         if self.write_defaults:
             try:
-                self.input_data = self._expand_defaults(inputs, default_values)
+                self.inputs = self._expand_defaults(inputs, default_values, input_data)
             except KeyError as ex:
-                logger.debug(ex)
+                logger.debug(f"Can not write default values due to missing {ex} data")
+                print(f"Can not write default values due to missing {ex} data")
 
-        for name, df in sorted(self.input_data.items()):
+        for name, df in sorted(self.inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
             try:
@@ -277,7 +280,7 @@ class WriteStrategy(Strategy):
             if entity_type != "set":
                 default_value = default_values[name]
                 self._write_parameter(
-                    df, name, handle, default=default_value, input_data=self.input_data
+                    df, name, handle, default=default_value, input_data=self.inputs
                 )
             else:
                 self._write_set(df, name, handle)
@@ -288,25 +291,30 @@ class WriteStrategy(Strategy):
             handle.close()
 
     def _expand_defaults(
-        self, data_to_expand: Dict[str, pd.DataFrame], default_values: Dict[str, float]
+        self, inputs: Dict[str, pd.DataFrame], default_values: Dict[str, float], input_data: Dict[str, pd.DataFrame] = None
     ) -> Dict[str, pd.DataFrame]:
         """Populates default value entry rows in dataframes
 
         Parameters
         ----------
-        data_to_expand : Dict[str, pd.DataFrame],
+        inputs : Dict[str, pd.DataFrame], 
+            param/set data or result data
         default_values : Dict[str, float]
+            defaults of param/result data
+        input_data: Dict[str, pd.DataFrame]
+            param/set data needed for expanding result data
 
         Returns
         -------
         Dict[str, pd.DataFrame]
             Input data with expanded default values replacing missing entries
-
         """
 
         sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
+        input_data = input_data if input_data else inputs.copy() 
+        
         output = {}
-        for name, data in data_to_expand.items():
+        for name, data in inputs.items():
             logger.info(f"Writing defaults for {name}")
 
             # skip sets
@@ -324,7 +332,7 @@ class WriteStrategy(Strategy):
             # save set information for each parameter
             index_data = {}
             for index in data.index.names:
-                index_data[index] = self.input_data[index]["VALUE"].to_list()
+                index_data[index] = input_data[index]["VALUE"].to_list()
 
             # set index
             if len(index_data) > 1:

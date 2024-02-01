@@ -38,6 +38,17 @@ def capital_cost():
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
     return df
 
+@fixture
+def new_capacity():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "NGCC", 2016, 1.23],
+            ["SIMPLICITY", "HYD1", 2014, 2.34],
+            ["SIMPLICITY", "HYD1", 2015, 3.45],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return df
 
 @fixture()
 def simple_default_values():
@@ -57,6 +68,12 @@ def simple_input_data(region, year, technology, capital_cost):
         "CapitalCost": capital_cost,
     }
 
+
+@fixture
+def simple_result_data(new_capacity):
+    return {
+        "NewCapacity": new_capacity
+    }
 
 @fixture
 def simple_user_config():
@@ -80,13 +97,19 @@ def simple_user_config():
             "dtype": "int",
             "type": "set",
         },
+        "NewCapacity": {
+            "indices": ["REGION", "TECHNOLOGY", "YEAR"],
+            "type": "result",
+            "dtype": "float",
+            "default": 0,
+        },
     }
 
 
 # To instantiate abstract class WriteStrategy
 class DummyWriteStrategy(WriteStrategy):
     def _header(self) -> Union[TextIO, Any]:
-        raise NotImplementedError()
+        pass
 
     def _write_parameter(
         self,
@@ -96,13 +119,13 @@ class DummyWriteStrategy(WriteStrategy):
         default: float,
         **kwargs
     ) -> pd.DataFrame:
-        raise NotImplementedError()
+        pass
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO) -> pd.DataFrame:
-        raise NotImplementedError()
+        pass
 
     def _footer(self, handle: TextIO):
-        raise NotImplementedError()
+        pass
 
 
 # To instantiate abstract class ReadStrategy
@@ -229,34 +252,6 @@ class TestExpandDefaults:
         }
         return data, "DiscountRate", discount_rate_out
 
-    @fixture
-    def result_data(region):
-        new_capacity_in = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2015, 100],
-                ["SIMPLICITY", "HYD1", 2016, 0.1],
-                ["SIMPLICITY", "NGCC", 2014, 0.5],
-                ["SIMPLICITY", "NGCC", 2015, 100],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        new_capacity_out = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2014, 20],
-                ["SIMPLICITY", "HYD1", 2015, 100],
-                ["SIMPLICITY", "HYD1", 2016, 0.1],
-                ["SIMPLICITY", "NGCC", 2014, 0.5],
-                ["SIMPLICITY", "NGCC", 2015, 100],
-                ["SIMPLICITY", "NGCC", 2016, 20],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-
-        data = {
-            "NewCapacity": new_capacity_in,
-        }
-        return data, "NewCapacity", new_capacity_out
-
     parameter_test_data = [
         input_data_multi_index_no_defaults(region, technology, year),
         input_data_multi_index(region, technology, year),
@@ -290,16 +285,28 @@ class TestExpandDefaults:
         assert_frame_equal(actual[parameter], expected)
 
     def test_expand_result_defaults(
-        self, user_config, simple_default_values, simple_input_data, result_data
+        self, simple_user_config, simple_default_values, simple_input_data, simple_result_data
     ):
         write_strategy = DummyWriteStrategy(
-            user_config=user_config, default_values=simple_default_values
+            user_config=simple_user_config, default_values=simple_default_values
         )
-        write_strategy.input_data = simple_input_data
         actual = write_strategy._expand_defaults(
-            result_data[0], write_strategy.default_values
+            simple_result_data, write_strategy.default_values, simple_input_data
         )
-        assert_frame_equal(actual[result_data[1]], result_data[2])
+        
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "HYD1", 2014, 2.34],
+                ["SIMPLICITY", "HYD1", 2015, 3.45],
+                ["SIMPLICITY", "HYD1", 2016, 20],
+                ["SIMPLICITY", "NGCC", 2014, 20],
+                ["SIMPLICITY", "NGCC", 2015, 20],
+                ["SIMPLICITY", "NGCC", 2016, 1.23],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        
+        assert_frame_equal(actual["NewCapacity"], expected)
 
 
 class TestReadStrategy:
@@ -524,3 +531,4 @@ class TestReadStrategy:
         reader = DummyReadStrategy(simple_user_config)
         with raises(OtooleNameMismatchError):
             reader._compare_read_to_expected(names=expected)
+    
