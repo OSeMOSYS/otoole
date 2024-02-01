@@ -110,7 +110,7 @@ def simple_user_config():
 # To instantiate abstract class WriteStrategy
 class DummyWriteStrategy(WriteStrategy):
     def _header(self) -> Union[TextIO, Any]:
-        pass
+        raise NotImplementedError()
 
     def _write_parameter(
         self,
@@ -120,13 +120,13 @@ class DummyWriteStrategy(WriteStrategy):
         default: float,
         **kwargs
     ) -> pd.DataFrame:
-        pass
+        raise NotImplementedError()
 
     def _write_set(self, df: pd.DataFrame, set_name, handle: TextIO) -> pd.DataFrame:
-        pass
+        raise NotImplementedError()
 
     def _footer(self, handle: TextIO):
-        pass
+        raise NotImplementedError()
 
 
 # To instantiate abstract class ReadStrategy
