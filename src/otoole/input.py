@@ -256,15 +256,14 @@ class WriteStrategy(Strategy):
         handle = self._header()
         logger.debug(default_values)
 
-        self.inputs = inputs # parameter/set data OR result data
+        self.inputs = inputs  # parameter/set data OR result data
         input_data = kwargs.get("input_data", None)
-        
+
         if self.write_defaults:
             try:
                 self.inputs = self._expand_defaults(inputs, default_values, input_data)
             except KeyError as ex:
                 logger.debug(f"Can not write default values due to missing {ex} data")
-                print(f"Can not write default values due to missing {ex} data")
 
         for name, df in sorted(self.inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
@@ -291,13 +290,16 @@ class WriteStrategy(Strategy):
             handle.close()
 
     def _expand_defaults(
-        self, inputs: Dict[str, pd.DataFrame], default_values: Dict[str, float], input_data: Dict[str, pd.DataFrame] = None
+        self,
+        inputs: Dict[str, pd.DataFrame],
+        default_values: Dict[str, float],
+        input_data: Dict[str, pd.DataFrame] = None,
     ) -> Dict[str, pd.DataFrame]:
         """Populates default value entry rows in dataframes
 
         Parameters
         ----------
-        inputs : Dict[str, pd.DataFrame], 
+        inputs : Dict[str, pd.DataFrame],
             param/set data or result data
         default_values : Dict[str, float]
             defaults of param/result data
@@ -311,8 +313,8 @@ class WriteStrategy(Strategy):
         """
 
         sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
-        input_data = input_data if input_data else inputs.copy() 
-        
+        input_data = input_data if input_data else inputs.copy()
+
         output = {}
         for name, data in inputs.items():
             logger.info(f"Writing defaults for {name}")

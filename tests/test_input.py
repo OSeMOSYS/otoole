@@ -38,6 +38,7 @@ def capital_cost():
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
     return df
 
+
 @fixture
 def new_capacity():
     df = pd.DataFrame(
@@ -49,6 +50,7 @@ def new_capacity():
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
     return df
+
 
 @fixture()
 def simple_default_values():
@@ -71,9 +73,8 @@ def simple_input_data(region, year, technology, capital_cost):
 
 @fixture
 def simple_result_data(new_capacity):
-    return {
-        "NewCapacity": new_capacity
-    }
+    return {"NewCapacity": new_capacity}
+
 
 @fixture
 def simple_user_config():
@@ -285,7 +286,11 @@ class TestExpandDefaults:
         assert_frame_equal(actual[parameter], expected)
 
     def test_expand_result_defaults(
-        self, simple_user_config, simple_default_values, simple_input_data, simple_result_data
+        self,
+        simple_user_config,
+        simple_default_values,
+        simple_input_data,
+        simple_result_data,
     ):
         write_strategy = DummyWriteStrategy(
             user_config=simple_user_config, default_values=simple_default_values
@@ -293,7 +298,7 @@ class TestExpandDefaults:
         actual = write_strategy._expand_defaults(
             simple_result_data, write_strategy.default_values, simple_input_data
         )
-        
+
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "HYD1", 2014, 2.34],
@@ -305,8 +310,23 @@ class TestExpandDefaults:
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        
+
         assert_frame_equal(actual["NewCapacity"], expected)
+
+    def test_expand_results_key_error(
+        self, simple_user_config, simple_result_data, simple_default_values
+    ):
+        """When input data is just the result data"""
+        write_strategy = DummyWriteStrategy(
+            user_config=simple_user_config,
+            default_values=simple_default_values,
+            write_defaults=True,
+        )
+
+        with raises(KeyError, match="REGION"):
+            write_strategy._expand_defaults(
+                simple_result_data, write_strategy.default_values
+            )
 
 
 class TestReadStrategy:
@@ -531,4 +551,3 @@ class TestReadStrategy:
         reader = DummyReadStrategy(simple_user_config)
         with raises(OtooleNameMismatchError):
             reader._compare_read_to_expected(names=expected)
-    
