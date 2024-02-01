@@ -179,7 +179,7 @@ def rename_duplicate_column(index: List) -> List:
 
 
 class ReadCplex(ReadWideResults):
-    """Read a CPLEX solution file into memeory"""
+    """Read a CPLEX solution file into memory"""
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
         """Reads a Cplex solution file into a pandas DataFrame
@@ -193,7 +193,7 @@ class ReadCplex(ReadWideResults):
         df[["Variable", "Index"]] = df["name"].str.split("(", expand=True)
         df["Index"] = df["Index"].str.replace(")", "", regex=False)
         LOGGER.debug(df)
-        df = df[(df["value"] != 0)].reset_index().rename(columns={"value": "Value"})
+        df = df.reset_index().rename(columns={"value": "Value"})
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
 
 
