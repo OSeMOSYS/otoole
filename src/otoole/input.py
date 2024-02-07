@@ -273,7 +273,7 @@ class WriteStrategy(Strategy):
             if entity_type != "set":
                 default_value = default_values[name]
                 # This should be moved inside the loop and performed once for each parameter
-                if self.write_defaults:
+                if self.write_defaults and "Annual" in name:
                     try:
                         logger.info(f"Expanding {name} with default values")
                         df_expand = self._expand_dataframe(
