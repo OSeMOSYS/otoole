@@ -90,7 +90,7 @@ def convert_results(
     from_format : str
         Available options are 'cbc', 'cplex' and 'gurobi'
     to_format : str
-        Available options are 'csv'
+        Available options are 'csv', 'excel'
     from_path : str
         Path to cbc, cplex or gurobi solution file
     to_path : str
@@ -125,7 +125,11 @@ def convert_results(
     write_defaults = True if write_defaults else False
 
     if to_format == "csv":
-        write_strategy = WriteCsv(
+        write_strategy: WriteStrategy = WriteCsv(
+            user_config=user_config, write_defaults=write_defaults
+        )
+    elif to_format == "excel":
+        write_strategy = WriteExcel(
             user_config=user_config, write_defaults=write_defaults
         )
     else:

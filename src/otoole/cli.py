@@ -172,7 +172,7 @@ def get_parser():
     result_parser.add_argument(
         "to_format",
         help="Result data format to convert to",
-        choices=sorted(["csv"]),
+        choices=sorted(["csv", "excel"]),
     )
     result_parser.add_argument(
         "from_path", help="Path to file or folder to convert from"

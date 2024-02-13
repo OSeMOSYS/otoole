@@ -256,14 +256,10 @@ class WriteStrategy(Strategy):
         handle = self._header()
         logger.debug(default_values)
 
-        self.input_data = inputs
-        if self.write_defaults:
-            try:
-                self.input_data = self._expand_defaults(inputs, default_values)
-            except KeyError as ex:
-                logger.debug(ex)
+        self.inputs = inputs  # parameter/set data OR result data
+        self.input_params = kwargs.get("input_data", None)  # parameter/set data
 
-        for name, df in sorted(self.input_data.items()):
+        for name, df in sorted(self.inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
             try:
@@ -275,9 +271,17 @@ class WriteStrategy(Strategy):
                     raise KeyError("Cannot find %s in input or results config", name)
 
             if entity_type != "set":
-                default_value = default_values[name]
+                if self.write_defaults:
+                    df_out = self._expand_dataframe(name, df)
+                else:
+                    df_out = df
+
                 self._write_parameter(
-                    df, name, handle, default=default_value, input_data=self.input_data
+                    df_out,
+                    name,
+                    handle,
+                    default=default_values[name],
+                    input_data=self.inputs,
                 )
             else:
                 self._write_set(df, name, handle)
@@ -287,69 +291,62 @@ class WriteStrategy(Strategy):
         if isinstance(handle, TextIO):
             handle.close()
 
-    def _expand_defaults(
-        self, data_to_expand: Dict[str, pd.DataFrame], default_values: Dict[str, float]
-    ) -> Dict[str, pd.DataFrame]:
+    def _expand_dataframe(self, name: str, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         """Populates default value entry rows in dataframes
 
         Parameters
         ----------
-        data_to_expand : Dict[str, pd.DataFrame],
-        default_values : Dict[str, float]
+        name: str
+            Name of parameter/result to expand
+        df: pd.DataFrame,
+            input parameter/result data to be expanded
 
         Returns
         -------
-        Dict[str, pd.DataFrame]
+        pd.DataFrame,
             Input data with expanded default values replacing missing entries
-
         """
 
-        sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
-        output = {}
-        for name, data in data_to_expand.items():
-            logger.info(f"Writing defaults for {name}")
+        # TODO: Issue with how otoole handles trade route right now.
+        # The double definition of REGION throws an error.
+        if name == "TradeRoute":
+            return df
 
-            # skip sets
-            if name in sets:
-                output[name] = data
-                continue
+        default_df = self._get_default_dataframe(name)
 
-            # TODO
-            # Issue with how otoole handles trade route right now.
-            # The double definition of REGION throws an error.
-            if name == "TradeRoute":
-                output[name] = data
-                continue
+        df = pd.concat([df, default_df])
+        df = df[~df.index.duplicated(keep="first")]
+        return df.sort_index()
 
-            # save set information for each parameter
-            index_data = {}
-            for index in data.index.names:
-                index_data[index] = self.input_data[index]["VALUE"].to_list()
+        # default_df.update(df)
+        # return default_df.sort_index()
 
-            # set index
-            if len(index_data) > 1:
-                new_index = pd.MultiIndex.from_product(
-                    list(index_data.values()), names=list(index_data.keys())
-                )
-            else:
-                new_index = pd.Index(
-                    list(index_data.values())[0], name=list(index_data.keys())[0]
-                )
-            df_default = pd.DataFrame(index=new_index)
+    def _get_default_dataframe(self, name: str) -> pd.DataFrame:
+        """Creates default dataframe"""
 
-            # save default result value
-            df_default["VALUE"] = default_values[name]
+        index_data = {}
+        indices = self.user_config[name]["indices"]
+        try:  # result data
+            for index in indices:
+                index_data[index] = self.input_params[index]["VALUE"].to_list()
+        except (TypeError, KeyError):  # parameter data
+            for index in indices:
+                index_data[index] = self.inputs[index]["VALUE"].to_list()
 
-            # combine result and default value dataframe
-            if not data.empty:
-                df = pd.concat([data, df_default])
-                df = df[~df.index.duplicated(keep="first")]
-            else:
-                df = df_default
-            df = df.sort_index()
-            output[name] = df
+        if len(index_data) > 1:
+            new_index = pd.MultiIndex.from_product(
+                list(index_data.values()), names=list(index_data.keys())
+            )
+        else:
+            new_index = pd.Index(
+                list(index_data.values())[0], name=list(index_data.keys())[0]
+            )
 
-        return output
+        df = pd.DataFrame(index=new_index)
+        df["VALUE"] = self.default_values[name]
+        df["VALUE"] = df.VALUE.astype(self.user_config[name]["dtype"])
+
+        return df
 
 
 class ReadStrategy(Strategy):
