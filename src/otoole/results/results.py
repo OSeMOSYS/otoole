@@ -272,8 +272,13 @@ class ReadGlpk(ReadWideResults):
         Path to GLPK model file. Can be created using the `--wglp` flag.
     """
 
-    def __init__(self, user_config: Dict[str, Dict], glpk_model: Union[str, TextIO]):
-        super().__init__(user_config)
+    def __init__(
+        self,
+        user_config: Dict[str, Dict],
+        glpk_model: Union[str, TextIO],
+        write_defaults: bool = False,
+    ):
+        super().__init__(user_config=user_config, write_defaults=write_defaults)
 
         if isinstance(glpk_model, str):
             with open(glpk_model, "r") as model_file:

@@ -152,8 +152,7 @@ class WriteDatafile(WriteStrategy):
         default : int
         """
 
-        if not self.write_defaults:
-            df = self._form_parameter(df, default)
+        df = self._form_parameter(df, default)
         handle.write("param default {} : {} :=\n".format(default, parameter_name))
         df.to_csv(
             path_or_buf=handle,

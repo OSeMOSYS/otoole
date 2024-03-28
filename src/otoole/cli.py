@@ -38,6 +38,7 @@ Ask for help on the command line::
     --version, -V         The version of otoole
 
 """
+
 import argparse
 import logging
 import os
@@ -125,7 +126,6 @@ def setup(args):
 
     data_type = args.data_type
     data_path = args.data_path
-    write_defaults = args.write_defaults
     overwrite = args.overwrite
 
     if os.path.exists(data_path) and not overwrite:
@@ -139,9 +139,7 @@ def setup(args):
     elif data_type == "csv":
         config = get_config_setup_data()
         input_data, default_values = get_csv_setup_data(config)
-        WriteCsv(user_config=config).write(
-            input_data, data_path, default_values, write_defaults=write_defaults
-        )
+        WriteCsv(user_config=config).write(input_data, data_path, default_values)
 
 
 def get_parser():
@@ -271,12 +269,6 @@ def get_parser():
         "data_type", help="Type of file to setup", choices=sorted(["config", "csv"])
     )
     setup_parser.add_argument("data_path", help="Path to file or folder to save to")
-    setup_parser.add_argument(
-        "--write_defaults",
-        help="Writes default values",
-        default=False,
-        action="store_true",
-    )
     setup_parser.add_argument(
         "--overwrite",
         help="Overwrites existing data",

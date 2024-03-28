@@ -186,7 +186,6 @@ class WriteStrategy(Strategy):
     user_config: dict, default=None
     filepath: str, default=None
     default_values: dict, default=None
-    write_defaults: bool, default=False
     input_data: dict, default=None
 
     """
@@ -196,7 +195,6 @@ class WriteStrategy(Strategy):
         user_config: Dict,
         filepath: Optional[str] = None,
         default_values: Optional[Dict] = None,
-        write_defaults: bool = False,
         input_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         super().__init__(user_config=user_config)
@@ -214,8 +212,6 @@ class WriteStrategy(Strategy):
             self.input_data = input_data
         else:
             self.input_data = {}
-
-        self.write_defaults = write_defaults
 
     @abstractmethod
     def _header(self) -> Union[TextIO, Any]:
@@ -271,13 +267,8 @@ class WriteStrategy(Strategy):
                     raise KeyError("Cannot find %s in input or results config", name)
 
             if entity_type != "set":
-                if self.write_defaults:
-                    df_out = self._expand_dataframe(name, df)
-                else:
-                    df_out = df
-
                 self._write_parameter(
-                    df_out,
+                    df,
                     name,
                     handle,
                     default=default_values[name],
@@ -291,62 +282,59 @@ class WriteStrategy(Strategy):
         if isinstance(handle, TextIO):
             handle.close()
 
-    def _expand_dataframe(self, name: str, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-        """Populates default value entry rows in dataframes
+    # def _expand_dataframe(self, name: str, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    #     """Populates default value entry rows in dataframes
 
-        Parameters
-        ----------
-        name: str
-            Name of parameter/result to expand
-        df: pd.DataFrame,
-            input parameter/result data to be expanded
+    #     Parameters
+    #     ----------
+    #     name: str
+    #         Name of parameter/result to expand
+    #     df: pd.DataFrame,
+    #         input parameter/result data to be expanded
 
-        Returns
-        -------
-        pd.DataFrame,
-            Input data with expanded default values replacing missing entries
-        """
+    #     Returns
+    #     -------
+    #     pd.DataFrame,
+    #         Input data with expanded default values replacing missing entries
+    #     """
 
-        # TODO: Issue with how otoole handles trade route right now.
-        # The double definition of REGION throws an error.
-        if name == "TradeRoute":
-            return df
+    #     # TODO: Issue with how otoole handles trade route right now.
+    #     # The double definition of REGION throws an error.
+    #     if name == "TradeRoute":
+    #         return df
 
-        default_df = self._get_default_dataframe(name)
+    #     default_df = self._get_default_dataframe(name)
 
-        df = pd.concat([df, default_df])
-        df = df[~df.index.duplicated(keep="first")]
-        return df.sort_index()
+    #     df = pd.concat([df, default_df])
+    #     df = df[~df.index.duplicated(keep="first")]
+    #     return df.sort_index()
 
-        # default_df.update(df)
-        # return default_df.sort_index()
+    # def _get_default_dataframe(self, name: str) -> pd.DataFrame:
+    #     """Creates default dataframe"""
 
-    def _get_default_dataframe(self, name: str) -> pd.DataFrame:
-        """Creates default dataframe"""
+    #     index_data = {}
+    #     indices = self.user_config[name]["indices"]
+    #     try:  # result data
+    #         for index in indices:
+    #             index_data[index] = self.input_params[index]["VALUE"].to_list()
+    #     except (TypeError, KeyError):  # parameter data
+    #         for index in indices:
+    #             index_data[index] = self.inputs[index]["VALUE"].to_list()
 
-        index_data = {}
-        indices = self.user_config[name]["indices"]
-        try:  # result data
-            for index in indices:
-                index_data[index] = self.input_params[index]["VALUE"].to_list()
-        except (TypeError, KeyError):  # parameter data
-            for index in indices:
-                index_data[index] = self.inputs[index]["VALUE"].to_list()
+    #     if len(index_data) > 1:
+    #         new_index = pd.MultiIndex.from_product(
+    #             list(index_data.values()), names=list(index_data.keys())
+    #         )
+    #     else:
+    #         new_index = pd.Index(
+    #             list(index_data.values())[0], name=list(index_data.keys())[0]
+    #         )
 
-        if len(index_data) > 1:
-            new_index = pd.MultiIndex.from_product(
-                list(index_data.values()), names=list(index_data.keys())
-            )
-        else:
-            new_index = pd.Index(
-                list(index_data.values())[0], name=list(index_data.keys())[0]
-            )
+    #     df = pd.DataFrame(index=new_index)
+    #     df["VALUE"] = self.default_values[name]
+    #     df["VALUE"] = df.VALUE.astype(self.user_config[name]["dtype"])
 
-        df = pd.DataFrame(index=new_index)
-        df["VALUE"] = self.default_values[name]
-        df["VALUE"] = df.VALUE.astype(self.user_config[name]["dtype"])
-
-        return df
+    #     return df
 
 
 class ReadStrategy(Strategy):
@@ -356,6 +344,15 @@ class ReadStrategy(Strategy):
     The Context uses this interface to call the algorithm defined by Concrete
     Strategies.
     """
+
+    def __init__(
+        self,
+        user_config: Dict,
+        write_defaults: bool = False,
+    ):
+        super().__init__(user_config=user_config)
+
+        self.write_defaults = write_defaults
 
     def _check_index(
         self, input_data: Dict[str, pd.DataFrame]
@@ -584,6 +581,72 @@ class ReadStrategy(Strategy):
         if errors:
             logger.debug(f"data and config name errors are: {errors}")
             raise OtooleNameMismatchError(name=errors)
+
+    def _expand_dataframe(
+        self,
+        name: str,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, pd.DataFrame],
+    ) -> pd.DataFrame:
+        """Populates default value entry rows in dataframes
+
+        Parameters
+        ----------
+        name: str
+            Name of parameter/result to expand
+        df: pd.DataFrame,
+            input parameter/result data to be expanded
+
+        Returns
+        -------
+        pd.DataFrame,
+            Input data with expanded default values replacing missing entries
+        """
+
+        try:
+            df = input_data[name]
+        except KeyError as ex:
+            print(ex)
+            raise KeyError(f"No input data to expand for {name}")
+
+        # TODO: Issue with how otoole handles trade route right now.
+        # The double definition of REGION throws an error.
+        if name == "TradeRoute":
+            return df
+
+        default_df = self._get_default_dataframe(name, input_data, default_values)
+
+        df = pd.concat([df, default_df])
+        df = df[~df.index.duplicated(keep="first")]
+        return df.sort_index()
+
+    def _get_default_dataframe(
+        self,
+        name: str,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, pd.DataFrame],
+    ) -> pd.DataFrame:
+        """Creates default dataframe"""
+
+        index_data = {}
+        indices = self.user_config[name]["indices"]
+        for index in indices:
+            index_data[index] = input_data[index]["VALUE"].to_list()
+
+        if len(index_data) > 1:
+            new_index = pd.MultiIndex.from_product(
+                list(index_data.values()), names=list(index_data.keys())
+            )
+        else:
+            new_index = pd.Index(
+                list(index_data.values())[0], name=list(index_data.keys())[0]
+            )
+
+        df = pd.DataFrame(index=new_index)
+        df["VALUE"] = default_values[name]
+        df["VALUE"] = df.VALUE.astype(self.user_config[name]["dtype"])
+
+        return df
 
     @abstractmethod
     def read(
