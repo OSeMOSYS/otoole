@@ -86,6 +86,12 @@ def simple_user_config():
             "default": 0,
             "short_name": "CAPEX",
         },
+        "DiscountRate": {
+            "indices": ["REGION"],
+            "type": "param",
+            "dtype": "float",
+            "default": 0.25,
+        },
         "REGION": {
             "dtype": "str",
             "type": "set",
@@ -276,14 +282,15 @@ class TestExpandDefaults:
     def test_expand_parameters_defaults(
         self, user_config, simple_default_values, input_data, parameter, expected
     ):
-        write_strategy = DummyWriteStrategy(
-            user_config=user_config, default_values=simple_default_values
+        read_strategy = DummyReadStrategy(user_config=user_config)
+        actual = read_strategy._expand_dataframe(
+            parameter, input_data, simple_default_values
         )
-        write_strategy.input_data = input_data
-        actual = write_strategy._expand_defaults(
-            input_data, write_strategy.default_values
-        )
-        assert_frame_equal(actual[parameter], expected)
+        print("\n")
+        print(actual.index.dtypes)
+        print("\n")
+        print(expected.index.dtypes)
+        assert_frame_equal(actual, expected)
 
     def test_expand_result_defaults(
         self,
@@ -292,11 +299,11 @@ class TestExpandDefaults:
         simple_input_data,
         simple_result_data,
     ):
-        write_strategy = DummyWriteStrategy(
-            user_config=simple_user_config, default_values=simple_default_values
+        read_strategy = DummyReadStrategy(
+            user_config=simple_user_config, write_defaults=True
         )
-        actual = write_strategy._expand_defaults(
-            simple_result_data, write_strategy.default_values, simple_input_data
+        actual = read_strategy._expand_dataframe(
+            "NewCapacity", simple_input_data, simple_default_values
         )
 
         expected = pd.DataFrame(
@@ -317,16 +324,75 @@ class TestExpandDefaults:
         self, simple_user_config, simple_result_data, simple_default_values
     ):
         """When input data is just the result data"""
-        write_strategy = DummyWriteStrategy(
-            user_config=simple_user_config,
-            default_values=simple_default_values,
-            write_defaults=True,
+        read_strategy = DummyReadStrategy(
+            user_config=simple_user_config, write_defaults=True
         )
 
-        with raises(KeyError, match="REGION"):
-            write_strategy._expand_defaults(
-                simple_result_data, write_strategy.default_values
+        with raises(KeyError, match="SpecifiedAnnualDemand"):
+            read_strategy._expand_dataframe(
+                "SpecifiedAnnualDemand", simple_result_data, simple_default_values
             )
+
+    def defaults_dataframe_single_index(region):
+        discount_rate_out = pd.DataFrame(
+            [["SIMPLICITY", 0.25]], columns=["REGION", "VALUE"]
+        ).set_index(["REGION"])
+        discount_rate_out["VALUE"] = discount_rate_out["VALUE"].astype(float)
+
+        data = {
+            "REGION": region,
+        }
+        return data, "DiscountRate", discount_rate_out
+
+    def defaults_dataframe_multi_index(region, technology, year):
+        capex_out = pd.DataFrame(
+            [
+                ["SIMPLICITY", "NGCC", 2014, -1],
+                ["SIMPLICITY", "NGCC", 2015, -1],
+                ["SIMPLICITY", "NGCC", 2016, -1],
+                ["SIMPLICITY", "HYD1", 2014, -1],
+                ["SIMPLICITY", "HYD1", 2015, -1],
+                ["SIMPLICITY", "HYD1", 2016, -1],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        capex_out["VALUE"] = capex_out["VALUE"].astype(float)
+
+        data = {
+            "TECHNOLOGY": technology,
+            "YEAR": year,
+            "REGION": region,
+        }
+        return data, "CapitalCost", capex_out
+
+    parameter_test_data = [
+        defaults_dataframe_single_index(region),
+        defaults_dataframe_multi_index(region, technology, year),
+    ]
+    parameter_test_data_ids = [
+        "single_index",
+        "multi_index",
+    ]
+
+    @mark.parametrize(
+        "input_data,parameter,expected",
+        parameter_test_data,
+        ids=parameter_test_data_ids,
+    )
+    def test_get_default_dataframe(
+        self,
+        simple_user_config,
+        simple_default_values,
+        simple_input_data,
+        input_data,
+        parameter,
+        expected,
+    ):
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual = read_strategy._get_default_dataframe(
+            parameter, input_data, simple_default_values
+        )
+        assert_frame_equal(actual, expected)
 
 
 class TestReadStrategy:

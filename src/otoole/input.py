@@ -28,6 +28,7 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 >>> converter.convert('my_datafile.txt', 'folder_of_csv_files')
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -615,6 +616,7 @@ class ReadStrategy(Strategy):
             return df
 
         default_df = self._get_default_dataframe(name, input_data, default_values)
+        # default_df = self._check_index_dtypes(name, self.user_config[name], default_df)
 
         df = pd.concat([df, default_df])
         df = df[~df.index.duplicated(keep="first")]

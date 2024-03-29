@@ -179,15 +179,16 @@ class ReadExcel(_ReadTabular):
                 input_data, config_type=config_type
             )
 
-        input_data = self._check_index(input_data)
-
         if self.write_defaults:
-            for name in [
+            names = [
                 x for x in self.user_config if self.user_config[x]["type"] == "param"
-            ]:
+            ]
+            for name in names:
                 input_data[name] = self._expand_dataframe(
                     name, input_data, default_values
                 )
+
+        input_data = self._check_index(input_data)
 
         return input_data, default_values
 
