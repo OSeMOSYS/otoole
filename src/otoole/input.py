@@ -283,60 +283,6 @@ class WriteStrategy(Strategy):
         if isinstance(handle, TextIO):
             handle.close()
 
-    # def _expand_dataframe(self, name: str, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-    #     """Populates default value entry rows in dataframes
-
-    #     Parameters
-    #     ----------
-    #     name: str
-    #         Name of parameter/result to expand
-    #     df: pd.DataFrame,
-    #         input parameter/result data to be expanded
-
-    #     Returns
-    #     -------
-    #     pd.DataFrame,
-    #         Input data with expanded default values replacing missing entries
-    #     """
-
-    #     # TODO: Issue with how otoole handles trade route right now.
-    #     # The double definition of REGION throws an error.
-    #     if name == "TradeRoute":
-    #         return df
-
-    #     default_df = self._get_default_dataframe(name)
-
-    #     df = pd.concat([df, default_df])
-    #     df = df[~df.index.duplicated(keep="first")]
-    #     return df.sort_index()
-
-    # def _get_default_dataframe(self, name: str) -> pd.DataFrame:
-    #     """Creates default dataframe"""
-
-    #     index_data = {}
-    #     indices = self.user_config[name]["indices"]
-    #     try:  # result data
-    #         for index in indices:
-    #             index_data[index] = self.input_params[index]["VALUE"].to_list()
-    #     except (TypeError, KeyError):  # parameter data
-    #         for index in indices:
-    #             index_data[index] = self.inputs[index]["VALUE"].to_list()
-
-    #     if len(index_data) > 1:
-    #         new_index = pd.MultiIndex.from_product(
-    #             list(index_data.values()), names=list(index_data.keys())
-    #         )
-    #     else:
-    #         new_index = pd.Index(
-    #             list(index_data.values())[0], name=list(index_data.keys())[0]
-    #         )
-
-    #     df = pd.DataFrame(index=new_index)
-    #     df["VALUE"] = self.default_values[name]
-    #     df["VALUE"] = df.VALUE.astype(self.user_config[name]["dtype"])
-
-    #     return df
-
 
 class ReadStrategy(Strategy):
     """
@@ -616,10 +562,12 @@ class ReadStrategy(Strategy):
             return df
 
         default_df = self._get_default_dataframe(name, input_data, default_values)
-        # default_df = self._check_index_dtypes(name, self.user_config[name], default_df)
 
         df = pd.concat([df, default_df])
         df = df[~df.index.duplicated(keep="first")]
+
+        df = self._check_index_dtypes(name, self.user_config[name], df)
+
         return df.sort_index()
 
     def _get_default_dataframe(
@@ -644,9 +592,8 @@ class ReadStrategy(Strategy):
                 list(index_data.values())[0], name=list(index_data.keys())[0]
             )
 
-        df = pd.DataFrame(index=new_index)
+        df = pd.DataFrame(index=new_index).sort_index()
         df["VALUE"] = default_values[name]
-        df["VALUE"] = df.VALUE.astype(self.user_config[name]["dtype"])
 
         return df
 
