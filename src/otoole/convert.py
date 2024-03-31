@@ -7,6 +7,7 @@ Import the convert function from the otoole package::
 >>> convert('config.yaml', 'excel', 'datafile', 'input.xlsx', 'output.dat')
 
 """
+
 import logging
 import os
 from typing import Dict, Optional, Tuple, Union
@@ -29,7 +30,7 @@ def read_results(
     from_path: str,
     input_format: str,
     input_path: str,
-    glpk_model: str = None,
+    glpk_model: Optional[str] = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS results from CBC, GLPK, Gurobi, or CPLEX results files
 
@@ -79,7 +80,7 @@ def convert_results(
     input_format: str,
     input_path: str,
     write_defaults: bool = False,
-    glpk_model: str = None,
+    glpk_model: Optional[str] = None,
 ) -> bool:
     """Post-process results from a CBC, CPLEX, Gurobi, or GLPK solution file into CSV format
 

@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from importlib.resources import files
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from pydantic import ValidationError
@@ -29,7 +29,7 @@ def _read_file(open_file, ending):
     return contents
 
 
-def read_packaged_file(filename: str, module_name: str = None):
+def read_packaged_file(filename: str, module_name: Optional[str] = None):
 
     _, ending = os.path.splitext(filename)
 
