@@ -80,7 +80,6 @@ class TestReadCplex:
         reader = ReadCplex(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
-        # print(actual)
         expected = pd.DataFrame(
             [
                 ["NewCapacity", "SIMPLICITY,ETHPLANT,2015", 0.030000000000000027],
@@ -99,7 +98,6 @@ class TestReadCplex:
         reader = ReadCplex(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
-        # print(actual)
         expected = (
             pd.DataFrame(
                 [
@@ -146,6 +144,32 @@ class TestReadCplex:
         )
         pd.testing.assert_frame_equal(actual[0]["RateOfActivity"], expected)
 
+    def test_solution_to_dataframe_with_defaults(self, user_config):
+        input_file = self.cplex_data
+
+        regions = pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
+        technologies = pd.DataFrame(data=["ETHPLANT"], columns=["VALUE"])
+        years = pd.DataFrame(data=[2014, 2015, 2016], columns=["VALUE"])
+        input_data = {"REGION": regions, "TECHNOLOGY": technologies, "YEAR": years}
+
+        reader = ReadCplex(user_config, write_defaults=True)
+        with StringIO(input_file) as file_buffer:
+            actual = reader.read(file_buffer, input_data=input_data)
+        expected = (
+            pd.DataFrame(
+                [
+                    ["SIMPLICITY", "ETHPLANT", 2014, 0],
+                    ["SIMPLICITY", "ETHPLANT", 2015, 0.030000000000000027],
+                    ["SIMPLICITY", "ETHPLANT", 2016, 0.030999999999999917],
+                ],
+                columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+            )
+            .astype({"REGION": str, "TECHNOLOGY": str, "YEAR": "int64", "VALUE": float})
+            .set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        )
+
+        pd.testing.assert_frame_equal(actual[0]["NewCapacity"], expected)
+
 
 class TestReadGurobi:
 
@@ -169,7 +193,6 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
         reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
-        # print(actual)
         expected = pd.DataFrame(
             [
                 ["TotalDiscountedCost", "SIMPLICITY,2014", 1.9360385416218188e02],
@@ -191,7 +214,6 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
         reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
-        # print(actual)
         expected = (
             pd.DataFrame(
                 [

@@ -550,11 +550,7 @@ class ReadStrategy(Strategy):
             Input data with expanded default values replacing missing entries
         """
 
-        try:
-            df = input_data[name]
-        except KeyError as ex:
-            print(ex)
-            raise KeyError(f"No input data to expand for {name}")
+        df = input_data[name]
 
         # TODO: Issue with how otoole handles trade route right now.
         # The double definition of REGION throws an error.
@@ -605,7 +601,13 @@ class ReadStrategy(Strategy):
         """Returns paramter dataframes with default values expanded"""
         names = [x for x in self.user_config if self.user_config[x]["type"] == "param"]
         for name in names:
-            input_data[name] = self._expand_dataframe(name, input_data, default_values)
+            try:
+                logger.debug(f"Serching for {name} data to expand")
+                input_data[name] = self._expand_dataframe(
+                    name, input_data, default_values
+                )
+            except KeyError:
+                logger.warning(f"Can not expand {name} data")
         return input_data
 
     def write_default_results(
@@ -616,7 +618,13 @@ class ReadStrategy(Strategy):
         """Returns result dataframes with default values expanded"""
         names = [x for x in self.user_config if self.user_config[x]["type"] == "result"]
         for name in names:
-            input_data[name] = self._expand_dataframe(name, input_data, default_values)
+            try:
+                logger.debug(f"Serching for {name} data to expand")
+                input_data[name] = self._expand_dataframe(
+                    name, input_data, default_values
+                )
+            except KeyError:
+                logger.warning(f"Can not expand {name} data")
         return input_data
 
     @abstractmethod
