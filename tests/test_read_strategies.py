@@ -19,6 +19,7 @@ from otoole.results.results import (
     identify_duplicate,
     rename_duplicate_column,
 )
+from otoole.utils import _read_file
 
 
 class TestReadCplex:
@@ -992,6 +993,21 @@ class TestReadDatafile:
             in caplog.text
         )
 
+    def test_read_datafile_with_defaults(self, user_config):
+        datafile = os.path.join("tests", "fixtures", "simplicity.txt")
+        reader = ReadDatafile(user_config=user_config, write_defaults=True)
+        actual, _ = reader.read(datafile)
+        data = [
+            ["SIMPLICITY", "DAM", 2014, 0.0],
+            ["SIMPLICITY", "DAM", 2015, 0.0],
+            ["SIMPLICITY", "DAM", 2016, 0.0],
+        ]
+        expected = pd.DataFrame(
+            data, columns=["REGION", "STORAGE", "YEAR", "VALUE"]
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        pd.testing.assert_frame_equal(actual["CapitalCostStorage"].iloc[:3], expected)
+
 
 class TestReadExcel:
     def test_read_excel_yearsplit(self, user_config):
@@ -1044,6 +1060,21 @@ class TestReadExcel:
         ]
 
         assert (actual_data == expected).all()
+
+    def test_read_excel_with_defaults(self, user_config):
+        spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        reader = ReadExcel(user_config=user_config, write_defaults=True)
+        actual, _ = reader.read(spreadsheet)
+        data = [
+            ["09_ROK", "CO2", 2017, -1.0],
+            ["09_ROK", "CO2", 2018, -1.0],
+            ["09_ROK", "CO2", 2019, -1.0],
+        ]
+        expected = pd.DataFrame(
+            data, columns=["REGION", "EMISSION", "YEAR", "VALUE"]
+        ).set_index(["REGION", "EMISSION", "YEAR"])
+
+        pd.testing.assert_frame_equal(actual["AnnualEmissionLimit"].iloc[:3], expected)
 
     def test_narrow_parameters(self, user_config):
         data = [
@@ -1160,6 +1191,26 @@ class TestReadCSV:
         actual = reader._check_for_default_values_csv(filepath)
         expected = None
         assert actual == expected
+
+    def test_read_csv_with_defaults(self):
+        user_config_path = os.path.join(
+            "tests", "fixtures", "super_simple", "super_simple.yaml"
+        )
+        with open(user_config_path, "r") as config_file:
+            user_config = _read_file(config_file, ".yaml")
+
+        filepath = os.path.join("tests", "fixtures", "super_simple", "csv")
+        reader = ReadCsv(user_config=user_config, write_defaults=True)
+        actual, _ = reader.read(filepath)
+        data = [
+            ["BB", "gas_import", 2016, 0.0],
+            ["BB", "gas_plant", 2016, 1.03456],
+        ]
+        expected = pd.DataFrame(
+            data, columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        pd.testing.assert_frame_equal(actual["CapitalCost"], expected)
 
 
 class TestReadTabular:
