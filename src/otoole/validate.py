@@ -33,7 +33,7 @@ Create a yaml validation config with the following format::
 import logging
 import re
 from collections import defaultdict
-from typing import Dict, List, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import networkx.algorithms.isolate as isolate
 import pandas as pd
@@ -53,7 +53,7 @@ def check_for_duplicates(codes: Sequence) -> bool:
     return duplicate_values
 
 
-def create_schema(config: Dict[str, Dict] = None) -> Dict:
+def create_schema(config: Optional[Dict[str, Dict]] = None) -> Dict:
     """Populate the dict of schema with codes from the validation config
 
     Arguments

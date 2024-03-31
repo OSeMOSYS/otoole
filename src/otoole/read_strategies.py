@@ -33,7 +33,7 @@ class ReadMemory(ReadStrategy):
         self._parameters = parameters
 
     def read(
-        self, filepath: Union[str, TextIO] = None, **kwargs
+        self, filepath: Union[str, TextIO, None] = None, **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
 
         config = self.user_config
