@@ -45,6 +45,9 @@ class ReadResults(ReadStrategy):
             available_results, input_data
         )  # type: Dict[str, pd.DataFrame]
 
+        if self.write_defaults:
+            results = self.write_default_results(results, default_values)
+
         return results, default_values
 
     @abstractmethod

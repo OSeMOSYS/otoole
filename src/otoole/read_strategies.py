@@ -180,13 +180,7 @@ class ReadExcel(_ReadTabular):
             )
 
         if self.write_defaults:
-            names = [
-                x for x in self.user_config if self.user_config[x]["type"] == "param"
-            ]
-            for name in names:
-                input_data[name] = self._expand_dataframe(
-                    name, input_data, default_values
-                )
+            input_data = self.write_default_params(input_data, default_values)
 
         input_data = self._check_index(input_data)
 
@@ -263,12 +257,7 @@ class ReadCsv(_ReadTabular):
         input_data = self._check_index(input_data)
 
         if self.write_defaults:
-            for name in [
-                x for x in self.user_config if self.user_config[x]["type"] == "param"
-            ]:
-                input_data[name] = self._expand_dataframe(
-                    name, input_data, default_values
-                )
+            input_data = self.write_default_params(input_data, default_values)
 
         return input_data, default_values
 
@@ -358,14 +347,7 @@ class ReadDatafile(ReadStrategy):
             input_data = self._check_index(input_data)
 
             if self.write_defaults:
-                for name in [
-                    x
-                    for x in self.user_config
-                    if self.user_config[x]["type"] == "param"
-                ]:
-                    input_data[name] = self._expand_dataframe(
-                        name, input_data, default_values
-                    )
+                input_data = self.write_default_params(input_data, default_values)
 
             return input_data, default_values
         else:

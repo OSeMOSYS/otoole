@@ -597,6 +597,28 @@ class ReadStrategy(Strategy):
 
         return df
 
+    def write_default_params(
+        self,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, Union[str, int, float]],
+    ) -> Dict[str, pd.DataFrame]:
+        """Returns paramter dataframes with default values expanded"""
+        names = [x for x in self.user_config if self.user_config[x]["type"] == "param"]
+        for name in names:
+            input_data[name] = self._expand_dataframe(name, input_data, default_values)
+        return input_data
+
+    def write_default_results(
+        self,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, Union[str, int, float]],
+    ) -> Dict[str, pd.DataFrame]:
+        """Returns result dataframes with default values expanded"""
+        names = [x for x in self.user_config if self.user_config[x]["type"] == "result"]
+        for name in names:
+            input_data[name] = self._expand_dataframe(name, input_data, default_values)
+        return input_data
+
     @abstractmethod
     def read(
         self, filepath: Union[str, TextIO], **kwargs

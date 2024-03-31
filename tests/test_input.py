@@ -29,10 +29,8 @@ def capital_cost():
         data=[
             ["SIMPLICITY", "NGCC", 2014, 1.23],
             ["SIMPLICITY", "NGCC", 2015, 2.34],
-            ["SIMPLICITY", "NGCC", 2016, 3.45],
-            ["SIMPLICITY", "HYD1", 2014, 3.45],
-            ["SIMPLICITY", "HYD1", 2015, 2.34],
-            ["SIMPLICITY", "HYD1", 2016, 1.23],
+            ["SIMPLICITY", "HYD1", 2015, 3.45],
+            ["SIMPLICITY", "HYD1", 2016, 4.56],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -67,13 +65,13 @@ def simple_input_data(region, year, technology, capital_cost, discount_rate):
         "REGION": region,
         "TECHNOLOGY": technology,
         "YEAR": year,
-        # "CapitalCost": capital_cost,
-        # "DiscountRate": discount_rate
+        "CapitalCost": capital_cost,
+        "DiscountRate": discount_rate,
     }
 
 
 @fixture
-def simple_result_data(new_capacity):
+def simple_available_results(new_capacity):
     return {"NewCapacity": new_capacity}
 
 
@@ -84,7 +82,7 @@ def simple_user_config():
             "indices": ["REGION", "TECHNOLOGY", "YEAR"],
             "type": "param",
             "dtype": "float",
-            "default": 0,
+            "default": -1,
             "short_name": "CAPEX",
         },
         "DiscountRate": {
@@ -109,7 +107,7 @@ def simple_user_config():
             "indices": ["REGION", "TECHNOLOGY", "YEAR"],
             "type": "result",
             "dtype": "float",
-            "default": 0,
+            "default": 20,
         },
     }
 
@@ -266,7 +264,7 @@ class TestExpandDefaults:
         assert_frame_equal(actual, expected)
 
     def test_expand_results_key_error(
-        self, simple_user_config, simple_result_data, simple_default_values
+        self, simple_user_config, simple_input_data, simple_default_values
     ):
         read_strategy = DummyReadStrategy(
             user_config=simple_user_config, write_defaults=True
@@ -274,7 +272,7 @@ class TestExpandDefaults:
 
         with raises(KeyError, match="SpecifiedAnnualDemand"):
             read_strategy._expand_dataframe(
-                "SpecifiedAnnualDemand", simple_result_data, simple_default_values
+                "SpecifiedAnnualDemand", simple_input_data, simple_default_values
             )
 
     # test get default dataframe
@@ -306,6 +304,84 @@ class TestExpandDefaults:
         actual = read_strategy._get_default_dataframe(
             name, simple_input_data, simple_default_values
         )
+        assert_frame_equal(actual, expected)
+
+    # test expand all input data
+
+    def test_write_default_params(
+        self, simple_user_config, simple_input_data, simple_default_values
+    ):
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual_expanded = read_strategy.write_default_params(
+            simple_input_data, simple_default_values
+        )
+        actual = actual_expanded["CapitalCost"]
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "HYD1", 2014, -1],
+                ["SIMPLICITY", "HYD1", 2015, 3.45],
+                ["SIMPLICITY", "HYD1", 2016, 4.56],
+                ["SIMPLICITY", "NGCC", 2014, 1.23],
+                ["SIMPLICITY", "NGCC", 2015, 2.34],
+                ["SIMPLICITY", "NGCC", 2016, -1],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_write_default_results_correct(
+        self,
+        simple_user_config,
+        simple_input_data,
+        simple_available_results,
+        simple_default_values,
+    ):
+        # data merged by result package
+        input_data = simple_input_data.copy()
+        input_data.update(simple_available_results)
+
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual_expanded = read_strategy.write_default_results(
+            input_data, simple_default_values
+        )
+
+        actual = actual_expanded["NewCapacity"]
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "HYD1", 2014, 2.34],
+                ["SIMPLICITY", "HYD1", 2015, 3.45],
+                ["SIMPLICITY", "HYD1", 2016, 20],
+                ["SIMPLICITY", "NGCC", 2014, 20],
+                ["SIMPLICITY", "NGCC", 2015, 20],
+                ["SIMPLICITY", "NGCC", 2016, 1.23],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_write_default_results_incorrect(
+        self,
+        simple_user_config,
+        simple_input_data,
+        simple_available_results,
+        simple_default_values,
+    ):
+        # data merged by result package
+        input_data = simple_input_data.copy()
+        input_data.update(simple_available_results)
+
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual_expanded = read_strategy.write_default_results(
+            input_data, simple_default_values
+        )
+
+        actual = actual_expanded["CapitalCost"]
+        expected = simple_input_data["CapitalCost"]
+
         assert_frame_equal(actual, expected)
 
 
