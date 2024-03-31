@@ -146,12 +146,6 @@ class DummyReadStrategy(ReadStrategy):
 
 class TestExpandDefaults:
 
-    # simple set fixtures
-
-    year = pd.DataFrame(data=[2014, 2015, 2016], columns=["VALUE"])
-    region = pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
-    technology = pd.DataFrame(data=["NGCC", "HYD1"], columns=["VALUE"])
-
     # capital costs fixtures
 
     input_data_multi_index_full = pd.DataFrame(
@@ -223,6 +217,8 @@ class TestExpandDefaults:
         [["SIMPLICITY", 0.25]], columns=["REGION", "VALUE"]
     ).set_index(["REGION"])
 
+    # test expansion of dataframe
+
     test_data = [
         ("CapitalCost", input_data_multi_index_full, output_data_multi_index_full),
         (
@@ -252,14 +248,16 @@ class TestExpandDefaults:
         ids=test_data_ids,
     )
     def test_expand_parameters_defaults(
-        self, simple_user_config, simple_default_values, name, input, expected
+        self,
+        simple_user_config,
+        simple_default_values,
+        simple_input_data,
+        name,
+        input,
+        expected,
     ):
-        input_data = {
-            "REGION": self.region,
-            "TECHNOLOGY": self.technology,
-            "YEAR": self.year,
-            name: input,
-        }
+        input_data = simple_input_data.copy()
+        input_data[name] = input
 
         read_strategy = DummyReadStrategy(user_config=simple_user_config)
         actual = read_strategy._expand_dataframe(
@@ -270,7 +268,6 @@ class TestExpandDefaults:
     def test_expand_results_key_error(
         self, simple_user_config, simple_result_data, simple_default_values
     ):
-        """When input data is just the result data"""
         read_strategy = DummyReadStrategy(
             user_config=simple_user_config, write_defaults=True
         )
@@ -279,6 +276,8 @@ class TestExpandDefaults:
             read_strategy._expand_dataframe(
                 "SpecifiedAnnualDemand", simple_result_data, simple_default_values
             )
+
+    # test get default dataframe
 
     test_data_defaults = [
         ("CapitalCost", output_data_multi_index_empty),
@@ -298,18 +297,14 @@ class TestExpandDefaults:
         self,
         simple_user_config,
         simple_default_values,
+        simple_input_data,
         name,
         expected,
     ):
-        input_data = {
-            "REGION": self.region,
-            "TECHNOLOGY": self.technology,
-            "YEAR": self.year,
-        }
 
         read_strategy = DummyReadStrategy(user_config=simple_user_config)
         actual = read_strategy._get_default_dataframe(
-            name, input_data, simple_default_values
+            name, simple_input_data, simple_default_values
         )
         assert_frame_equal(actual, expected)
 
