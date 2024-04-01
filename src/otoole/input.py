@@ -111,6 +111,7 @@ class Context:
         input_filepath: str
         output_filepath: str
         """
+
         inputs, default_values = self._read(input_filepath, **kwargs)
         self._write(inputs, output_filepath, default_values, **kwargs)
 
@@ -541,8 +542,9 @@ class ReadStrategy(Strategy):
         ----------
         name: str
             Name of parameter/result to expand
-        df: pd.DataFrame,
-            input parameter/result data to be expanded
+        input_data: Dict[str, pd.DataFrame],
+            internal datastore
+        default_values: Dict[str, pd.DataFrame],
 
         Returns
         -------
@@ -612,20 +614,23 @@ class ReadStrategy(Strategy):
 
     def write_default_results(
         self,
+        result_data: Dict[str, pd.DataFrame],
         input_data: Dict[str, pd.DataFrame],
         default_values: Dict[str, Union[str, int, float]],
     ) -> Dict[str, pd.DataFrame]:
         """Returns result dataframes with default values expanded"""
+
+        all_data = {**result_data, **input_data}
         names = [x for x in self.user_config if self.user_config[x]["type"] == "result"]
         for name in names:
             try:
                 logger.debug(f"Serching for {name} data to expand")
-                input_data[name] = self._expand_dataframe(
-                    name, input_data, default_values
+                result_data[name] = self._expand_dataframe(
+                    name, all_data, default_values
                 )
             except KeyError:
-                logger.warning(f"Can not expand {name} data")
-        return input_data
+                logger.debug(f"Can not expand {name} data")
+        return result_data
 
     @abstractmethod
     def read(

@@ -331,20 +331,17 @@ class TestExpandDefaults:
 
         assert_frame_equal(actual, expected)
 
-    def test_write_default_results_correct(
+    def test_write_default_results(
         self,
         simple_user_config,
         simple_input_data,
         simple_available_results,
         simple_default_values,
     ):
-        # data merged by result package
-        input_data = simple_input_data.copy()
-        input_data.update(simple_available_results)
 
         read_strategy = DummyReadStrategy(user_config=simple_user_config)
         actual_expanded = read_strategy.write_default_results(
-            input_data, simple_default_values
+            simple_available_results, simple_input_data, simple_default_values
         )
 
         actual = actual_expanded["NewCapacity"]
@@ -360,27 +357,6 @@ class TestExpandDefaults:
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-
-        assert_frame_equal(actual, expected)
-
-    def test_write_default_results_incorrect(
-        self,
-        simple_user_config,
-        simple_input_data,
-        simple_available_results,
-        simple_default_values,
-    ):
-        # data merged by result package
-        input_data = simple_input_data.copy()
-        input_data.update(simple_available_results)
-
-        read_strategy = DummyReadStrategy(user_config=simple_user_config)
-        actual_expanded = read_strategy.write_default_results(
-            input_data, simple_default_values
-        )
-
-        actual = actual_expanded["CapitalCost"]
-        expected = simple_input_data["CapitalCost"]
 
         assert_frame_equal(actual, expected)
 

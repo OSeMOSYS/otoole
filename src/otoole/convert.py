@@ -30,6 +30,7 @@ def read_results(
     from_path: str,
     input_format: str,
     input_path: str,
+    write_defaults: bool = False,
     glpk_model: Optional[str] = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS results from CBC, GLPK, Gurobi, or CPLEX results files
@@ -58,7 +59,9 @@ def read_results(
     """
     user_config = _get_user_config(config)
     input_strategy = _get_read_strategy(user_config, input_format)
-    result_strategy = _get_read_result_strategy(user_config, from_format, glpk_model)
+    result_strategy = _get_read_result_strategy(
+        user_config, from_format, glpk_model, write_defaults
+    )
 
     if input_strategy:
         input_data, _ = input_strategy.read(input_path)
@@ -427,11 +430,10 @@ def write(
 
     """
     user_config = _get_user_config(config)
+    write_strategy = _get_write_strategy(user_config, to_format)
     if default_values is None:
-        write_strategy = _get_write_strategy(user_config, to_format)
         write_strategy.write(inputs, to_path, {})
     else:
-        write_strategy = _get_write_strategy(user_config, to_format)
         write_strategy.write(inputs, to_path, default_values)
 
     return True

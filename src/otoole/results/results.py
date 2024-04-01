@@ -46,8 +46,7 @@ class ReadResults(ReadStrategy):
         )  # type: Dict[str, pd.DataFrame]
 
         if self.write_defaults:
-            all_data = {**input_data, **results} if input_data else results.copy()
-            results = self.write_default_results(all_data, default_values)
+            results = self.write_default_results(results, input_data, default_values)
 
         return results, default_values
 
