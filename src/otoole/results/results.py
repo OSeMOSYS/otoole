@@ -32,14 +32,25 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
+            param_default_values = self._read_default_values(self.input_config)
         else:
-            input_data = None
+            input_data = {}
 
         available_results = self.get_results_from_file(
             filepath, input_data
         )  # type: Dict[str, pd.DataFrame]
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
+
+        # need to expand discount rate for results processing
+        if "DiscountRate" in input_data:
+            input_data["DiscountRate"] = self._expand_dataframe(
+                "DiscountRate", input_data, param_default_values
+            )
+        if "DiscountRateIdv" in input_data:
+            input_data["DiscountRateIdv"] = self._expand_dataframe(
+                "DiscountRateIdv", input_data, param_default_values
+            )
 
         results = self.calculate_results(
             available_results, input_data
