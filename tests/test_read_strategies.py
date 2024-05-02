@@ -694,8 +694,7 @@ class TestReadHighs:
     """Tests reading of HiGHS solution file"""
 
     highs_data = dedent(
-        """
-Columns
+        """Columns
     Index Status        Lower        Upper       Primal         Dual  Type        Name
         0     BS            0          inf      193.604            0  Continuous  TotalDiscountedCost(SIMPLICITY,2014)
         1     BS            0          inf      187.724            0  Continuous  TotalDiscountedCost(SIMPLICITY,2015)
@@ -739,8 +738,8 @@ Objective value: 4497.319670152045
                 ["TotalDiscountedCost", "SIMPLICITY,2016", 183.998],
                 ["TotalDiscountedCost", "SIMPLICITY,2017", 181.728],
                 ["RateOfActivity", "SIMPLICITY,WN,HYD1,1,2020", 0.353203],
-                ["RateOfActivity", "SIMPLICITY,WN,HYD1,1,2021", 0.353203],
                 ["RateOfTotalActivity", "SIMPLICITY,HYD1,WN,2020", 0.353203],
+                ["RateOfActivity", "SIMPLICITY,WN,HYD1,1,2021", 0.353203],
             ],
             columns=["Variable", "Index", "Value"],
         ).astype({"Variable": str, "Index": str, "Value": float})

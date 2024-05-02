@@ -266,13 +266,12 @@ class ReadHighs(ReadWideResults):
         ---------
         file_path : str
         """
-
         df = pd.read_csv(
             file_path,
             sep=r"\s+",
             skiprows=1,
             index_col=0,
-            dtype=str,  # suppresses pandas warning
+            dtype=str,
         )
         df.index.name = ""  # remove the name Index, as otoole uses that
 
@@ -280,6 +279,7 @@ class ReadHighs(ReadWideResults):
         df = df[df.Type.isin(var_types)].copy()
         df[["Variable", "Index"]] = df["Name"].str.split("(", expand=True).loc[:, 0:1]
         df["Index"] = df["Index"].str.replace(")", "", regex=False)
+        df = df[~(df.Primal.astype(float).abs() < 1e-6)]
         return (
             df[["Variable", "Index", "Primal"]]
             .rename(columns={"Primal": "Value"})
