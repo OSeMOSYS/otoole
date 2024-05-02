@@ -15,6 +15,7 @@ from otoole.results.results import (
     ReadCplex,
     ReadGlpk,
     ReadGurobi,
+    ReadHighs,
     check_for_duplicates,
     identify_duplicate,
     rename_duplicate_column,
@@ -687,6 +688,108 @@ e o f
     def test_read_model_error(self, user_config):
         with raises(TypeError):
             ReadGlpk(user_config)
+
+
+class TestReadHighs:
+    """Tests reading of HiGHS solution file"""
+
+    highs_data = dedent(
+        """
+Columns
+    Index Status        Lower        Upper       Primal         Dual  Type        Name
+        0     BS            0          inf      193.604            0  Continuous  TotalDiscountedCost(SIMPLICITY,2014)
+        1     BS            0          inf      187.724            0  Continuous  TotalDiscountedCost(SIMPLICITY,2015)
+        2     BS            0          inf      183.998            0  Continuous  TotalDiscountedCost(SIMPLICITY,2016)
+        3     BS            0          inf      181.728            0  Continuous  TotalDiscountedCost(SIMPLICITY,2017)
+     2433     LB            0          inf            0       162680  Continuous  RateOfActivity(SIMPLICITY,ID,BACKSTOP1,1,2014)
+     2434     LB            0          inf            0       162682  Continuous  RateOfActivity(SIMPLICITY,ID,BACKSTOP1,2,2014)
+     2435     BS            0          inf           -0            0  Continuous  RateOfTotalActivity(SIMPLICITY,BACKSTOP1,ID,2014)
+     2436     LB            0          inf            0       154933  Continuous  RateOfActivity(SIMPLICITY,ID,BACKSTOP1,1,2015)
+     5772     BS            0          inf     0.353203            0  Continuous  RateOfActivity(SIMPLICITY,WN,HYD1,1,2020)
+     5773     LB            0          inf            0      2.15221  Continuous  RateOfActivity(SIMPLICITY,WN,HYD1,2,2020)
+     5774     BS            0          inf     0.353203            0  Continuous  RateOfTotalActivity(SIMPLICITY,HYD1,WN,2020)
+     5775     BS            0          inf     0.353203            0  Continuous  RateOfActivity(SIMPLICITY,WN,HYD1,1,2021)
+    15417     BS            0          inf           -0            0  Continuous  RateOfProductionByTechnologyByMode(SIMPLICITY,ID,GAS_IMPORT,1,GAS,2038)
+    15418     BS            0          inf           -0            0  Continuous  RateOfProductionByTechnologyByMode(SIMPLICITY,ID,GAS_IMPORT,1,GAS,2039)
+    15419     BS            0          inf           -0            0  Continuous  RateOfProductionByTechnologyByMode(SIMPLICITY,ID,GAS_IMPORT,1,GAS,2040)
+Rows
+    Index Status        Lower        Upper       Primal         Dual  Name
+        0     FX     -1.59376     -1.59376     -1.59376     -2.68632  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2014)
+        1     FX     -1.60168     -1.60168     -1.60168      -2.5584  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2015)
+        2     FX     -1.63695     -1.63695     -1.63695     -2.43657  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2016)
+        3     FX      -1.6859      -1.6859      -1.6859     -2.32054  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2017)
+        4     FX     -1.74637     -1.74637     -1.74637     -2.21004  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2018)
+        5     FX     -1.80612     -1.80612     -1.80612      -2.1048  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2019)
+
+Model status: Optimal
+
+Objective value: 4497.319670152045
+"""
+    )
+
+    def test_convert_to_dataframe(self, user_config):
+        input_file = self.highs_data
+        reader = ReadHighs(user_config)
+        with StringIO(input_file) as file_buffer:
+            actual = reader._convert_to_dataframe(file_buffer)
+        expected = pd.DataFrame(
+            [
+                ["TotalDiscountedCost", "SIMPLICITY,2014", 193.604],
+                ["TotalDiscountedCost", "SIMPLICITY,2015", 187.724],
+                ["TotalDiscountedCost", "SIMPLICITY,2016", 183.998],
+                ["TotalDiscountedCost", "SIMPLICITY,2017", 181.728],
+                ["RateOfActivity", "SIMPLICITY,WN,HYD1,1,2020", 0.353203],
+                ["RateOfActivity", "SIMPLICITY,WN,HYD1,1,2021", 0.353203],
+                ["RateOfTotalActivity", "SIMPLICITY,HYD1,WN,2020", 0.353203],
+            ],
+            columns=["Variable", "Index", "Value"],
+        ).astype({"Variable": str, "Index": str, "Value": float})
+
+        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_solution_to_dataframe(self, user_config):
+        input_file = self.highs_data
+        reader = ReadHighs(user_config)
+        with StringIO(input_file) as file_buffer:
+            actual = reader.read(file_buffer)
+        # print(actual)
+        expected = (
+            pd.DataFrame(
+                [
+                    ["SIMPLICITY", 2014, 193.604],
+                    ["SIMPLICITY", 2015, 187.724],
+                    ["SIMPLICITY", 2016, 183.998],
+                    ["SIMPLICITY", 2017, 181.728],
+                ],
+                columns=["REGION", "YEAR", "VALUE"],
+            )
+            .astype({"YEAR": "int64", "VALUE": float})
+            .set_index(["REGION", "YEAR"])
+        )
+
+        pd.testing.assert_frame_equal(actual[0]["TotalDiscountedCost"], expected)
+
+        expected = (
+            pd.DataFrame(
+                [
+                    ["SIMPLICITY", "WN", "HYD1", 1, 2020, 0.353203],
+                    ["SIMPLICITY", "WN", "HYD1", 1, 2021, 0.353203],
+                ],
+                columns=[
+                    "REGION",
+                    "TIMESLICE",
+                    "TECHNOLOGY",
+                    "MODE_OF_OPERATION",
+                    "YEAR",
+                    "VALUE",
+                ],
+            )
+            .astype({"YEAR": "int64", "VALUE": float, "MODE_OF_OPERATION": "int64"})
+            .set_index(
+                ["REGION", "TIMESLICE", "TECHNOLOGY", "MODE_OF_OPERATION", "YEAR"]
+            )
+        )
+        pd.testing.assert_frame_equal(actual[0]["RateOfActivity"], expected)
 
 
 class TestCleanOnRead:
