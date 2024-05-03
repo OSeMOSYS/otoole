@@ -6,6 +6,7 @@ Changelog
 ===========================
 - Lock pandas to 2.1.4 or later
 - Capital Investment result calculation fixed
+- Add HiGHS as a solver
 
 Version 1.1.2
 =============

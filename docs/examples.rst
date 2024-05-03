@@ -21,9 +21,9 @@ Solver Setup
 Objective
 ~~~~~~~~~
 
-Install GLPK_ (required) and CBC_ (optional) to use in the otoole examples.
-While ``otoole`` does not require a solver, these examples will use the free
-and open source solvers GLPK_ and CBC_.
+Install GLPK_ (required), CBC_ (optional), and HiGHS_ (optional) to use in the otoole
+examples. While ``otoole`` does not require a solver, these examples will use the free
+and open source solvers GLPK_, CBC_, and HiGHS_.
 
 1. Install GLPK
 ~~~~~~~~~~~~~~~~
@@ -50,8 +50,6 @@ your Python packages, you can install GLPK via the command::
 
     $ conda install -c conda-forge glpk
 
-2. Test the GLPK install
-~~~~~~~~~~~~~~~~~~~~~~~~
 Once installed, you should be able to call the ``glpsol`` command::
 
     $ glpsol
@@ -61,7 +59,7 @@ Once installed, you should be able to call the ``glpsol`` command::
 .. TIP::
     See the `GLPK Wiki`_ for more information on the ``glpsol`` command
 
-3. Install CBC
+2. Install CBC
 ~~~~~~~~~~~~~~
 
 CBC_ is a free and open-source mixed integer linear programming solver. Full
@@ -84,8 +82,6 @@ your Python packages, you can install CBC via the command::
 
     $ conda install -c conda-forge coincbc
 
-4. Test the CBC install
-~~~~~~~~~~~~~~~~~~~~~~~
 Once installed, you should be able to directly call CBC::
 
     $ cbc
@@ -98,6 +94,60 @@ Once installed, you should be able to directly call CBC::
     Coin:
 
 You can exit the solver by typing ``quit``
+
+3. Install HiGHS
+~~~~~~~~~~~~~~~~
+
+HiGHS_ is a free and open-source mixed integer linear programming solver. HiGHS_ can be
+run through the command line or through one of their
+`API interfaces <https://ergo-code.github.io/HiGHS/dev/interfaces/python/>`_.  See the
+`HiGHS install instructions <https://ergo-code.github.io/HiGHS/dev/installation/>`_ for full
+details on both methods. Here we will cover abbreviated instructions for CLI and Python
+execution.
+
+CLI Install
++++++++++++
+
+To install the HiGHS executable, install a pre-compiled binary as directed by
+the `HiGHS install documentation <https://ergo-code.github.io/HiGHS/dev/installation/#Precompiled-Binaries>`_.
+
+Extract the binary with the following command on MacOS/Linux::
+
+    $ tar -xzf filename.tar.gz
+
+Navigate to the ``./bin/`` folder and run HiGHS from the command line::
+
+    $ ./highs
+
+.. TIP::
+    To call HiGHS_ from anywhere in the command line, add the path to the execultable
+    to your environment variables.
+
+Once installed, you should be able to directly call HiGHS_::
+
+    $ highs
+    Please specify filename in .mps|.lp|.ems format.
+
+Python Install
+++++++++++++++
+
+In Python, simple install HiGHS through pip with::
+
+    $ pip install highspy
+
+Once installed, you should be able to see ``highspy`` in your environment::
+
+    $ pip show highspy
+    Name: highspy
+    Version: 1.5.3
+    Summary: Python interface to HiGHS
+    Home-page: https://github.com/ergo-code/highs
+    Author:
+    Author-email:
+    License: MIT
+    Location: /home/xxx/.local/lib/python3.10/site-packages
+    Requires:
+    Required-by:
 
 Input Data Conversion
 ---------------------
@@ -145,7 +195,7 @@ Process Solutions from Different Solvers
 Objective
 ~~~~~~~~~
 
-Process solutions from GLPK_, CBC_, Gurobi_, and CPLEX_. This example assumes
+Process solutions from GLPK_, CBC_, HiGHS_, Gurobi_, and CPLEX_. This example assumes
 you have an existing GNU MathProg datafile called ``simplicity.txt`` (from the
 previous example).
 
@@ -175,7 +225,62 @@ save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV re
 
     $ otoole results cbc csv simplicity.sol results csv data config.yaml
 
-3. Process a solution from Gurobi
+3. Process a solution from HiGHS (CLI)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use HiGHS_ to solve the model and
+save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/``.
+
+HiGHS_ has the ability to write solutions in a variety of formats; ``otoole`` will process the
+``kSolutionStylePretty`` solution style. We pass this into the HiGHS_ solver through an
+`options file <https://ergo-code.github.io/HiGHS/dev/options/intro/#Options-file>`_. First, create the options file::
+
+    $ touch highs_options.txt
+
+And add the following option to the file::
+
+    write_solution_style = 1
+
+Next, we can follow a similar process to processing results from other solvers::
+
+    $ glpsol -m OSeMOSYS.txt -d simplicity.txt --wlp simplicity.lp --check
+
+    $ highs --model_file simplicity.lp --solution_file simplicity.sol --options_file="highs_options.txt"
+
+    $ otoole results highs csv simplicity.sol results csv data config.yaml
+
+.. NOTE::
+    Run the following command to see all the options available to pass into highs in the options file::
+
+        $ highs --options_file=""
+
+4. Process a solution from HiGHS (Python)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use `HiGHS Python API`_  to solve a model, and use otoole's Python API to create a folder of CSV results called ``results/``.
+HiGHS can process models in both ``.mlp`` and CPLEX ``.lp`` format. This example will assume you have a model file called ``simplicity.lp``
+already created. This can be created through GLPK following the first command in the previous example.
+
+First, install HiGHS and otoole into your Python environment::
+
+    $ pip install highspy
+    $ pip install otoole
+
+Next, use HiGHS to solve the model and write a solution file::
+
+    import highspy
+    h = highspy.Highs()
+    h.readModel("simplicity.lp")
+    h.run()
+    h.writeSolution("simplicity.sol", 1)
+
+.. warning::
+    The HiGHS_ solution style **must be** solution style ``1`` (ie. ``kSolutionStylePretty``)
+
+Finally, use otoole to convert the solution file into a folder of result CSVs::
+
+    from otoole import convert_results
+    convert_results("config.yaml", "highs", "csv", "simplicity.sol", "results", "csv", "data")
+
+1. Process a solution from Gurobi
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use Gurobi_ to solve the model and
 save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/`` from the solution file::
@@ -186,7 +291,7 @@ save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV re
 
     $ otoole results gurobi csv simplicity.sol results csv data config.yaml
 
-4. Process a solution from CPLEX
+6. Process a solution from CPLEX
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use CPLEX_ to solve the model and
 save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/`` from the solution file::
@@ -504,3 +609,5 @@ will also flag it as an isolated fuel. This means the fuel is unconnected from t
 .. _Anaconda: https://www.anaconda.com/
 .. _Gurobi: https://www.gurobi.com/
 .. _graphviz: https://www.graphviz.org/download/
+.. _HiGHS: https://ergo-code.github.io/HiGHS/dev/
+.. _HiGHS Python API: https://ergo-code.github.io/HiGHS/dev/interfaces/python/

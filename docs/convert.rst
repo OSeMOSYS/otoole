@@ -23,7 +23,7 @@ See :py:func:`otoole.convert.convert` for more details
 Converting solver results to a folder of CSV files
 --------------------------------------------------
 
-The ``convert_results`` function creates a folder of CSV result files from a CBC_, CLP_,
+The ``convert_results`` function creates a folder of CSV result files from a CBC_, CLP_, HiGHS_,
 Gurobi_ or CPLEX_ solution file::
 
 >>> from otoole import convert_results
@@ -34,7 +34,7 @@ See :func:`otoole.convert.convert_results` for more details
 Reading solver results into a dict of Pandas DataFrames
 -------------------------------------------------------
 
-The ``read_results`` function reads a CBC_, CLP_,
+The ``read_results`` function reads a CBC_, CLP_, HiGHS_,
 Gurobi_ or CPLEX_ solution file into memory::
 
 >>> from otoole import read_results
@@ -68,3 +68,4 @@ You can use the :py:func:`otoole.convert.write` function to write data out to di
 .. _CLP: https://github.com/coin-or/Clp
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
 .. _Gurobi: https://www.gurobi.com/
+.. _HiGHS: https://ergo-code.github.io/HiGHS/dev/
