@@ -184,6 +184,9 @@ visualising the reference energy system through the ``vis res`` command is suppo
     including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The graphviz_ library
     used to layout the reference energy system will interpret the file ending.
 
+    Remember to check if you have already installed graphviz_ on your maching, before using this fuctionality. 
+    To install graphviz_ use ``conda install graphviz`` command.
+
 Validation
 ----------
 The validation module in ``otoole`` checks technology and fuel names against a
