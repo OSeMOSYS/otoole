@@ -197,6 +197,8 @@ save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV re
 
     $ otoole results cplex csv simplicity.sol results csv data config.yaml
 
+.. _model-visualization:
+
 Model Visualization
 -------------------
 
@@ -217,18 +219,21 @@ Run the following command, where the RES will be saved as the file ``res.png``::
 
 .. WARNING::
     If you encounter a ``graphviz`` dependency error, install it on your system
-    from the graphviz_ website (if on Windows) or via the command::
+    following instructions on the Graphviz_ website. If on Windows,
+    download the install package `from Graphviz <https://graphviz.org/download/>`_.
+    If on Mac or Linux, or running conda, use one of the following commands::
 
-        sudo apt install graphviz # if on Ubuntu
-        brew install graphviz # if on Mac
+        brew install graphviz       # if on Mac
+        sudo apt install graphviz   # if on Ubuntu
+        conda install graphviz      # if using conda
 
     To check that ``graphviz`` installed correctly, run ``dot -V`` to check the
     version::
 
-        ~$ dot -V
+        $ dot -V
         dot - graphviz version 2.43.0 (0)
 
-1. View the RES
+2. View the RES
 ~~~~~~~~~~~~~~~
 Open the newly created file, ``res.png`` and the following image should be
 displayed
@@ -503,4 +508,4 @@ will also flag it as an isolated fuel. This means the fuel is unconnected from t
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
 .. _Anaconda: https://www.anaconda.com/
 .. _Gurobi: https://www.gurobi.com/
-.. _graphviz: https://www.graphviz.org/download/
+.. _Graphviz: https://www.graphviz.org/download/
