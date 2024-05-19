@@ -29,10 +29,21 @@ def capital_cost():
         data=[
             ["SIMPLICITY", "NGCC", 2014, 1.23],
             ["SIMPLICITY", "NGCC", 2015, 2.34],
-            ["SIMPLICITY", "NGCC", 2016, 3.45],
-            ["SIMPLICITY", "HYD1", 2014, 3.45],
-            ["SIMPLICITY", "HYD1", 2015, 2.34],
-            ["SIMPLICITY", "HYD1", 2016, 1.23],
+            ["SIMPLICITY", "HYD1", 2015, 3.45],
+            ["SIMPLICITY", "HYD1", 2016, 4.56],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return df
+
+
+@fixture
+def new_capacity():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "NGCC", 2016, 1.23],
+            ["SIMPLICITY", "HYD1", 2014, 2.34],
+            ["SIMPLICITY", "HYD1", 2015, 3.45],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -49,13 +60,19 @@ def simple_default_values():
 
 
 @fixture
-def simple_input_data(region, year, technology, capital_cost):
+def simple_input_data(region, year, technology, capital_cost, discount_rate):
     return {
         "REGION": region,
         "TECHNOLOGY": technology,
         "YEAR": year,
         "CapitalCost": capital_cost,
+        "DiscountRate": discount_rate,
     }
+
+
+@fixture
+def simple_available_results(new_capacity):
+    return {"NewCapacity": new_capacity}
 
 
 @fixture
@@ -65,8 +82,14 @@ def simple_user_config():
             "indices": ["REGION", "TECHNOLOGY", "YEAR"],
             "type": "param",
             "dtype": "float",
-            "default": 0,
+            "default": -1,
             "short_name": "CAPEX",
+        },
+        "DiscountRate": {
+            "indices": ["REGION"],
+            "type": "param",
+            "dtype": "float",
+            "default": 0.25,
         },
         "REGION": {
             "dtype": "str",
@@ -79,6 +102,12 @@ def simple_user_config():
         "YEAR": {
             "dtype": "int",
             "type": "set",
+        },
+        "NewCapacity": {
+            "indices": ["REGION", "TECHNOLOGY", "YEAR"],
+            "type": "result",
+            "dtype": "float",
+            "default": 20,
         },
     }
 
@@ -115,191 +144,221 @@ class DummyReadStrategy(ReadStrategy):
 
 class TestExpandDefaults:
 
-    year = pd.DataFrame(data=[2014, 2015, 2016], columns=["VALUE"])
-    region = pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
-    technology = pd.DataFrame(data=["NGCC", "HYD1"], columns=["VALUE"])
+    # capital costs fixtures
 
-    def input_data_multi_index_no_defaults(region, technology, year):
-        capex_in = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2014, 2000],
-                ["SIMPLICITY", "HYD1", 2015, 1500],
-                ["SIMPLICITY", "HYD1", 2016, 1000],
-                ["SIMPLICITY", "NGCC", 2014, 1000],
-                ["SIMPLICITY", "NGCC", 2015, 900],
-                ["SIMPLICITY", "NGCC", 2016, 800],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        capex_out = capex_in.copy()
-        capex_out["VALUE"] = capex_out["VALUE"].astype(float)
+    input_data_multi_index_full = pd.DataFrame(
+        [
+            ["SIMPLICITY", "HYD1", 2014, 2000.0],
+            ["SIMPLICITY", "HYD1", 2015, 1500.0],
+            ["SIMPLICITY", "HYD1", 2016, 1000.0],
+            ["SIMPLICITY", "NGCC", 2014, 1000.0],
+            ["SIMPLICITY", "NGCC", 2015, 900.0],
+            ["SIMPLICITY", "NGCC", 2016, 800.0],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
-        data = {
-            "CapitalCost": capex_in,
-            "TECHNOLOGY": technology,
-            "YEAR": year,
-            "REGION": region,
-        }
-        return data, "CapitalCost", capex_out
+    output_data_multi_index_full = input_data_multi_index_full.copy()
 
-    def input_data_multi_index(region, technology, year):
-        capex_in = pd.DataFrame(
-            [
-                ["SIMPLICITY", "NGCC", 2014, 1000],
-                ["SIMPLICITY", "NGCC", 2015, 900],
-                ["SIMPLICITY", "HYD1", 2015, 1500],
-                ["SIMPLICITY", "HYD1", 2016, 1000],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        capex_out = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2014, -1],
-                ["SIMPLICITY", "HYD1", 2015, 1500],
-                ["SIMPLICITY", "HYD1", 2016, 1000],
-                ["SIMPLICITY", "NGCC", 2014, 1000],
-                ["SIMPLICITY", "NGCC", 2015, 900],
-                ["SIMPLICITY", "NGCC", 2016, -1],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        capex_out["VALUE"] = capex_out["VALUE"].astype(float)
+    input_data_multi_index_partial = pd.DataFrame(
+        [
+            ["SIMPLICITY", "NGCC", 2014, 1000.0],
+            ["SIMPLICITY", "NGCC", 2015, 900.0],
+            ["SIMPLICITY", "HYD1", 2015, 1500.0],
+            ["SIMPLICITY", "HYD1", 2016, 1000.0],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
-        data = {
-            "CapitalCost": capex_in,
-            "TECHNOLOGY": technology,
-            "YEAR": year,
-            "REGION": region,
-        }
-        return data, "CapitalCost", capex_out
+    output_data_multi_index_partial = pd.DataFrame(
+        [
+            ["SIMPLICITY", "HYD1", 2014, -1.0],
+            ["SIMPLICITY", "HYD1", 2015, 1500.0],
+            ["SIMPLICITY", "HYD1", 2016, 1000.0],
+            ["SIMPLICITY", "NGCC", 2014, 1000.0],
+            ["SIMPLICITY", "NGCC", 2015, 900.0],
+            ["SIMPLICITY", "NGCC", 2016, -1.0],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
-    def input_data_multi_index_empty(region, technology, year):
-        capex_in = pd.DataFrame(
-            [],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        capex_out = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2014, -1],
-                ["SIMPLICITY", "HYD1", 2015, -1],
-                ["SIMPLICITY", "HYD1", 2016, -1],
-                ["SIMPLICITY", "NGCC", 2014, -1],
-                ["SIMPLICITY", "NGCC", 2015, -1],
-                ["SIMPLICITY", "NGCC", 2016, -1],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        capex_out["VALUE"] = capex_out["VALUE"].astype(float)
+    # discount rate fixtures
 
-        data = {
-            "CapitalCost": capex_in,
-            "TECHNOLOGY": technology,
-            "YEAR": year,
-            "REGION": region,
-        }
-        return data, "CapitalCost", capex_out
+    input_data_multi_index_empty = pd.DataFrame(
+        [],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
-    def input_data_single_index(region):
-        discount_rate_in = pd.DataFrame(
-            [["SIMPLICITY", 0.05]], columns=["REGION", "VALUE"]
-        ).set_index(["REGION"])
-        discount_rate_out = discount_rate_in.copy()
-        discount_rate_out["VALUE"] = discount_rate_out["VALUE"].astype(float)
+    output_data_multi_index_empty = pd.DataFrame(
+        [
+            ["SIMPLICITY", "HYD1", 2014, -1.0],
+            ["SIMPLICITY", "HYD1", 2015, -1.0],
+            ["SIMPLICITY", "HYD1", 2016, -1.0],
+            ["SIMPLICITY", "NGCC", 2014, -1.0],
+            ["SIMPLICITY", "NGCC", 2015, -1.0],
+            ["SIMPLICITY", "NGCC", 2016, -1.0],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
-        data = {
-            "DiscountRate": discount_rate_in,
-            "REGION": region,
-        }
-        return data, "DiscountRate", discount_rate_out
+    input_data_single_index_full = pd.DataFrame(
+        [["SIMPLICITY", 0.05]], columns=["REGION", "VALUE"]
+    ).set_index(["REGION"])
 
-    def input_data_single_index_empty(region):
-        discount_rate_in = pd.DataFrame([], columns=["REGION", "VALUE"]).set_index(
-            ["REGION"]
-        )
-        discount_rate_out = pd.DataFrame(
-            [["SIMPLICITY", 0.25]], columns=["REGION", "VALUE"]
-        ).set_index(["REGION"])
-        discount_rate_out["VALUE"] = discount_rate_out["VALUE"].astype(float)
+    output_data_single_index_full = input_data_single_index_full.copy()
 
-        data = {
-            "DiscountRate": discount_rate_in,
-            "TECHNOLOGY": technology,
-            "YEAR": year,
-            "REGION": region,
-        }
-        return data, "DiscountRate", discount_rate_out
+    input_data_single_index_empty = pd.DataFrame(
+        [], columns=["REGION", "VALUE"]
+    ).set_index(["REGION"])
 
-    @fixture
-    def result_data(region):
-        new_capacity_in = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2015, 100],
-                ["SIMPLICITY", "HYD1", 2016, 0.1],
-                ["SIMPLICITY", "NGCC", 2014, 0.5],
-                ["SIMPLICITY", "NGCC", 2015, 100],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
-        new_capacity_out = pd.DataFrame(
-            [
-                ["SIMPLICITY", "HYD1", 2014, 20],
-                ["SIMPLICITY", "HYD1", 2015, 100],
-                ["SIMPLICITY", "HYD1", 2016, 0.1],
-                ["SIMPLICITY", "NGCC", 2014, 0.5],
-                ["SIMPLICITY", "NGCC", 2015, 100],
-                ["SIMPLICITY", "NGCC", 2016, 20],
-            ],
-            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    output_data_single_index_empty = pd.DataFrame(
+        [["SIMPLICITY", 0.25]], columns=["REGION", "VALUE"]
+    ).set_index(["REGION"])
 
-        data = {
-            "NewCapacity": new_capacity_in,
-        }
-        return data, "NewCapacity", new_capacity_out
+    # test expansion of dataframe
 
-    parameter_test_data = [
-        input_data_multi_index_no_defaults(region, technology, year),
-        input_data_multi_index(region, technology, year),
-        input_data_multi_index_empty(region, technology, year),
-        input_data_single_index(region),
-        input_data_single_index_empty(region),
+    test_data = [
+        ("CapitalCost", input_data_multi_index_full, output_data_multi_index_full),
+        (
+            "CapitalCost",
+            input_data_multi_index_partial,
+            output_data_multi_index_partial,
+        ),
+        ("CapitalCost", input_data_multi_index_empty, output_data_multi_index_empty),
+        ("DiscountRate", input_data_single_index_full, output_data_single_index_full),
+        (
+            "DiscountRate",
+            input_data_single_index_empty,
+            output_data_single_index_empty,
+        ),
     ]
-    parameter_test_data_ids = [
-        "multi_index_no_defaults",
-        "multi_index",
+    test_data_ids = [
+        "multi_index_full",
+        "multi_index_partial",
         "multi_index_empty",
-        "single_index",
+        "single_index_full",
         "single_index_empty",
     ]
 
     @mark.parametrize(
-        "input_data,parameter,expected",
-        parameter_test_data,
-        ids=parameter_test_data_ids,
+        "name,input,expected",
+        test_data,
+        ids=test_data_ids,
     )
     def test_expand_parameters_defaults(
-        self, user_config, simple_default_values, input_data, parameter, expected
+        self,
+        simple_user_config,
+        simple_default_values,
+        simple_input_data,
+        name,
+        input,
+        expected,
     ):
-        write_strategy = DummyWriteStrategy(
-            user_config=user_config, default_values=simple_default_values
-        )
-        write_strategy.input_data = input_data
-        actual = write_strategy._expand_defaults(
-            input_data, write_strategy.default_values
-        )
-        assert_frame_equal(actual[parameter], expected)
+        input_data = simple_input_data.copy()
+        input_data[name] = input
 
-    def test_expand_result_defaults(
-        self, user_config, simple_default_values, simple_input_data, result_data
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual = read_strategy._expand_dataframe(
+            name, input_data, simple_default_values
+        )
+        assert_frame_equal(actual, expected)
+
+    def test_expand_results_key_error(
+        self, simple_user_config, simple_input_data, simple_default_values
     ):
-        write_strategy = DummyWriteStrategy(
-            user_config=user_config, default_values=simple_default_values
+        read_strategy = DummyReadStrategy(
+            user_config=simple_user_config, write_defaults=True
         )
-        write_strategy.input_data = simple_input_data
-        actual = write_strategy._expand_defaults(
-            result_data[0], write_strategy.default_values
+
+        with raises(KeyError, match="SpecifiedAnnualDemand"):
+            read_strategy._expand_dataframe(
+                "SpecifiedAnnualDemand", simple_input_data, simple_default_values
+            )
+
+    # test get default dataframe
+
+    test_data_defaults = [
+        ("CapitalCost", output_data_multi_index_empty),
+        ("DiscountRate", output_data_single_index_empty),
+    ]
+    test_data_defaults_ids = [
+        "multi_index",
+        "single_index",
+    ]
+
+    @mark.parametrize(
+        "name,expected",
+        test_data_defaults,
+        ids=test_data_defaults_ids,
+    )
+    def test_get_default_dataframe(
+        self,
+        simple_user_config,
+        simple_default_values,
+        simple_input_data,
+        name,
+        expected,
+    ):
+
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual = read_strategy._get_default_dataframe(
+            name, simple_input_data, simple_default_values
         )
-        assert_frame_equal(actual[result_data[1]], result_data[2])
+        assert_frame_equal(actual, expected)
+
+    # test expand all input data
+
+    def test_write_default_params(
+        self, simple_user_config, simple_input_data, simple_default_values
+    ):
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual_expanded = read_strategy.write_default_params(
+            simple_input_data, simple_default_values
+        )
+        actual = actual_expanded["CapitalCost"]
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "HYD1", 2014, -1],
+                ["SIMPLICITY", "HYD1", 2015, 3.45],
+                ["SIMPLICITY", "HYD1", 2016, 4.56],
+                ["SIMPLICITY", "NGCC", 2014, 1.23],
+                ["SIMPLICITY", "NGCC", 2015, 2.34],
+                ["SIMPLICITY", "NGCC", 2016, -1],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_write_default_results(
+        self,
+        simple_user_config,
+        simple_input_data,
+        simple_available_results,
+        simple_default_values,
+    ):
+
+        read_strategy = DummyReadStrategy(user_config=simple_user_config)
+        actual_expanded = read_strategy.write_default_results(
+            simple_available_results, simple_input_data, simple_default_values
+        )
+
+        actual = actual_expanded["NewCapacity"]
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "HYD1", 2014, 2.34],
+                ["SIMPLICITY", "HYD1", 2015, 3.45],
+                ["SIMPLICITY", "HYD1", 2016, 20],
+                ["SIMPLICITY", "NGCC", 2014, 20],
+                ["SIMPLICITY", "NGCC", 2015, 20],
+                ["SIMPLICITY", "NGCC", 2016, 1.23],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
 
 
 class TestReadStrategy:
@@ -315,8 +374,8 @@ class TestReadStrategy:
         ("set", "REGION", pd.DataFrame(columns=["VALUE"])),
     )
     compare_read_to_expected_data = [
-        [["CapitalCost", "REGION", "TECHNOLOGY", "YEAR"], False],
-        [["CAPEX", "REGION", "TECHNOLOGY", "YEAR"], True],
+        [["CapitalCost", "DiscountRate", "REGION", "TECHNOLOGY", "YEAR"], False],
+        [["CAPEX", "DiscountRate", "REGION", "TECHNOLOGY", "YEAR"], True],
     ]
     compare_read_to_expected_data_exception = [
         ["CapitalCost", "REGION", "TECHNOLOGY"],
