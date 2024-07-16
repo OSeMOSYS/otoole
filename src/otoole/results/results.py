@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 from io import StringIO
-from typing import Any, Dict, List, Set, TextIO, Tuple, Union
+from typing import Any, Dict, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -145,7 +145,7 @@ class ReadWideResults(ReadResults):
         return results
 
 
-def check_duplicate_index(df: pd.DataFrame, columns: List, index: List) -> pd.DataFrame:
+def check_duplicate_index(df: pd.DataFrame, columns: list, index: list) -> pd.DataFrame:
     """Catches pandas error when there are duplicate column indices"""
     if check_for_duplicates(index):
         index = rename_duplicate_column(index)
@@ -156,12 +156,12 @@ def check_duplicate_index(df: pd.DataFrame, columns: List, index: List) -> pd.Da
     return df, index
 
 
-def check_for_duplicates(index: List) -> bool:
+def check_for_duplicates(index: list) -> bool:
     return len(set(index)) != len(index)
 
 
-def identify_duplicate(index: List) -> Union[int, bool]:
-    elements = set()  # type: Set
+def identify_duplicate(index: list) -> Union[int, bool]:
+    elements = set()  # type: set
     for counter, elem in enumerate(index):
         if elem in elements:
             return counter
@@ -170,7 +170,7 @@ def identify_duplicate(index: List) -> Union[int, bool]:
     return False
 
 
-def rename_duplicate_column(index: List) -> List:
+def rename_duplicate_column(index: list) -> list:
     column = index.copy()
     location = identify_duplicate(column)
     if location:
