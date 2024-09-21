@@ -30,6 +30,7 @@ def read_results(
     from_path: str,
     input_format: str,
     input_path: str,
+    write_defaults: bool = False,
     glpk_model: Optional[str] = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS results from CBC, GLPK, Gurobi, or CPLEX results files
@@ -46,6 +47,8 @@ def read_results(
         Format of input data. Available options are 'datafile', 'csv' and 'excel'
     input_path: str
         Path to input data
+    write_defaults: bool, default: False
+        Expand default values to pad dataframes
     glpk_model : str
         Path to ``*.glp`` model file
 
@@ -56,7 +59,9 @@ def read_results(
     """
     user_config = _get_user_config(config)
     input_strategy = _get_read_strategy(user_config, input_format)
-    result_strategy = _get_read_result_strategy(user_config, from_format, glpk_model)
+    result_strategy = _get_read_result_strategy(
+        user_config, from_format, glpk_model, write_defaults
+    )
 
     if input_strategy:
         input_data, _ = input_strategy.read(input_path)
@@ -91,7 +96,7 @@ def convert_results(
     from_format : str
         Available options are 'cbc', 'cplex' and 'gurobi'
     to_format : str
-        Available options are 'csv'
+        Available options are 'csv', 'excel'
     from_path : str
         Path to cbc, cplex or gurobi solution file
     to_path : str
@@ -100,8 +105,8 @@ def convert_results(
         Format of input data. Available options are 'datafile', 'csv' and 'excel'
     input_path: str
         Path to input data
-    write_defaults : bool
-        Write default values to CSVs
+    write_defaults: bool, default: False
+        Expand default values to pad dataframes
     glpk_model : str
         Path to ``*.glp`` model file
 
@@ -119,16 +124,16 @@ def convert_results(
 
     # set read strategy
 
-    read_strategy = _get_read_result_strategy(user_config, from_format, glpk_model)
+    read_strategy = _get_read_result_strategy(
+        user_config, from_format, glpk_model, write_defaults
+    )
 
     # set write strategy
 
-    write_defaults = True if write_defaults else False
-
     if to_format == "csv":
-        write_strategy = WriteCsv(
-            user_config=user_config, write_defaults=write_defaults
-        )
+        write_strategy: WriteStrategy = WriteCsv(user_config=user_config)
+    elif to_format == "excel":
+        write_strategy = WriteExcel(user_config=user_config)
     else:
         raise NotImplementedError(msg)
 
@@ -145,7 +150,7 @@ def convert_results(
 
 
 def _get_read_result_strategy(
-    user_config, from_format, glpk_model=None
+    user_config, from_format, glpk_model=None, write_defaults=False
 ) -> Union[ReadResults, None]:
     """Get ``ReadResults`` for gurobi, cbc, cplex, and glpk formats
 
@@ -155,6 +160,8 @@ def _get_read_result_strategy(
         User configuration describing parameters and sets
     from_format : str
         Available options are 'cbc', 'gurobi', 'cplex', and 'glpk'
+    write_defaults: bool, default: False
+        Write default values to output format
     glpk_model : str
         Path to ``*.glp`` model file
 
@@ -166,15 +173,25 @@ def _get_read_result_strategy(
     """
 
     if from_format == "cbc":
-        read_strategy: ReadResults = ReadCbc(user_config)
+        read_strategy: ReadResults = ReadCbc(
+            user_config=user_config, write_defaults=write_defaults
+        )
     elif from_format == "gurobi":
-        read_strategy = ReadGurobi(user_config=user_config)
+        read_strategy = ReadGurobi(
+            user_config=user_config, write_defaults=write_defaults
+        )
     elif from_format == "cplex":
-        read_strategy = ReadCplex(user_config=user_config)
+        read_strategy = ReadCplex(
+            user_config=user_config, write_defaults=write_defaults
+        )
     elif from_format == "glpk":
         if not glpk_model:
             raise OtooleError(resource="Read GLPK", message="Provide glpk model file")
-        read_strategy = ReadGlpk(user_config=user_config, glpk_model=glpk_model)
+        read_strategy = ReadGlpk(
+            user_config=user_config,
+            glpk_model=glpk_model,
+            write_defaults=write_defaults,
+        )
     else:
         return None
 
@@ -204,7 +221,9 @@ def _get_user_config(config) -> dict:
     return user_config
 
 
-def _get_read_strategy(user_config, from_format, keep_whitespace=False) -> ReadStrategy:
+def _get_read_strategy(
+    user_config, from_format, keep_whitespace=False, write_defaults=False
+) -> ReadStrategy:
     """Get ``ReadStrategy`` for csv/datafile/excel format
 
     Arguments
@@ -215,6 +234,8 @@ def _get_read_strategy(user_config, from_format, keep_whitespace=False) -> ReadS
         Available options are 'datafile', 'datapackage', 'csv' and 'excel'
     keep_whitespace: bool, default: False
         Keep whitespace in CSVs
+    write_defaults: bool, default: False
+        Expand default values to pad dataframes
 
     Returns
     -------
@@ -225,22 +246,30 @@ def _get_read_strategy(user_config, from_format, keep_whitespace=False) -> ReadS
     keep_whitespace = True if keep_whitespace else False
 
     if from_format == "datafile":
-        read_strategy: ReadStrategy = ReadDatafile(user_config=user_config)
+        read_strategy: ReadStrategy = ReadDatafile(
+            user_config=user_config, write_defaults=write_defaults
+        )
     elif from_format == "datapackage":
         logger.warning(
             "Reading from datapackage is deprecated, trying to read from CSVs"
         )
         logger.info("Successfully read folder of CSVs")
         read_strategy = ReadCsv(
-            user_config=user_config, keep_whitespace=keep_whitespace
+            user_config=user_config,
+            keep_whitespace=keep_whitespace,
+            write_defaults=write_defaults,
         )  # typing: ReadStrategy
     elif from_format == "csv":
         read_strategy = ReadCsv(
-            user_config=user_config, keep_whitespace=keep_whitespace
+            user_config=user_config,
+            keep_whitespace=keep_whitespace,
+            write_defaults=write_defaults,
         )  # typing: ReadStrategy
     elif from_format == "excel":
         read_strategy = ReadExcel(
-            user_config=user_config, keep_whitespace=keep_whitespace
+            user_config=user_config,
+            keep_whitespace=keep_whitespace,
+            write_defaults=write_defaults,
         )  # typing: ReadStrategy
     else:
         msg = f"Conversion from {from_format} is not supported"
@@ -249,7 +278,7 @@ def _get_read_strategy(user_config, from_format, keep_whitespace=False) -> ReadS
     return read_strategy
 
 
-def _get_write_strategy(user_config, to_format, write_defaults=False) -> WriteStrategy:
+def _get_write_strategy(user_config, to_format) -> WriteStrategy:
     """Get ``WriteStrategy`` for csv/datafile/excel format
 
     Arguments
@@ -258,8 +287,6 @@ def _get_write_strategy(user_config, to_format, write_defaults=False) -> WriteSt
         User configuration describing parameters and sets
     to_format : str
         Available options are 'datafile', 'datapackage', 'csv' and 'excel'
-    write_defaults: bool, default: False
-        Write default values to output format
 
     Returns
     -------
@@ -267,25 +294,15 @@ def _get_write_strategy(user_config, to_format, write_defaults=False) -> WriteSt
         A ReadStrategy object. Returns None if to_format is not recognised
 
     """
-    # set write strategy
-    write_defaults = True if write_defaults else False
 
     if to_format == "datapackage":
-        write_strategy: WriteStrategy = WriteCsv(
-            user_config=user_config, write_defaults=write_defaults
-        )
+        write_strategy: WriteStrategy = WriteCsv(user_config=user_config)
     elif to_format == "excel":
-        write_strategy = WriteExcel(
-            user_config=user_config, write_defaults=write_defaults
-        )
+        write_strategy = WriteExcel(user_config=user_config)
     elif to_format == "datafile":
-        write_strategy = WriteDatafile(
-            user_config=user_config, write_defaults=write_defaults
-        )
+        write_strategy = WriteDatafile(user_config=user_config)
     elif to_format == "csv":
-        write_strategy = WriteCsv(
-            user_config=user_config, write_defaults=write_defaults
-        )
+        write_strategy = WriteCsv(user_config=user_config)
     else:
         msg = f"Conversion to {to_format} is not supported"
         raise NotImplementedError(msg)
@@ -315,7 +332,7 @@ def convert(
     from_path : str
         Path to destination file (if datafile or excel) or folder (csv or datapackage)
     write_defaults: bool, default: False
-        Write default values to CSVs
+        Expand default values to pad dataframes
     keep_whitespace: bool, default: False
         Keep whitespace in CSVs
 
@@ -327,12 +344,13 @@ def convert(
 
     user_config = _get_user_config(config)
     read_strategy = _get_read_strategy(
-        user_config, from_format, keep_whitespace=keep_whitespace
+        user_config,
+        from_format,
+        keep_whitespace=keep_whitespace,
+        write_defaults=write_defaults,
     )
 
-    write_strategy = _get_write_strategy(
-        user_config, to_format, write_defaults=write_defaults
-    )
+    write_strategy = _get_write_strategy(user_config, to_format)
 
     if from_format == "datapackage":
         logger.warning(
@@ -348,7 +366,11 @@ def convert(
 
 
 def read(
-    config: str, from_format: str, from_path: str, keep_whitespace: bool = False
+    config: str,
+    from_format: str,
+    from_path: str,
+    keep_whitespace: bool = False,
+    write_defaults: bool = False,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
     """Read OSeMOSYS data from datafile, csv or Excel formats
 
@@ -362,6 +384,8 @@ def read(
         Path to source file (if datafile or excel) or folder (csv)
     keep_whitespace: bool, default: False
         Keep whitespace in source files
+    write_defaults: bool, default: False
+        Expand default values to pad dataframes
 
     Returns
     -------
@@ -370,7 +394,10 @@ def read(
     """
     user_config = _get_user_config(config)
     read_strategy = _get_read_strategy(
-        user_config, from_format, keep_whitespace=keep_whitespace
+        user_config,
+        from_format,
+        keep_whitespace=keep_whitespace,
+        write_defaults=write_defaults,
     )
 
     if from_format == "datapackage":
@@ -403,15 +430,10 @@ def write(
 
     """
     user_config = _get_user_config(config)
+    write_strategy = _get_write_strategy(user_config, to_format)
     if default_values is None:
-        write_strategy = _get_write_strategy(
-            user_config, to_format, write_defaults=False
-        )
         write_strategy.write(inputs, to_path, {})
     else:
-        write_strategy = _get_write_strategy(
-            user_config, to_format, write_defaults=True
-        )
         write_strategy.write(inputs, to_path, default_values)
 
     return True

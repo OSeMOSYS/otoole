@@ -32,8 +32,9 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
+            param_default_values = self._read_default_values(self.input_config)
         else:
-            input_data = None
+            input_data = {}
 
         available_results = self.get_results_from_file(
             filepath, input_data
@@ -41,9 +42,22 @@ class ReadResults(ReadStrategy):
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
 
+        # need to expand discount rate for results processing
+        if "DiscountRate" in input_data:
+            input_data["DiscountRate"] = self._expand_dataframe(
+                "DiscountRate", input_data, param_default_values
+            )
+        if "DiscountRateIdv" in input_data:
+            input_data["DiscountRateIdv"] = self._expand_dataframe(
+                "DiscountRateIdv", input_data, param_default_values
+            )
+
         results = self.calculate_results(
             available_results, input_data
         )  # type: Dict[str, pd.DataFrame]
+
+        if self.write_defaults:
+            results = self.write_default_results(results, input_data, default_values)
 
         return results, default_values
 
@@ -272,8 +286,13 @@ class ReadGlpk(ReadWideResults):
         Path to GLPK model file. Can be created using the `--wglp` flag.
     """
 
-    def __init__(self, user_config: Dict[str, Dict], glpk_model: Union[str, TextIO]):
-        super().__init__(user_config)
+    def __init__(
+        self,
+        user_config: Dict[str, Dict],
+        glpk_model: Union[str, TextIO],
+        write_defaults: bool = False,
+    ):
+        super().__init__(user_config=user_config, write_defaults=write_defaults)
 
         if isinstance(glpk_model, str):
             with open(glpk_model, "r") as model_file:

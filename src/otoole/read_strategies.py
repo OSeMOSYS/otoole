@@ -43,8 +43,13 @@ class ReadMemory(ReadStrategy):
 
 
 class _ReadTabular(ReadStrategy):
-    def __init__(self, user_config: Dict[str, Dict], keep_whitespace: bool = False):
-        super().__init__(user_config)
+    def __init__(
+        self,
+        user_config: Dict[str, Dict],
+        write_defaults: bool = False,
+        keep_whitespace: bool = False,
+    ):
+        super().__init__(user_config=user_config, write_defaults=write_defaults)
         self.keep_whitespace = keep_whitespace
 
     def _check_set(self, df: pd.DataFrame, config_details: Dict, name: str):
@@ -174,6 +179,9 @@ class ReadExcel(_ReadTabular):
                 input_data, config_type=config_type
             )
 
+        if self.write_defaults:
+            input_data = self.write_default_params(input_data, default_values)
+
         input_data = self._check_index(input_data)
 
         return input_data, default_values
@@ -247,6 +255,9 @@ class ReadCsv(_ReadTabular):
             )
 
         input_data = self._check_index(input_data)
+
+        if self.write_defaults:
+            input_data = self.write_default_params(input_data, default_values)
 
         return input_data, default_values
 
@@ -328,13 +339,17 @@ class ReadDatafile(ReadStrategy):
         # Check filepath exists
         if os.path.exists(filepath):
             amply_datafile = self.read_in_datafile(filepath, config)
-            inputs = self._convert_amply_to_dataframe(amply_datafile, config)
+            input_data = self._convert_amply_to_dataframe(amply_datafile, config)
             for config_type in ["param", "set"]:
-                inputs = self._get_missing_input_dataframes(
-                    inputs, config_type=config_type
+                input_data = self._get_missing_input_dataframes(
+                    input_data, config_type=config_type
                 )
-            inputs = self._check_index(inputs)
-            return inputs, default_values
+            input_data = self._check_index(input_data)
+
+            if self.write_defaults:
+                input_data = self.write_default_params(input_data, default_values)
+
+            return input_data, default_values
         else:
             raise FileNotFoundError(f"File not found: {filepath}")
 
