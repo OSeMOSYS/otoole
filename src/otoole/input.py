@@ -116,7 +116,6 @@ class Context:
 
 class Strategy(ABC):
     """
-
     Arguments
     ---------
     user_config : dict, default=None
@@ -139,10 +138,20 @@ class Strategy(ABC):
                 dtypes = {}
                 for column in details["indices"] + ["VALUE"]:
                     if column == "VALUE":
-                        dtypes["VALUE"] = details["dtype"]
+                        dtypes["VALUE"] = (
+                            details["dtype"] if details["dtype"] != "int" else "int64"
+                        )
                     else:
-                        dtypes[column] = config[column]["dtype"]
+                        dtypes[column] = (
+                            config[column]["dtype"]
+                            if config[column]["dtype"] != "int"
+                            else "int64"
+                        )
                 details["index_dtypes"] = dtypes
+            elif details["type"] == "set":
+                details["dtype"] = (
+                    details["dtype"] if details["dtype"] != "int" else "int64"
+                )
         return config
 
     @property
@@ -174,9 +183,11 @@ class WriteStrategy(Strategy):
 
     Arguments
     ---------
+    user_config: dict, default=None
     filepath: str, default=None
     default_values: dict, default=None
-    user_config: dict, default=None
+    write_defaults: bool, default=False
+    input_data: dict, default=None
 
     """
 
@@ -245,13 +256,14 @@ class WriteStrategy(Strategy):
         handle = self._header()
         logger.debug(default_values)
 
+        self.input_data = inputs
         if self.write_defaults:
             try:
-                inputs = self._expand_defaults(inputs, default_values, **kwargs)
+                self.input_data = self._expand_defaults(inputs, default_values)
             except KeyError as ex:
                 logger.debug(ex)
 
-        for name, df in sorted(inputs.items()):
+        for name, df in sorted(self.input_data.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
             try:
@@ -276,37 +288,23 @@ class WriteStrategy(Strategy):
             handle.close()
 
     def _expand_defaults(
-        self,
-        data_to_expand: Dict[str, pd.DataFrame],
-        default_values: Dict[str, float],
-        **kwargs,
+        self, data_to_expand: Dict[str, pd.DataFrame], default_values: Dict[str, float]
     ) -> Dict[str, pd.DataFrame]:
         """Populates default value entry rows in dataframes
 
         Parameters
         ----------
-        input_data : Dict[str, pd.DataFrame],
+        data_to_expand : Dict[str, pd.DataFrame],
         default_values : Dict[str, float]
 
         Returns
         -------
-        results : Dict[str, pd.DataFrame]
-            Updated available reults dictionary
+        Dict[str, pd.DataFrame]
+            Input data with expanded default values replacing missing entries
 
-        Raises
-        ------
-        KeyError
-            If set defenitons are not in input_data and input_data is not supplied
         """
 
         sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
-
-        # if expanding results, input data is needed for set defenitions
-        if "input_data" in kwargs:
-            model_data = kwargs["input_data"]
-        else:
-            model_data = data_to_expand
-
         output = {}
         for name, data in data_to_expand.items():
             logger.info(f"Writing defaults for {name}")
@@ -318,7 +316,7 @@ class WriteStrategy(Strategy):
 
             # TODO
             # Issue with how otoole handles trade route right now.
-            # The double defenition of REGION throws an error.
+            # The double definition of REGION throws an error.
             if name == "TradeRoute":
                 output[name] = data
                 continue
@@ -326,11 +324,7 @@ class WriteStrategy(Strategy):
             # save set information for each parameter
             index_data = {}
             for index in data.index.names:
-                try:
-                    index_data[index] = model_data[index]["VALUE"].to_list()
-                except KeyError as ex:
-                    logger.info("Can not write default values. Supply input data")
-                    raise KeyError(ex)
+                index_data[index] = self.input_data[index]["VALUE"].to_list()
 
             # set index
             if len(index_data) > 1:
@@ -347,8 +341,11 @@ class WriteStrategy(Strategy):
             df_default["VALUE"] = default_values[name]
 
             # combine result and default value dataframe
-            df = pd.concat([data, df_default])
-            df = df[~df.index.duplicated(keep="first")]
+            if not data.empty:
+                df = pd.concat([data, df_default])
+                df = df[~df.index.duplicated(keep="first")]
+            else:
+                df = df_default
             df = df.sort_index()
             output[name] = df
 
@@ -389,7 +386,10 @@ class ReadStrategy(Strategy):
             elif details["type"] == "set":
                 self._check_set_index_names(name=name, df=df)
 
-            df = self._check_index_dtypes(name=name, config=details, df=df)
+            try:
+                df = self._check_index_dtypes(name=name, config=details, df=df)
+            except ValueError as ex:
+                raise ValueError(f"{name}: {ex}")
 
             input_data[name] = df
 
@@ -454,7 +454,7 @@ class ReadStrategy(Strategy):
         OtooleIndexError
             If actual indices do not match expected indices
         """
-        if not df.columns == ["VALUE"]:
+        if not list(df.columns) == ["VALUE"]:
             raise OtooleIndexError(
                 resource=name,
                 config_indices=["VALUE"],
@@ -503,8 +503,8 @@ class ReadStrategy(Strategy):
             except ValueError:  # ValueError: invalid literal for int() with base 10:
                 df = df.dropna(axis=0, how="all").reset_index()
                 for index, dtype in config["index_dtypes"].items():
-                    if dtype == "int":
-                        df[index] = df[index].astype(float).astype(int)
+                    if dtype == "int64":
+                        df[index] = df[index].astype(float).astype("int64")
                     else:
                         df[index] = df[index].astype(dtype)
                 df = df.set_index(config["indices"])
@@ -592,4 +592,16 @@ class ReadStrategy(Strategy):
     def read(
         self, filepath: Union[str, TextIO], **kwargs
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
+        """Reads in data from file
+
+        Arguments
+        ---------
+        filepath: Union[str, TextIO]
+
+        Returns
+        -------
+        Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]
+            tuple of input_data as a dictionary of pandas DataFrames and
+            dictionary of default values
+        """
         raise NotImplementedError()

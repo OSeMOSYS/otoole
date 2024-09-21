@@ -651,6 +651,24 @@ class TestCapitalRecoveryFactor:
 
         assert_frame_equal(actual, expected)
 
+    def test_crf_no_tech_discount_rate(self, region, discount_rate, operational_life):
+
+        technologies = ["GAS_EXTRACTION", "DUMMY"]
+        regions = region["VALUE"].to_list()
+        actual = capital_recovery_factor(
+            regions, technologies, discount_rate, operational_life
+        )
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "GAS_EXTRACTION", 0.5121951219512197],
+                ["SIMPLICITY", "DUMMY", 0.34972244250594786],
+            ],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+        assert_frame_equal(actual, expected)
+
 
 class TestPvAnnuity:
     def test_pva(self, region, discount_rate, operational_life):

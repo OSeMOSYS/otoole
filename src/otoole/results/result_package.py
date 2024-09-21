@@ -307,8 +307,11 @@ class ResultsPackage(Mapping):
             capital_cost = self["CapitalCost"]
             new_capacity = self["NewCapacity"]
             operational_life = self["OperationalLife"]
-            discount_rate = self["DiscountRate"]
-            discount_rate_idv = self["DiscountRateIdv"]
+
+            if "DiscountRateIdv" in self.keys():
+                discount_rate = self["DiscountRateIdv"]
+            else:
+                discount_rate = self["DiscountRate"]
 
             regions = self["REGION"]["VALUE"].to_list()
             technologies = self.get_unique_values_from_index(
@@ -323,10 +326,9 @@ class ResultsPackage(Mapping):
             raise KeyError(self._msg("CapitalInvestment", str(ex)))
 
         crf = capital_recovery_factor(
-            regions, technologies, discount_rate_idv, operational_life
+            regions, technologies, discount_rate, operational_life
         )
         pva = pv_annuity(regions, technologies, discount_rate, operational_life)
-
         capital_investment = capital_cost.mul(new_capacity, fill_value=0.0)
         capital_investment = capital_investment.mul(crf, fill_value=0.0).mul(
             pva, fill_value=0.0
@@ -765,22 +767,38 @@ def capital_recovery_factor(
         param CapitalRecoveryFactor{r in REGION, t in TECHNOLOGY} :=
                 (1 - (1 + DiscountRateIdv[r,t])^(-1))/(1 - (1 + DiscountRateIdv[r,t])^(-(OperationalLife[r,t])));
     """
-    if regions and technologies:
-        index = pd.MultiIndex.from_product(
-            [regions, technologies], names=["REGION", "TECHNOLOGY"]
-        )
+
+    def calc_crf(df: pd.DataFrame, operational_life: pd.Series) -> pd.Series:
+        rate = df["VALUE"] + 1
+        numerator = 1 - rate.pow(-1)
+        denominator = 1 - rate.pow(-operational_life)
+
+        return numerator / denominator
+
+    if not regions and not technologies:
+        return pd.DataFrame(
+            data=[],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+    index = pd.MultiIndex.from_product(
+        [regions, technologies], names=["REGION", "TECHNOLOGY"]
+    )
+    if "TECHNOLOGY" in discount_rate_idv.index.names:
         crf = discount_rate_idv.reindex(index)
-        crf["RATE"] = crf["VALUE"] + 1
-        crf["NUMER"] = 1 - crf["RATE"].pow(-1)
-        crf["DENOM"] = 1 - crf["RATE"].pow(-operational_life["VALUE"])
-        crf["VALUE"] = (crf["NUMER"] / crf["DENOM"]).round(6)
-        return crf.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
-            ["REGION", "TECHNOLOGY"]
-        )
+        crf["VALUE"] = calc_crf(crf, operational_life["VALUE"])
+
     else:
-        return pd.DataFrame([], columns=["REGION", "TECHNOLOGY", "VALUE"]).set_index(
-            ["REGION", "TECHNOLOGY"]
-        )
+        values = discount_rate_idv["VALUE"].copy()
+        crf = discount_rate_idv.reindex(index)
+        # This is a hack to get around the fact that the discount rate is
+        # indexed by REGION and not REGION, TECHNOLOGY
+        crf[:] = values
+        crf["VALUE"] = calc_crf(crf, operational_life["VALUE"])
+
+    return crf.reset_index()[["REGION", "TECHNOLOGY", "VALUE"]].set_index(
+        ["REGION", "TECHNOLOGY"]
+    )
 
 
 def pv_annuity(
@@ -858,7 +876,7 @@ def discount_factor(
     if regions and years:
         discount_rate["YEAR"] = [years]
         discount_factor = discount_rate.explode("YEAR").reset_index(level="REGION")
-        discount_factor["YEAR"] = discount_factor["YEAR"].astype(int)
+        discount_factor["YEAR"] = discount_factor["YEAR"].astype("int64")
         discount_factor["NUM"] = discount_factor["YEAR"] - discount_factor["YEAR"].min()
         discount_factor["RATE"] = discount_factor["VALUE"] + 1
         discount_factor["VALUE"] = (

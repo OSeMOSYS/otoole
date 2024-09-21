@@ -1,3 +1,4 @@
+import os
 from tempfile import NamedTemporaryFile
 
 import pandas as pd
@@ -77,16 +78,18 @@ user_config_name_errors = ["user_config_long_param_name", "user_config_long_shor
 def test_excel_name_length_error(user_config_simple, request):
     user_config = request.getfixturevalue(user_config_simple)
     write_excel = WriteExcel(user_config=user_config)
-    temp_excel = NamedTemporaryFile(suffix=".xlsx")
-    handle = pd.ExcelWriter(temp_excel.name)
-
-    with pytest.raises(OtooleExcelNameLengthError):
-        write_excel._write_parameter(
-            df=pd.DataFrame(),
-            parameter_name="ParameterNameLongerThanThirtyOneChars",
-            handle=pd.ExcelWriter(handle),
-            default=0,
-        )
+    temp_excel = NamedTemporaryFile(suffix=".xlsx", delete=False, mode="r")
+    try:
+        with pytest.raises(OtooleExcelNameLengthError):
+            write_excel._write_parameter(
+                df=pd.DataFrame(),
+                parameter_name="ParameterNameLongerThanThirtyOneChars",
+                handle=pd.ExcelWriter(temp_excel.name),
+                default=0,
+            )
+    finally:
+        temp_excel.close()
+        os.unlink(temp_excel.name)
 
 
 class TestYamlUniqueKeyReader:

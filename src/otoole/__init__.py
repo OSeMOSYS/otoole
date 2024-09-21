@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from otoole.input import Context
-from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel, ReadMemory
-from otoole.results.results import ReadCbc, ReadCplex, ReadGurobi
-from otoole.write_strategies import WriteCsv, WriteDatafile, WriteExcel
+from otoole.convert import convert, convert_results, read, read_results, write
 
 if sys.version_info[:2] >= (3, 8):
     # TODO: Import directly (no need for conditional) when `python_requires = >= 3.8`
@@ -21,17 +18,10 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
+convert = convert
+convert_results = convert_results
+read = read
+write = write
+read_results = read_results
 
-__all__ = [
-    "Context",
-    "ReadCbc",
-    "ReadCsv",
-    "ReadCplex",
-    "ReadDatafile",
-    "ReadExcel",
-    "ReadGurobi",
-    "ReadMemory",
-    "WriteCsv",
-    "WriteDatafile",
-    "WriteExcel",
-]
+__all__ = ["convert" "convert_results", "read", "write", "read_results"]

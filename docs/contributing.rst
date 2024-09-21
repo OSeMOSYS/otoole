@@ -196,6 +196,10 @@ Find more detailed information in `creating a PR`_. You might also want to open
 the PR as a draft first and mark it as ready for review after the feedbacks
 from the continuous integration (CI) system or any required fixes.
 
+We track test coverage using coveralls_. You can check the coverage
+of your PR by clicking on the "details" link in the "Coverage" section of
+the pull request checks.  Try to ensure that your pull requests always increase
+test coverage.
 
 Troubleshooting
 ---------------
@@ -281,6 +285,7 @@ on PyPI_, the following steps can be used to release a new version for
 .. |tox| replace:: ``tox``
 
 
+.. _coveralls: https://coveralls.io/github/OSeMOSYS/otoole
 .. _black: https://pypi.org/project/black/
 .. _CommonMark: https://commonmark.org/
 .. _contribution-guide.org: https://www.contribution-guide.org/
