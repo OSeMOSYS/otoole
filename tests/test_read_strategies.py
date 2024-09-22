@@ -1,7 +1,6 @@
 import os
 from io import StringIO
 from textwrap import dedent
-from typing import List
 
 import pandas as pd
 from amply import Amply
@@ -407,7 +406,7 @@ class TestReadCbc:
                 ).set_index(["REGION", "EMISSION", "YEAR"])
             },
         ),
-    ]  # type: List
+    ]  # type: list
 
     @mark.parametrize(
         "results,expected",
@@ -421,7 +420,7 @@ class TestReadCbc:
         for name, df in actual.items():
             pd.testing.assert_frame_equal(df, expected[name])
 
-    test_data_3 = [(total_cost_cbc, {}, total_cost_otoole_df)]  # type: List
+    test_data_3 = [(total_cost_cbc, {}, total_cost_otoole_df)]  # type: list
 
     @mark.parametrize(
         "cbc_solution,input_data,expected",
