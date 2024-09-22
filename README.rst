@@ -14,7 +14,7 @@ otoole: OSeMOSYS tools for energy work
     :target: https://github.com/psf/black
     :alt: Code Style
 
-.. image:: https://img.shields.io/badge/python-3.9_|_3.10_|_3.11-blue.svg
+.. image:: https://img.shields.io/badge/python-3.9_|_3.10_|_3.11|_3.12-blue.svg
     :target: https://crate.io/packages/otoole/
     :alt: Python Version
 

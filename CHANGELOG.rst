@@ -6,6 +6,8 @@ Changelog
 ===========================
 - Lock pandas to 2.1.4 or later
 - Capital Investment result calculation fixed
+- Defults expansion moved to ReadStrategy
+- Adds Python 3.12 support
 
 Version 1.1.2
 =============

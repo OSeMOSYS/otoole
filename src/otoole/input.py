@@ -561,7 +561,12 @@ class ReadStrategy(Strategy):
 
         default_df = self._get_default_dataframe(name, input_data, default_values)
 
-        df = pd.concat([df, default_df])
+        # future warning of concating empty dataframe
+        if not df.empty:
+            df = pd.concat([df, default_df])
+        else:
+            df = default_df.copy()
+
         df = df[~df.index.duplicated(keep="first")]
 
         df = self._check_index_dtypes(name, self.user_config[name], df)
