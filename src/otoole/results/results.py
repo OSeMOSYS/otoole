@@ -83,7 +83,7 @@ class ReadResults(ReadStrategy):
     def _expand_required_params(
         self,
         input_data: dict[str, pd.DataFrame],
-        param_defaults: dict[str, str | int | float],
+        param_defaults: dict[str, Any],
     ) -> dict[str, pd.DataFrame]:
         """Expands required default values for results processing"""
 
