@@ -35,6 +35,7 @@ class ReadResults(ReadStrategy):
             param_default_values = self._read_default_values(self.input_config)
         else:
             input_data = {}
+            param_default_values = {}
 
         available_results = self.get_results_from_file(
             filepath, input_data
