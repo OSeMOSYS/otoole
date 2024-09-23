@@ -42,15 +42,7 @@ class ReadResults(ReadStrategy):
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
 
-        # need to expand discount rate for results processing
-        if "DiscountRate" in input_data:
-            input_data["DiscountRate"] = self._expand_dataframe(
-                "DiscountRate", input_data, param_default_values
-            )
-        if "DiscountRateIdv" in input_data:
-            input_data["DiscountRateIdv"] = self._expand_dataframe(
-                "DiscountRateIdv", input_data, param_default_values
-            )
+        input_data = self._expand_required_params(input_data, param_default_values)
 
         results = self.calculate_results(
             available_results, input_data
@@ -86,6 +78,24 @@ class ReadResults(ReadStrategy):
                 LOGGER.debug("Error calculating %s: %s", name, str(ex))
 
         return results
+
+    def _expand_required_params(
+        self,
+        input_data: dict[str, pd.DataFrame],
+        param_defaults: dict[str, str | int | float],
+    ) -> dict[str, pd.DataFrame]:
+        """Expands required default values for results processing"""
+
+        if "DiscountRate" in input_data:
+            input_data["DiscountRate"] = self._expand_dataframe(
+                "DiscountRate", input_data, param_defaults
+            )
+        if "DiscountRateIdv" in input_data:
+            input_data["DiscountRateIdv"] = self._expand_dataframe(
+                "DiscountRateIdv", input_data, param_defaults
+            )
+
+        return input_data
 
 
 class ReadWideResults(ReadResults):
