@@ -669,6 +669,17 @@ class TestCapitalRecoveryFactor:
 
         assert_frame_equal(actual, expected)
 
+    def test_crf_empty_discount_rate(
+        self, region, discount_rate_empty, operational_life
+    ):
+        technologies = ["GAS_EXTRACTION", "DUMMY"]
+        regions = region["VALUE"].to_list()
+
+        with raises(ValueError):
+            capital_recovery_factor(
+                regions, technologies, discount_rate_empty, operational_life
+            )
+
 
 class TestPvAnnuity:
     def test_pva(self, region, discount_rate, operational_life):

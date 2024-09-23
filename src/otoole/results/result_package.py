@@ -775,6 +775,9 @@ def capital_recovery_factor(
 
         return numerator / denominator
 
+    if discount_rate_idv.empty:
+        raise ValueError("Cannot calculate CRF due to missing discount rate data")
+
     if not regions and not technologies:
         return pd.DataFrame(
             data=[],
