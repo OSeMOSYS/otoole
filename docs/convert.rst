@@ -34,7 +34,7 @@ See :func:`otoole.convert.convert_results` for more details
 Reading solver results into a dict of Pandas DataFrames
 -------------------------------------------------------
 
-The ``read_results`` function reads a CBC_, CLP_, Gurobi_ or CPLEX_ solution file into to a Python object.
+The ``read_results`` function reads a CBC_, CLP_, Gurobi_ or CPLEX_ solution file to a Python object.
 This allows you to then use all the features offered by Python to manipulate the data.
 
 >>> from otoole import read_results
