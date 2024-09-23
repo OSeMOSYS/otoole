@@ -14,11 +14,18 @@ from otoole.results.results import (
     ReadCplex,
     ReadGlpk,
     ReadGurobi,
+    ReadResults,
     check_for_duplicates,
     identify_duplicate,
     rename_duplicate_column,
 )
 from otoole.utils import _read_file
+
+
+# To instantiate abstract class ReadResults
+class DummyReadResults(ReadResults):
+    def get_results_from_file(self, filepath, input_data):
+        raise NotImplementedError()
 
 
 class TestReadCplex:
@@ -1275,3 +1282,66 @@ class TestLongifyData:
 
         with raises(ValueError):
             check_datatypes(df, user_config, "AvailabilityFactor")
+
+
+class TestExpandRequiredParameters:
+    """Tests the expansion of required parameters for results processing"""
+
+    region = pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
+
+    technology = pd.DataFrame(data=["NGCC"], columns=["VALUE"])
+
+    def test_no_expansion(self):
+
+        user_config = {
+            "REGION": {
+                "dtype": "str",
+                "type": "set",
+            },
+        }
+
+        reader = DummyReadResults(user_config=user_config)
+        defaults = {}
+        input_data = {}
+
+        actual = reader._expand_required_params(input_data, defaults)
+
+        assert not actual
+
+    def test_expansion(self, user_config, discount_rate_empty, discount_rate_idv_empty):
+
+        user_config["DiscountRateIdv"] = {
+            "indices": ["REGION", "TECHNOLOGY"],
+            "type": "param",
+            "dtype": "float",
+            "default": 0.10,
+        }
+
+        reader = DummyReadResults(user_config=user_config)
+        defaults = reader._read_default_values(user_config)
+        input_data = {
+            "REGION": self.region,
+            "TECHNOLOGY": self.technology,
+            "DiscountRate": discount_rate_empty,
+            "DiscountRateIdv": discount_rate_idv_empty,
+        }
+
+        actual = reader._expand_required_params(input_data, defaults)
+
+        actual_dr = actual["DiscountRate"]
+
+        expected_dr = pd.DataFrame(
+            data=[["SIMPLICITY", 0.05]],
+            columns=["REGION", "VALUE"],
+        ).set_index(["REGION"])
+
+        pd.testing.assert_frame_equal(actual_dr, expected_dr)
+
+        actual_dr_idv = actual["DiscountRateIdv"]
+
+        expected_dr_idv = pd.DataFrame(
+            data=[["SIMPLICITY", "NGCC", 0.10]],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+        pd.testing.assert_frame_equal(actual_dr_idv, expected_dr_idv)
