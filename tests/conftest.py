@@ -102,6 +102,15 @@ def discount_rate_idv_empty():
 
 
 @fixture
+def discount_rate_storage_empty():
+    df = pd.DataFrame(
+        data=[],
+        columns=["REGION", "STORAGE", "VALUE"],
+    ).set_index(["REGION", "STORAGE"])
+    return df
+
+
+@fixture
 def emission_activity_ratio():
     df = pd.DataFrame(
         data=[["SIMPLICITY", "GAS_EXTRACTION", "CO2", 1, 2014, 1.0]],

@@ -698,7 +698,7 @@ class TestPvAnnuity:
 
         assert_frame_equal(actual, expected)
 
-    def test_pva_null(self, discount_rate):
+    def test_pva_null(self, discount_rate, operational_life):
 
         actual = pv_annuity([], [], discount_rate, operational_life)
 
@@ -708,6 +708,15 @@ class TestPvAnnuity:
         ).set_index(["REGION", "TECHNOLOGY"])
 
         assert_frame_equal(actual, expected)
+
+    def test_pva_empty_discount_rate(
+        self, region, discount_rate_empty, operational_life
+    ):
+        technologies = ["GAS_EXTRACTION", "DUMMY"]
+        regions = region["VALUE"].to_list()
+
+        with raises(ValueError):
+            pv_annuity(regions, technologies, discount_rate_empty, operational_life)
 
 
 class TestDiscountFactor:
@@ -784,6 +793,13 @@ class TestDiscountFactor:
         ).set_index(["REGION", "YEAR"])
 
         assert_frame_equal(actual, expected)
+
+    def test_df_empty_discount_rate(self, region, year, discount_rate_empty):
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+
+        with raises(ValueError):
+            discount_factor(regions, years, discount_rate_empty, 1.0)
 
 
 class TestDiscountFactorStorage:
@@ -869,6 +885,18 @@ class TestDiscountFactorStorage:
         ).set_index(["REGION", "STORAGE", "YEAR"])
 
         assert_frame_equal(actual, expected)
+
+    def test_df_storage_empty_discount_rate(
+        self, region, year, discount_rate_storage_empty
+    ):
+        storages = ["DAM"]
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+
+        with raises(ValueError):
+            discount_factor_storage(
+                regions, storages, years, discount_rate_storage_empty, 1.0
+            )
 
 
 class TestResultsPackage:

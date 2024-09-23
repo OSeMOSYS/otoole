@@ -775,8 +775,8 @@ def capital_recovery_factor(
 
         return numerator / denominator
 
-    if discount_rate_idv.empty:
-        raise ValueError("Cannot calculate CRF due to missing discount rate data")
+    if discount_rate_idv.empty or operational_life.empty:
+        raise ValueError("Cannot calculate PV Annuity due to missing data")
 
     if not regions and not technologies:
         return pd.DataFrame(
@@ -826,6 +826,10 @@ def pv_annuity(
         param PvAnnuity{r in REGION, t in TECHNOLOGY} :=
                 (1 - (1 + DiscountRate[r])^(-(OperationalLife[r,t]))) * (1 + DiscountRate[r]) / DiscountRate[r];
     """
+
+    if discount_rate.empty or operational_life.empty:
+        raise ValueError("Cannot calculate PV Annuity due to missing data")
+
     if regions and technologies:
         index = pd.MultiIndex.from_product(
             [regions, technologies], names=["REGION", "TECHNOLOGY"]
@@ -876,6 +880,11 @@ def discount_factor(
                 (1 + DiscountRate[r]) ^ (y - min{yy in YEAR} min(yy) + 0.5);
     """
 
+    if discount_rate.empty:
+        raise ValueError(
+            "Cannot calculate discount factor due to missing discount rate"
+        )
+
     if regions and years:
         discount_rate["YEAR"] = [years]
         discount_factor = discount_rate.explode("YEAR").reset_index(level="REGION")
@@ -919,6 +928,11 @@ def discount_factor_storage(
         param DiscountFactorStorage{r in REGION, s in STORAGE, y in YEAR} :=
                 (1 + DiscountRateStorage[r,s]) ^ (y - min{yy in YEAR} min(yy) + 0.0);
     """
+
+    if discount_rate_storage.empty:
+        raise ValueError(
+            "Cannot calculate discount_factor_storage due to missing discount rate"
+        )
 
     if regions and years:
         index = pd.MultiIndex.from_product(
