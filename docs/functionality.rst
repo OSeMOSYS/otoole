@@ -180,8 +180,13 @@ visualising the reference energy system through the ``vis res`` command is suppo
 
 .. NOTE::
     The ``resfile`` command should include a file ending used for images,
-    including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The graphviz_ library
+    including ``bmp``, ``jpg``, ``pdf``, ``png`` etc. The Graphviz_ library
     used to layout the reference energy system will interpret the file ending.
+
+.. WARNING::
+    If you encounter a Graphviz_ dependencey error, please follow Graphviz_
+    installation instructions described in the
+    :ref:`visualization examples <model-visualization>`.
 
 Validation
 ----------
@@ -216,5 +221,5 @@ the rest of the model::
 .. _CPLEX: https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer
 .. _Gurobi: https://www.gurobi.com/
 .. _`OSeMOSYS Repository`: https://github.com/OSeMOSYS/OSeMOSYS_GNU_MathProg/tree/master/scripts
-.. _graphviz: https://graphviz.org/
+.. _Graphviz: https://graphviz.org/
 .. _HiGHS: https://ergo-code.github.io/HiGHS/dev/

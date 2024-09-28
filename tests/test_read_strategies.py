@@ -1,7 +1,6 @@
 import os
 from io import StringIO
 from textwrap import dedent
-from typing import List
 
 import pandas as pd
 from amply import Amply
@@ -16,10 +15,18 @@ from otoole.results.results import (
     ReadGlpk,
     ReadGurobi,
     ReadHighs,
+    ReadResults,
     check_for_duplicates,
     identify_duplicate,
     rename_duplicate_column,
 )
+from otoole.utils import _read_file
+
+
+# To instantiate abstract class ReadResults
+class DummyReadResults(ReadResults):
+    def get_results_from_file(self, filepath, input_data):
+        raise NotImplementedError()
 
 
 class TestReadCplex:
@@ -81,7 +88,6 @@ class TestReadCplex:
         reader = ReadCplex(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
-        # print(actual)
         expected = pd.DataFrame(
             [
                 ["NewCapacity", "SIMPLICITY,ETHPLANT,2015", 0.030000000000000027],
@@ -100,7 +106,6 @@ class TestReadCplex:
         reader = ReadCplex(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
-        # print(actual)
         expected = (
             pd.DataFrame(
                 [
@@ -147,6 +152,32 @@ class TestReadCplex:
         )
         pd.testing.assert_frame_equal(actual[0]["RateOfActivity"], expected)
 
+    def test_solution_to_dataframe_with_defaults(self, user_config):
+        input_file = self.cplex_data
+
+        regions = pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
+        technologies = pd.DataFrame(data=["ETHPLANT"], columns=["VALUE"])
+        years = pd.DataFrame(data=[2014, 2015, 2016], columns=["VALUE"])
+        input_data = {"REGION": regions, "TECHNOLOGY": technologies, "YEAR": years}
+
+        reader = ReadCplex(user_config, write_defaults=True)
+        with StringIO(input_file) as file_buffer:
+            actual = reader.read(file_buffer, input_data=input_data)
+        expected = (
+            pd.DataFrame(
+                [
+                    ["SIMPLICITY", "ETHPLANT", 2014, 0],
+                    ["SIMPLICITY", "ETHPLANT", 2015, 0.030000000000000027],
+                    ["SIMPLICITY", "ETHPLANT", 2016, 0.030999999999999917],
+                ],
+                columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+            )
+            .astype({"REGION": str, "TECHNOLOGY": str, "YEAR": "int64", "VALUE": float})
+            .set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        )
+
+        pd.testing.assert_frame_equal(actual[0]["NewCapacity"], expected)
+
 
 class TestReadGurobi:
 
@@ -170,7 +201,6 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
         reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
-        # print(actual)
         expected = pd.DataFrame(
             [
                 ["TotalDiscountedCost", "SIMPLICITY,2014", 1.9360385416218188e02],
@@ -192,7 +222,6 @@ RateOfActivity(SIMPLICITY,ID,FEL1,1,2017) 1.68590281943611
         reader = ReadGurobi(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)
-        # print(actual)
         expected = (
             pd.DataFrame(
                 [
@@ -385,7 +414,7 @@ class TestReadCbc:
                 ).set_index(["REGION", "EMISSION", "YEAR"])
             },
         ),
-    ]  # type: List
+    ]  # type: list
 
     @mark.parametrize(
         "results,expected",
@@ -399,7 +428,7 @@ class TestReadCbc:
         for name, df in actual.items():
             pd.testing.assert_frame_equal(df, expected[name])
 
-    test_data_3 = [(total_cost_cbc, {}, total_cost_otoole_df)]  # type: List
+    test_data_3 = [(total_cost_cbc, {}, total_cost_otoole_df)]  # type: list
 
     @mark.parametrize(
         "cbc_solution,input_data,expected",
@@ -1072,6 +1101,21 @@ class TestReadDatafile:
             in caplog.text
         )
 
+    def test_read_datafile_with_defaults(self, user_config):
+        datafile = os.path.join("tests", "fixtures", "simplicity.txt")
+        reader = ReadDatafile(user_config=user_config, write_defaults=True)
+        actual, _ = reader.read(datafile)
+        data = [
+            ["SIMPLICITY", "DAM", 2014, 0.0],
+            ["SIMPLICITY", "DAM", 2015, 0.0],
+            ["SIMPLICITY", "DAM", 2016, 0.0],
+        ]
+        expected = pd.DataFrame(
+            data, columns=["REGION", "STORAGE", "YEAR", "VALUE"]
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        pd.testing.assert_frame_equal(actual["CapitalCostStorage"].iloc[:3], expected)
+
 
 class TestReadExcel:
     def test_read_excel_yearsplit(self, user_config):
@@ -1124,6 +1168,21 @@ class TestReadExcel:
         ]
 
         assert (actual_data == expected).all()
+
+    def test_read_excel_with_defaults(self, user_config):
+        spreadsheet = os.path.join("tests", "fixtures", "combined_inputs.xlsx")
+        reader = ReadExcel(user_config=user_config, write_defaults=True)
+        actual, _ = reader.read(spreadsheet)
+        data = [
+            ["09_ROK", "CO2", 2017, -1.0],
+            ["09_ROK", "CO2", 2018, -1.0],
+            ["09_ROK", "CO2", 2019, -1.0],
+        ]
+        expected = pd.DataFrame(
+            data, columns=["REGION", "EMISSION", "YEAR", "VALUE"]
+        ).set_index(["REGION", "EMISSION", "YEAR"])
+
+        pd.testing.assert_frame_equal(actual["AnnualEmissionLimit"].iloc[:3], expected)
 
     def test_narrow_parameters(self, user_config):
         data = [
@@ -1241,6 +1300,26 @@ class TestReadCSV:
         expected = None
         assert actual == expected
 
+    def test_read_csv_with_defaults(self):
+        user_config_path = os.path.join(
+            "tests", "fixtures", "super_simple", "super_simple.yaml"
+        )
+        with open(user_config_path, "r") as config_file:
+            user_config = _read_file(config_file, ".yaml")
+
+        filepath = os.path.join("tests", "fixtures", "super_simple", "csv")
+        reader = ReadCsv(user_config=user_config, write_defaults=True)
+        actual, _ = reader.read(filepath)
+        data = [
+            ["BB", "gas_import", 2016, 0.0],
+            ["BB", "gas_plant", 2016, 1.03456],
+        ]
+        expected = pd.DataFrame(
+            data, columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"]
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        pd.testing.assert_frame_equal(actual["CapitalCost"], expected)
+
 
 class TestReadTabular:
     """Methods shared for csv and excel"""
@@ -1305,3 +1384,66 @@ class TestLongifyData:
 
         with raises(ValueError):
             check_datatypes(df, user_config, "AvailabilityFactor")
+
+
+class TestExpandRequiredParameters:
+    """Tests the expansion of required parameters for results processing"""
+
+    region = pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
+
+    technology = pd.DataFrame(data=["NGCC"], columns=["VALUE"])
+
+    def test_no_expansion(self):
+
+        user_config = {
+            "REGION": {
+                "dtype": "str",
+                "type": "set",
+            },
+        }
+
+        reader = DummyReadResults(user_config=user_config)
+        defaults = {}
+        input_data = {}
+
+        actual = reader._expand_required_params(input_data, defaults)
+
+        assert not actual
+
+    def test_expansion(self, user_config, discount_rate_empty, discount_rate_idv_empty):
+
+        user_config["DiscountRateIdv"] = {
+            "indices": ["REGION", "TECHNOLOGY"],
+            "type": "param",
+            "dtype": "float",
+            "default": 0.10,
+        }
+
+        reader = DummyReadResults(user_config=user_config)
+        defaults = reader._read_default_values(user_config)
+        input_data = {
+            "REGION": self.region,
+            "TECHNOLOGY": self.technology,
+            "DiscountRate": discount_rate_empty,
+            "DiscountRateIdv": discount_rate_idv_empty,
+        }
+
+        actual = reader._expand_required_params(input_data, defaults)
+
+        actual_dr = actual["DiscountRate"]
+
+        expected_dr = pd.DataFrame(
+            data=[["SIMPLICITY", 0.05]],
+            columns=["REGION", "VALUE"],
+        ).set_index(["REGION"])
+
+        pd.testing.assert_frame_equal(actual_dr, expected_dr)
+
+        actual_dr_idv = actual["DiscountRateIdv"]
+
+        expected_dr_idv = pd.DataFrame(
+            data=[["SIMPLICITY", "NGCC", 0.10]],
+            columns=["REGION", "TECHNOLOGY", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY"])
+
+        pd.testing.assert_frame_equal(actual_dr_idv, expected_dr_idv)

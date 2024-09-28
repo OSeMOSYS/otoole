@@ -28,6 +28,7 @@ Convert a GNUMathProg datafile to a folder of CSV files::
 >>> converter.convert('my_datafile.txt', 'folder_of_csv_files')
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -110,6 +111,7 @@ class Context:
         input_filepath: str
         output_filepath: str
         """
+
         inputs, default_values = self._read(input_filepath, **kwargs)
         self._write(inputs, output_filepath, default_values, **kwargs)
 
@@ -186,7 +188,6 @@ class WriteStrategy(Strategy):
     user_config: dict, default=None
     filepath: str, default=None
     default_values: dict, default=None
-    write_defaults: bool, default=False
     input_data: dict, default=None
 
     """
@@ -196,7 +197,6 @@ class WriteStrategy(Strategy):
         user_config: Dict,
         filepath: Optional[str] = None,
         default_values: Optional[Dict] = None,
-        write_defaults: bool = False,
         input_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         super().__init__(user_config=user_config)
@@ -214,8 +214,6 @@ class WriteStrategy(Strategy):
             self.input_data = input_data
         else:
             self.input_data = {}
-
-        self.write_defaults = write_defaults
 
     @abstractmethod
     def _header(self) -> Union[TextIO, Any]:
@@ -256,14 +254,10 @@ class WriteStrategy(Strategy):
         handle = self._header()
         logger.debug(default_values)
 
-        self.input_data = inputs
-        if self.write_defaults:
-            try:
-                self.input_data = self._expand_defaults(inputs, default_values)
-            except KeyError as ex:
-                logger.debug(ex)
+        self.inputs = inputs  # parameter/set data OR result data
+        self.input_params = kwargs.get("input_data", None)  # parameter/set data
 
-        for name, df in sorted(self.input_data.items()):
+        for name, df in sorted(self.inputs.items()):
             logger.debug("%s has %s columns: %s", name, len(df.index.names), df.columns)
 
             try:
@@ -275,9 +269,12 @@ class WriteStrategy(Strategy):
                     raise KeyError("Cannot find %s in input or results config", name)
 
             if entity_type != "set":
-                default_value = default_values[name]
                 self._write_parameter(
-                    df, name, handle, default=default_value, input_data=self.input_data
+                    df,
+                    name,
+                    handle,
+                    default=default_values[name],
+                    input_data=self.inputs,
                 )
             else:
                 self._write_set(df, name, handle)
@@ -287,70 +284,6 @@ class WriteStrategy(Strategy):
         if isinstance(handle, TextIO):
             handle.close()
 
-    def _expand_defaults(
-        self, data_to_expand: Dict[str, pd.DataFrame], default_values: Dict[str, float]
-    ) -> Dict[str, pd.DataFrame]:
-        """Populates default value entry rows in dataframes
-
-        Parameters
-        ----------
-        data_to_expand : Dict[str, pd.DataFrame],
-        default_values : Dict[str, float]
-
-        Returns
-        -------
-        Dict[str, pd.DataFrame]
-            Input data with expanded default values replacing missing entries
-
-        """
-
-        sets = [x for x in self.user_config if self.user_config[x]["type"] == "set"]
-        output = {}
-        for name, data in data_to_expand.items():
-            logger.info(f"Writing defaults for {name}")
-
-            # skip sets
-            if name in sets:
-                output[name] = data
-                continue
-
-            # TODO
-            # Issue with how otoole handles trade route right now.
-            # The double definition of REGION throws an error.
-            if name == "TradeRoute":
-                output[name] = data
-                continue
-
-            # save set information for each parameter
-            index_data = {}
-            for index in data.index.names:
-                index_data[index] = self.input_data[index]["VALUE"].to_list()
-
-            # set index
-            if len(index_data) > 1:
-                new_index = pd.MultiIndex.from_product(
-                    list(index_data.values()), names=list(index_data.keys())
-                )
-            else:
-                new_index = pd.Index(
-                    list(index_data.values())[0], name=list(index_data.keys())[0]
-                )
-            df_default = pd.DataFrame(index=new_index)
-
-            # save default result value
-            df_default["VALUE"] = default_values[name]
-
-            # combine result and default value dataframe
-            if not data.empty:
-                df = pd.concat([data, df_default])
-                df = df[~df.index.duplicated(keep="first")]
-            else:
-                df = df_default
-            df = df.sort_index()
-            output[name] = df
-
-        return output
-
 
 class ReadStrategy(Strategy):
     """
@@ -359,6 +292,15 @@ class ReadStrategy(Strategy):
     The Context uses this interface to call the algorithm defined by Concrete
     Strategies.
     """
+
+    def __init__(
+        self,
+        user_config: Dict,
+        write_defaults: bool = False,
+    ):
+        super().__init__(user_config=user_config)
+
+        self.write_defaults = write_defaults
 
     def _check_index(
         self, input_data: Dict[str, pd.DataFrame]
@@ -587,6 +529,113 @@ class ReadStrategy(Strategy):
         if errors:
             logger.debug(f"data and config name errors are: {errors}")
             raise OtooleNameMismatchError(name=errors)
+
+    def _expand_dataframe(
+        self,
+        name: str,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, pd.DataFrame],
+    ) -> pd.DataFrame:
+        """Populates default value entry rows in dataframes
+
+        Parameters
+        ----------
+        name: str
+            Name of parameter/result to expand
+        input_data: Dict[str, pd.DataFrame],
+            internal datastore
+        default_values: Dict[str, pd.DataFrame],
+
+        Returns
+        -------
+        pd.DataFrame,
+            Input data with expanded default values replacing missing entries
+        """
+
+        df = input_data[name]
+
+        # TODO: Issue with how otoole handles trade route right now.
+        # The double definition of REGION throws an error.
+        if name == "TradeRoute":
+            return df
+
+        default_df = self._get_default_dataframe(name, input_data, default_values)
+
+        # future warning of concating empty dataframe
+        if not df.empty:
+            df = pd.concat([df, default_df])
+        else:
+            df = default_df.copy()
+
+        df = df[~df.index.duplicated(keep="first")]
+
+        df = self._check_index_dtypes(name, self.user_config[name], df)
+
+        return df.sort_index()
+
+    def _get_default_dataframe(
+        self,
+        name: str,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, pd.DataFrame],
+    ) -> pd.DataFrame:
+        """Creates default dataframe"""
+
+        index_data = {}
+        indices = self.user_config[name]["indices"]
+        for index in indices:
+            index_data[index] = input_data[index]["VALUE"].to_list()
+
+        if len(index_data) > 1:
+            new_index = pd.MultiIndex.from_product(
+                list(index_data.values()), names=list(index_data.keys())
+            )
+        else:
+            new_index = pd.Index(
+                list(index_data.values())[0], name=list(index_data.keys())[0]
+            )
+
+        df = pd.DataFrame(index=new_index).sort_index()
+        df["VALUE"] = default_values[name]
+
+        return df
+
+    def write_default_params(
+        self,
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, Union[str, int, float]],
+    ) -> Dict[str, pd.DataFrame]:
+        """Returns paramter dataframes with default values expanded"""
+        names = [x for x in self.user_config if self.user_config[x]["type"] == "param"]
+        for name in names:
+            try:
+                logger.debug(f"Serching for {name} data to expand")
+                input_data[name] = self._expand_dataframe(
+                    name, input_data, default_values
+                )
+            except KeyError:
+                logger.warning(f"Can not expand {name} data")
+        return input_data
+
+    def write_default_results(
+        self,
+        result_data: Dict[str, pd.DataFrame],
+        input_data: Dict[str, pd.DataFrame],
+        default_values: Dict[str, Union[str, int, float]],
+    ) -> Dict[str, pd.DataFrame]:
+        """Returns result dataframes with default values expanded"""
+
+        all_data = {**result_data, **input_data}
+        names = [x for x in self.user_config if self.user_config[x]["type"] == "result"]
+        for name in names:
+            try:
+                logger.debug(f"Serching for {name} data to expand")
+                result_data[name] = self._expand_dataframe(
+                    name, all_data, default_values
+                )
+            except KeyError:
+                logger.debug(f"Can not expand {name} data")
+        return result_data
 
     @abstractmethod
     def read(

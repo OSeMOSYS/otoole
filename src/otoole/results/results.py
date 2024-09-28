@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 from io import StringIO
-from typing import Any, Dict, List, Set, TextIO, Tuple, Union
+from typing import Any, Dict, TextIO, Tuple, Union
 
 import pandas as pd
 
@@ -32,8 +32,10 @@ class ReadResults(ReadStrategy):
         """
         if "input_data" in kwargs:
             input_data = kwargs["input_data"]
+            param_default_values = self._read_default_values(self.input_config)
         else:
-            input_data = None
+            input_data = {}
+            param_default_values = {}
 
         available_results = self.get_results_from_file(
             filepath, input_data
@@ -41,9 +43,14 @@ class ReadResults(ReadStrategy):
 
         default_values = self._read_default_values(self.results_config)  # type: Dict
 
+        input_data = self._expand_required_params(input_data, param_default_values)
+
         results = self.calculate_results(
             available_results, input_data
         )  # type: Dict[str, pd.DataFrame]
+
+        if self.write_defaults:
+            results = self.write_default_results(results, input_data, default_values)
 
         return results, default_values
 
@@ -72,6 +79,24 @@ class ReadResults(ReadStrategy):
                 LOGGER.debug("Error calculating %s: %s", name, str(ex))
 
         return results
+
+    def _expand_required_params(
+        self,
+        input_data: dict[str, pd.DataFrame],
+        param_defaults: dict[str, Any],
+    ) -> dict[str, pd.DataFrame]:
+        """Expands required default values for results processing"""
+
+        if "DiscountRate" in input_data:
+            input_data["DiscountRate"] = self._expand_dataframe(
+                "DiscountRate", input_data, param_defaults
+            )
+        if "DiscountRateIdv" in input_data:
+            input_data["DiscountRateIdv"] = self._expand_dataframe(
+                "DiscountRateIdv", input_data, param_defaults
+            )
+
+        return input_data
 
 
 class ReadWideResults(ReadResults):
@@ -145,7 +170,7 @@ class ReadWideResults(ReadResults):
         return results
 
 
-def check_duplicate_index(df: pd.DataFrame, columns: List, index: List) -> pd.DataFrame:
+def check_duplicate_index(df: pd.DataFrame, columns: list, index: list) -> pd.DataFrame:
     """Catches pandas error when there are duplicate column indices"""
     if check_for_duplicates(index):
         index = rename_duplicate_column(index)
@@ -156,12 +181,12 @@ def check_duplicate_index(df: pd.DataFrame, columns: List, index: List) -> pd.Da
     return df, index
 
 
-def check_for_duplicates(index: List) -> bool:
+def check_for_duplicates(index: list) -> bool:
     return len(set(index)) != len(index)
 
 
-def identify_duplicate(index: List) -> Union[int, bool]:
-    elements = set()  # type: Set
+def identify_duplicate(index: list) -> Union[int, bool]:
+    elements = set()  # type: set
     for counter, elem in enumerate(index):
         if elem in elements:
             return counter
@@ -170,7 +195,7 @@ def identify_duplicate(index: List) -> Union[int, bool]:
     return False
 
 
-def rename_duplicate_column(index: List) -> List:
+def rename_duplicate_column(index: list) -> list:
     column = index.copy()
     location = identify_duplicate(column)
     if location:
@@ -298,8 +323,13 @@ class ReadGlpk(ReadWideResults):
         Path to GLPK model file. Can be created using the `--wglp` flag.
     """
 
-    def __init__(self, user_config: Dict[str, Dict], glpk_model: Union[str, TextIO]):
-        super().__init__(user_config)
+    def __init__(
+        self,
+        user_config: Dict[str, Dict],
+        glpk_model: Union[str, TextIO],
+        write_defaults: bool = False,
+    ):
+        super().__init__(user_config=user_config, write_defaults=write_defaults)
 
         if isinstance(glpk_model, str):
             with open(glpk_model, "r") as model_file:
