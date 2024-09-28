@@ -22,8 +22,8 @@ Objective
 ~~~~~~~~~
 
 While ``otoole`` does not require a solver, these examples will use the free
-and open source solvers GLPK_, CBC_, and HiGHS_. Install GLPK_ (required), 
-CBC_ (optional), and HiGHS_ (optional) to follow along! 
+and open source solvers GLPK_, CBC_, and HiGHS_. Install GLPK_ (required),
+CBC_ (optional), and HiGHS_ (optional) to follow along!
 
 1. Install GLPK
 ~~~~~~~~~~~~~~~~
@@ -110,15 +110,15 @@ You can exit the solver by typing ``quit``
 3. Install HiGHS
 ~~~~~~~~~~~~~~~~
 
-HiGHS_ is a free and open-source linear programming (LP), mixed-integer programming (MIP), 
+HiGHS_ is a free and open-source linear programming (LP), mixed-integer programming (MIP),
 and quadratic programming (QP) solver. HiGHS_ can be run through the command line or through one of their
-`API interfaces <https://ergo-code.github.io/HiGHS/dev/interfaces/python/>`_. If you are 
+`API interfaces <https://ergo-code.github.io/HiGHS/dev/interfaces/python/>`_. If you are
 using HiGHS through Python, follow the ``Python`` installation instructions. If you are running
-HiHGS through the command line, follow the ``Compile From Source`` **or** 
+HiHGS through the command line, follow the ``Compile From Source`` **or**
 ``Precompiled Binary`` installation instructions.
 
 .. SEEALSO::
-    For further information on installing HiGHS, visit the 
+    For further information on installing HiGHS, visit the
     `HiGHS documentation site <https://ergo-code.github.io/HiGHS/dev/installation/>`_
 
 Python Install
@@ -142,16 +142,16 @@ Once installed, you should be able to see ``highspy`` in your environment::
     Requires:
     Required-by:
 
-Compile from Source 
+Compile from Source
 +++++++++++++++++++
 
-HiHGS can be installed through CMake for Windows, Mac, or Linux. To do so, first 
-clone the `HiHGS repository <https://github.com/ERGO-Code/HiGHS/tree/latest>`_ 
+HiHGS can be installed through CMake for Windows, Mac, or Linux. To do so, first
+clone the `HiHGS repository <https://github.com/ERGO-Code/HiGHS/tree/latest>`_
 with the following command::
 
     $ git clone https://github.com/ERGO-Code/HiGHS.git
 
-Next, follow the HiHGS CMake build and install instructions for your operating system.  
+Next, follow the HiHGS CMake build and install instructions for your operating system.
 Install instructions for each operating system are described
 `here <https://github.com/ERGO-Code/HiGHS/blob/latest/cmake/README.md>`_
 
@@ -163,8 +163,8 @@ Once installed, you should be able to call HiGHS_ from the command line::
 Precompiled Binary
 ++++++++++++++++++
 
-Alternatively from compiling from source, HiHGS can be installed from a pre-compiled binary. 
-To install HiGHS, download a system compatible pre-compiled binary as directed by the 
+Alternatively from compiling from source, HiHGS can be installed from a pre-compiled binary.
+To install HiGHS, download a system compatible pre-compiled binary as directed by the
 `HiGHS install documentation <https://ergo-code.github.io/HiGHS/dev/installation/#Precompiled-Binaries>`_.
 
 Extract the binary with the following command on MacOS/Linux::
@@ -295,7 +295,7 @@ Next, we can follow a similar process to processing results from other solvers::
 4. Process a solution from HiGHS (Python)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use `HiGHS Python API`_  to solve a model, and use otoole's Python API to extract the data into a Python dictionary.
-HiGHS can process models in both ``.mlp`` and CPLEX ``.lp`` format. This example will assume you have a model file 
+HiGHS can process models in both ``.mlp`` and CPLEX ``.lp`` format. This example will assume you have a model file
 called ``simplicity.lp`` already created. This can be created through GLPK following the first command in the previous example.
 
 First, ensure HiGHS is installed in your Python environment::
@@ -305,7 +305,7 @@ First, ensure HiGHS is installed in your Python environment::
 Next, import ``highspy`` and ``otoole`` into your Python module::
 
     import highspy
-    import otoole 
+    import otoole
 
 Next, use HiGHS to solve the model and write a solution file::
 
@@ -323,7 +323,7 @@ Finally, use otoole's :func:`otoole.convert.read_results` to read results into a
     print(data["AnnualEmissions"])
 
     >                           VALUE
-    > REGION     EMISSION YEAR          
+    > REGION     EMISSION YEAR
     > SIMPLICITY CO2      2014  0.335158
     >                     2015  0.338832
     >                     2016  0.346281
@@ -331,9 +331,9 @@ Finally, use otoole's :func:`otoole.convert.read_results` to read results into a
     ...
 
 .. SEEALSO::
-    Using ``highspy``, you are able to extract out detailed solution information as demonstrated 
-    in the HiGHS documentation 
-    `here <https://ergo-code.github.io/HiGHS/dev/interfaces/python/example-py/#Print-solution-information>`_. 
+    Using ``highspy``, you are able to extract out detailed solution information as demonstrated
+    in the HiGHS documentation
+    `here <https://ergo-code.github.io/HiGHS/dev/interfaces/python/example-py/#Print-solution-information>`_.
 
 5. Process a solution from Gurobi
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -671,4 +671,3 @@ will also flag it as an isolated fuel. This means the fuel is unconnected from t
 .. _Graphviz: https://www.graphviz.org/download/
 .. _HiGHS: https://ergo-code.github.io/HiGHS/dev/
 .. _HiGHS Python API: https://ergo-code.github.io/HiGHS/dev/interfaces/python/
-
