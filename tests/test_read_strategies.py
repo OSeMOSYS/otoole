@@ -722,7 +722,7 @@ e o f
 class TestReadHighs:
     """Tests reading of HiGHS solution file"""
 
-    highs_data = dedent(
+    highs_data_with_type_col = dedent(
         """Columns
     Index Status        Lower        Upper       Primal         Dual  Type        Name
         0     BS            0          inf      193.604            0  Continuous  TotalDiscountedCost(SIMPLICITY,2014)
@@ -755,10 +755,45 @@ Objective value: 4497.319670152045
 """
     )
 
-    def test_convert_to_dataframe(self, user_config):
-        input_file = self.highs_data
+    highs_data_no_type_col = dedent(
+        """Columns
+    Index Status        Lower        Upper       Primal         Dual  Name
+        0     BS            0          inf      193.604            0  TotalDiscountedCost(SIMPLICITY,2014)
+        1     BS            0          inf      187.724            0  TotalDiscountedCost(SIMPLICITY,2015)
+        2     BS            0          inf      183.998            0  TotalDiscountedCost(SIMPLICITY,2016)
+        3     BS            0          inf      181.728            0  TotalDiscountedCost(SIMPLICITY,2017)
+     2433     LB            0          inf            0       162680  RateOfActivity(SIMPLICITY,ID,BACKSTOP1,1,2014)
+     2434     LB            0          inf            0       162682  RateOfActivity(SIMPLICITY,ID,BACKSTOP1,2,2014)
+     2435     BS            0          inf           -0            0  RateOfTotalActivity(SIMPLICITY,BACKSTOP1,ID,2014)
+     2436     LB            0          inf            0       154933  RateOfActivity(SIMPLICITY,ID,BACKSTOP1,1,2015)
+     5772     BS            0          inf     0.353203            0  RateOfActivity(SIMPLICITY,WN,HYD1,1,2020)
+     5773     LB            0          inf            0      2.15221  RateOfActivity(SIMPLICITY,WN,HYD1,2,2020)
+     5774     BS            0          inf     0.353203            0  RateOfTotalActivity(SIMPLICITY,HYD1,WN,2020)
+     5775     BS            0          inf     0.353203            0  RateOfActivity(SIMPLICITY,WN,HYD1,1,2021)
+    15417     BS            0          inf           -0            0  RateOfProductionByTechnologyByMode(SIMPLICITY,ID,GAS_IMPORT,1,GAS,2038)
+    15418     BS            0          inf           -0            0  RateOfProductionByTechnologyByMode(SIMPLICITY,ID,GAS_IMPORT,1,GAS,2039)
+    15419     BS            0          inf           -0            0  RateOfProductionByTechnologyByMode(SIMPLICITY,ID,GAS_IMPORT,1,GAS,2040)
+Rows
+    Index Status        Lower        Upper       Primal         Dual  Name
+        0     FX     -1.59376     -1.59376     -1.59376     -2.68632  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2014)
+        1     FX     -1.60168     -1.60168     -1.60168      -2.5584  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2015)
+        2     FX     -1.63695     -1.63695     -1.63695     -2.43657  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2016)
+        3     FX      -1.6859      -1.6859      -1.6859     -2.32054  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2017)
+        4     FX     -1.74637     -1.74637     -1.74637     -2.21004  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2018)
+        5     FX     -1.80612     -1.80612     -1.80612      -2.1048  EQ_SpecifiedDemand(SIMPLICITY,ID,FEL1,2019)
+
+Model status: Optimal
+
+Objective value: 4497.319670152045
+"""
+    )
+
+    test_data = [highs_data_with_type_col, highs_data_no_type_col]
+
+    @mark.parametrize("highs_sol", test_data, ids=["with_type_col", "no_type_col"])
+    def test_convert_to_dataframe(self, user_config, highs_sol):
         reader = ReadHighs(user_config)
-        with StringIO(input_file) as file_buffer:
+        with StringIO(highs_sol) as file_buffer:
             actual = reader._convert_to_dataframe(file_buffer)
         expected = pd.DataFrame(
             [
@@ -776,7 +811,7 @@ Objective value: 4497.319670152045
         pd.testing.assert_frame_equal(actual, expected)
 
     def test_solution_to_dataframe(self, user_config):
-        input_file = self.highs_data
+        input_file = self.highs_data_with_type_col
         reader = ReadHighs(user_config)
         with StringIO(input_file) as file_buffer:
             actual = reader.read(file_buffer)

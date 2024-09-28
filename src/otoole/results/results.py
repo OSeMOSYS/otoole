@@ -298,10 +298,19 @@ class ReadHighs(ReadWideResults):
             index_col=0,
             dtype=str,
         )
+
+        # Type column is not garunteed in the the model output
+        # retain conditional as filtering on type is more explicit
+        if "Type" in df.columns:
+            var_types = ["Continuous", "Integer", "SemiContinuous", "SemiInteger"]
+            df = df[df.Type.isin(var_types)].copy()
+        else:
+            df = df.reset_index()
+            row = df[df.Index == "Rows"].index[0]
+            df = df.iloc[:row].set_index("Index")
+
         df.index.name = ""  # remove the name Index, as otoole uses that
 
-        var_types = ["Continuous", "Integer", "SemiContinuous", "SemiInteger"]
-        df = df[df.Type.isin(var_types)].copy()
         df[["Variable", "Index"]] = df["Name"].str.split("(", expand=True).loc[:, 0:1]
         df["Index"] = df["Index"].str.replace(")", "", regex=False)
         df = df[~(df.Primal.astype(float).abs() < 1e-6)]
