@@ -21,9 +21,9 @@ Solver Setup
 Objective
 ~~~~~~~~~
 
-Install GLPK_ (required), CBC_ (optional), and HiGHS_ (optional) to use in the otoole
-examples. While ``otoole`` does not require a solver, these examples will use the free
-and open source solvers GLPK_, CBC_, and HiGHS_.
+While ``otoole`` does not require a solver, these examples will use the free
+and open source solvers GLPK_, CBC_, and HiGHS_. Install GLPK_ (required), 
+CBC_ (optional), and HiGHS_ (optional) to follow along! 
 
 1. Install GLPK
 ~~~~~~~~~~~~~~~~
@@ -31,6 +31,9 @@ and open source solvers GLPK_, CBC_, and HiGHS_.
 GLPK_ is a free and open-source linear program solver. Full
 install instructions can be found on the `GLPK Website`_, however, the
 abbreviated instructions are shown below
+
+Install on System
++++++++++++++++++
 
 To install GLPK on **Linux**, run the command::
 
@@ -44,6 +47,9 @@ To install GLPK on **Mac**, run the command::
 To install GLPK on **Windows**, follow the instructions on the
 `GLPK Website`_. Be sure to add GLPK to
 your environment variables after installation
+
+Install via Anaconda
+++++++++++++++++++++
 
 Alternatively, if you use Anaconda_ to manage
 your Python packages, you can install GLPK via the command::
@@ -66,6 +72,9 @@ CBC_ is a free and open-source mixed integer linear programming solver. Full
 install instructions can be found on the CBC_ website, however, the abbreviated
 instructions are shown below
 
+Install on System
++++++++++++++++++
+
 To install CBC on **Linux**, run the command::
 
     $ sudo apt-get install coinor-cbc coinor-libcbc-dev
@@ -76,6 +85,9 @@ To install CBC on **Mac**, run the command::
 
 To install CBC on **Windows**, follow the install instruction on the CBC_
 website.
+
+Install via Anaconda
+++++++++++++++++++++
 
 Alternatively, if you use Anaconda_ to manage
 your Python packages, you can install CBC via the command::
@@ -98,40 +110,21 @@ You can exit the solver by typing ``quit``
 3. Install HiGHS
 ~~~~~~~~~~~~~~~~
 
-HiGHS_ is a free and open-source mixed integer linear programming solver. HiGHS_ can be
-run through the command line or through one of their
-`API interfaces <https://ergo-code.github.io/HiGHS/dev/interfaces/python/>`_.  See the
-`HiGHS install instructions <https://ergo-code.github.io/HiGHS/dev/installation/>`_ for full
-details on both methods. Here we will cover abbreviated instructions for CLI and Python
-execution.
+HiGHS_ is a free and open-source linear programming (LP), mixed-integer programming (MIP), 
+and quadratic programming (QP) solver. HiGHS_ can be run through the command line or through one of their
+`API interfaces <https://ergo-code.github.io/HiGHS/dev/interfaces/python/>`_. If you are 
+using HiGHS through Python, follow the ``Python`` installation instructions. If you are running
+HiHGS through the command line, follow the ``Compile From Source`` **or** 
+``Precompiled Binary`` installation instructions.
 
-CLI Install
-+++++++++++
-
-To install the HiGHS executable, install a pre-compiled binary as directed by
-the `HiGHS install documentation <https://ergo-code.github.io/HiGHS/dev/installation/#Precompiled-Binaries>`_.
-
-Extract the binary with the following command on MacOS/Linux::
-
-    $ tar -xzf filename.tar.gz
-
-Navigate to the ``./bin/`` folder and run HiGHS from the command line::
-
-    $ ./highs
-
-.. TIP::
-    To call HiGHS_ from anywhere in the command line, add the path to the execultable
-    to your environment variables.
-
-Once installed, you should be able to directly call HiGHS_::
-
-    $ highs
-    Please specify filename in .mps|.lp|.ems format.
+.. SEEALSO::
+    For further information on installing HiGHS, visit the 
+    `HiGHS documentation site <https://ergo-code.github.io/HiGHS/dev/installation/>`_
 
 Python Install
 ++++++++++++++
 
-In Python, simple install HiGHS through pip with::
+In Python, install HiGHS through pip with::
 
     $ pip install highspy
 
@@ -148,6 +141,52 @@ Once installed, you should be able to see ``highspy`` in your environment::
     Location: /home/xxx/.local/lib/python3.10/site-packages
     Requires:
     Required-by:
+
+Compile from Source 
++++++++++++++++++++
+
+HiHGS can be installed through CMake for Windows, Mac, or Linux. To do so, first 
+clone the `HiHGS repository <https://github.com/ERGO-Code/HiGHS/tree/latest>`_ 
+with the following command::
+
+    $ git clone https://github.com/ERGO-Code/HiGHS.git
+
+Next, follow the HiHGS CMake build and install instructions for your operating system.  
+Install instructions for each operating system are described
+`here <https://github.com/ERGO-Code/HiGHS/blob/latest/cmake/README.md>`_
+
+Once installed, you should be able to call HiGHS_ from the command line::
+
+    $ highs
+    Please specify filename in .mps|.lp|.ems format.
+
+Precompiled Binary
+++++++++++++++++++
+
+Alternatively from compiling from source, HiHGS can be installed from a pre-compiled binary. 
+To install HiGHS, download a system compatible pre-compiled binary as directed by the 
+`HiGHS install documentation <https://ergo-code.github.io/HiGHS/dev/installation/#Precompiled-Binaries>`_.
+
+Extract the binary with the following command on MacOS/Linux::
+
+    $ tar -xzf filename.tar.gz
+
+Navigate to the ``./bin/`` folder and run HiGHS from the command line::
+
+    $ ./highs
+
+.. TIP::
+    To call HiGHS_ from anywhere in the command line, add the path to the execultable
+    to your environment variables. For example, if using a bash shell, add the following
+    to your ``.bashrc`` file::
+
+        alias highs="/opt/highs/bin/./highs"
+        export PATH=$PATH:"/opt/highs/bin/"
+
+Once installed, you should be able to call HiGHS_ from the command line::
+
+    $ highs
+    Please specify filename in .mps|.lp|.ems format.
 
 Input Data Conversion
 ---------------------
@@ -227,7 +266,7 @@ save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV re
 
 3. Process a solution from HiGHS (CLI)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use HiGHS_ to solve the model and
+Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use HiGHS_ from the command line to solve the model and
 save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/``.
 
 HiGHS_ has the ability to write solutions in a variety of formats; ``otoole`` will process the
@@ -255,18 +294,21 @@ Next, we can follow a similar process to processing results from other solvers::
 
 4. Process a solution from HiGHS (Python)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use `HiGHS Python API`_  to solve a model, and use otoole's Python API to create a folder of CSV results called ``results/``.
-HiGHS can process models in both ``.mlp`` and CPLEX ``.lp`` format. This example will assume you have a model file called ``simplicity.lp``
-already created. This can be created through GLPK following the first command in the previous example.
+Use `HiGHS Python API`_  to solve a model, and use otoole's Python API to extract the data into a Python dictionary.
+HiGHS can process models in both ``.mlp`` and CPLEX ``.lp`` format. This example will assume you have a model file 
+called ``simplicity.lp`` already created. This can be created through GLPK following the first command in the previous example.
 
-First, install HiGHS and otoole into your Python environment::
+First, ensure HiGHS is installed in your Python environment::
 
     $ pip install highspy
-    $ pip install otoole
+
+Next, import ``highspy`` and ``otoole`` into your Python module::
+
+    import highspy
+    import otoole 
 
 Next, use HiGHS to solve the model and write a solution file::
 
-    import highspy
     h = highspy.Highs()
     h.readModel("simplicity.lp")
     h.run()
@@ -275,12 +317,25 @@ Next, use HiGHS to solve the model and write a solution file::
 .. warning::
     The HiGHS_ solution style **must be** solution style ``1`` (ie. ``kSolutionStylePretty``)
 
-Finally, use otoole to convert the solution file into a folder of result CSVs::
+Finally, use otoole's :func:`otoole.convert.read_results` to read results into a dictionary::
 
-    from otoole import convert_results
-    convert_results("config.yaml", "highs", "csv", "simplicity.sol", "results", "csv", "data")
+    data, defaults = otoole.read_results("config.yaml", "highs", "simplicity.sol", "datafile", "simplicity.txt")
+    print(data["AnnualEmissions"])
 
-1. Process a solution from Gurobi
+    >                           VALUE
+    > REGION     EMISSION YEAR          
+    > SIMPLICITY CO2      2014  0.335158
+    >                     2015  0.338832
+    >                     2016  0.346281
+    >                     2017  0.355936
+    ...
+
+.. SEEALSO::
+    Using ``highspy``, you are able to extract out detailed solution information as demonstrated 
+    in the HiGHS documentation 
+    `here <https://ergo-code.github.io/HiGHS/dev/interfaces/python/example-py/#Print-solution-information>`_. 
+
+5. Process a solution from Gurobi
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use GLPK_ to build the model and save the problem as ``simplicity.lp``. Use Gurobi_ to solve the model and
 save the solution as ``simplicity.sol``. Use otoole to create a folder of CSV results called ``results/`` from the solution file::
