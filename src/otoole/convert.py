@@ -17,7 +17,14 @@ import pandas as pd
 from otoole.exceptions import OtooleError
 from otoole.input import Context, ReadStrategy, WriteStrategy
 from otoole.read_strategies import ReadCsv, ReadDatafile, ReadExcel
-from otoole.results.results import ReadCbc, ReadCplex, ReadGlpk, ReadGurobi, ReadResults
+from otoole.results.results import (
+    ReadCbc,
+    ReadCplex,
+    ReadGlpk,
+    ReadGurobi,
+    ReadHighs,
+    ReadResults,
+)
 from otoole.utils import _read_file, read_deprecated_datapackage, validate_config
 from otoole.write_strategies import WriteCsv, WriteDatafile, WriteExcel
 
@@ -33,14 +40,14 @@ def read_results(
     write_defaults: bool = False,
     glpk_model: Optional[str] = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, float]]:
-    """Read OSeMOSYS results from CBC, GLPK, Gurobi, or CPLEX results files
+    """Read OSeMOSYS results from CBC, GLPK, Gurobi, HiGHS, or CPLEX results files
 
     Arguments
     ---------
     config : str
         Path to config file
     from_format : str
-        Available options are 'cbc', 'gurobi', 'cplex', and 'glpk'
+        Available options are 'cbc', 'gurobi', 'cplex', 'highs', and 'glpk'
     from_path : str
         Path to source file (if datafile or excel) or folder (csv)
     input_format: str
@@ -87,18 +94,18 @@ def convert_results(
     write_defaults: bool = False,
     glpk_model: Optional[str] = None,
 ) -> bool:
-    """Post-process results from a CBC, CPLEX, Gurobi, or GLPK solution file into CSV format
+    """Post-process results from a CBC, CPLEX, Gurobi, HiHGS, or GLPK solution file into CSV format
 
     Arguments
     ---------
     config : str
         Path to config file
     from_format : str
-        Available options are 'cbc', 'cplex' and 'gurobi'
+        Available options are 'cbc', 'cplex', 'highs'. 'glpk', and 'gurobi'
     to_format : str
         Available options are 'csv', 'excel'
     from_path : str
-        Path to cbc, cplex or gurobi solution file
+        Path to solution file
     to_path : str
         Path to destination folder
     input_format: str
@@ -152,14 +159,14 @@ def convert_results(
 def _get_read_result_strategy(
     user_config, from_format, glpk_model=None, write_defaults=False
 ) -> Union[ReadResults, None]:
-    """Get ``ReadResults`` for gurobi, cbc, cplex, and glpk formats
+    """Get ``ReadResults`` for gurobi, cbc, cplex, highs and glpk formats
 
     Arguments
     ---------
     config : dict
         User configuration describing parameters and sets
     from_format : str
-        Available options are 'cbc', 'gurobi', 'cplex', and 'glpk'
+        Available options are 'cbc', 'gurobi', 'cplex', 'highs', and 'glpk'
     write_defaults: bool, default: False
         Write default values to output format
     glpk_model : str
@@ -182,6 +189,10 @@ def _get_read_result_strategy(
         )
     elif from_format == "cplex":
         read_strategy = ReadCplex(
+            user_config=user_config, write_defaults=write_defaults
+        )
+    elif from_format == "highs":
+        read_strategy = ReadHighs(
             user_config=user_config, write_defaults=write_defaults
         )
     elif from_format == "glpk":

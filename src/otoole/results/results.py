@@ -248,13 +248,7 @@ class ReadGurobi(ReadWideResults):
 
 
 class ReadCbc(ReadWideResults):
-    """Read a CBC solution file into memory
-
-    Arguments
-    ---------
-    user_config : Dict[str, Dict]
-    results_config : Dict[str, Dict]
-    """
+    """Read a CBC solution file into memory"""
 
     def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
         """Reads a CBC solution file into a pandas DataFrame
@@ -285,6 +279,47 @@ class ReadCbc(ReadWideResults):
         df["Index"] = df["Index"].str.replace(")", "", regex=False)
         df = df.drop(columns=["indexvalue"])
         return df[["Variable", "Index", "Value"]].astype({"Value": float})
+
+
+class ReadHighs(ReadWideResults):
+    """Read a HiGHS solution file into memory"""
+
+    def _convert_to_dataframe(self, file_path: Union[str, TextIO]) -> pd.DataFrame:
+        """Reads a HiGHS solution file into a pandas DataFrame
+
+        Arguments
+        ---------
+        file_path : str
+        """
+        df = pd.read_csv(
+            file_path,
+            sep=r"\s+",
+            skiprows=1,
+            index_col=0,
+            dtype=str,
+        )
+
+        # Type column is not garunteed in the the model output
+        # retain conditional as filtering on type is more explicit
+        if "Type" in df.columns:
+            var_types = ["Continuous", "Integer", "SemiContinuous", "SemiInteger"]
+            df = df[df.Type.isin(var_types)].copy()
+        else:
+            df = df.reset_index()
+            row = df[df.Index == "Rows"].index[0]
+            df = df.iloc[:row].set_index("Index")
+
+        df.index.name = ""  # remove the name Index, as otoole uses that
+
+        df[["Variable", "Index"]] = df["Name"].str.split("(", expand=True).loc[:, 0:1]
+        df["Index"] = df["Index"].str.replace(")", "", regex=False)
+        df = df[~(df.Primal.astype(float).abs() < 1e-6)]
+        return (
+            df[["Variable", "Index", "Primal"]]
+            .rename(columns={"Primal": "Value"})
+            .reset_index(drop=True)
+            .astype({"Variable": str, "Index": str, "Value": float})
+        )
 
 
 class ReadGlpk(ReadWideResults):

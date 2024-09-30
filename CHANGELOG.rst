@@ -8,6 +8,7 @@ Changelog
 - Capital Investment result calculation fixed
 - Defults expansion moved to ReadStrategy
 - Adds Python 3.12 support
+- Add HiGHS as a solver
 
 Version 1.1.2
 =============

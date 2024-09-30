@@ -1,19 +1,19 @@
 """Provides a command line interface to the ``otoole`` package
 
-The key functions are **convert**, **cplex** and **viz**.
+The key functions are **convert**, **results**, **validate**, and **viz**.
 
 The ``convert`` command allows convertion of multiple different OSeMOSYS input formats
 including from/to csv, an AMPL format datafile, a folder of
 CSVs, an Excel workbook with one tab per parameter, an SQLite database
 
-The ``cplex`` command provides access to scripts which transform and process a CPLEX
-solution file into a format which is more readily processed - either to CBC or CSV
-format.
+The ``results`` command allows conversion of a results solution file into processed
+tabular result file(s). Can process results from ``cplex``, ``gurobi``, ``highs``,
+``cbc``, and ``glpk``.
 
 The ``validate`` command checks the technology and fuel names
 against a standard or user defined configuration file.
 
-The **viz** command allows you to produce a Reference Energy System diagram
+The ``viz`` command allows you to produce a Reference Energy System diagram
 
 Example
 -------
@@ -21,7 +21,7 @@ Example
 Ask for help on the command line::
 
     >>> $ otoole --help
-    usage: otoole [-h] [--verbose] [--version] {convert,cplex,validate,viz} ...
+    usage: otoole [-h] [--verbose] [--version] {convert,results,validate,viz} ...
 
     otoole: Python toolkit of OSeMOSYS users
 
@@ -165,16 +165,14 @@ def get_parser():
     result_parser.add_argument(
         "from_format",
         help="Result data format to convert from",
-        choices=sorted(["cbc", "cplex", "gurobi", "glpk"]),
+        choices=sorted(["cbc", "cplex", "gurobi", "glpk", "highs"]),
     )
     result_parser.add_argument(
         "to_format",
         help="Result data format to convert to",
         choices=sorted(["csv", "excel"]),
     )
-    result_parser.add_argument(
-        "from_path", help="Path to file or folder to convert from"
-    )
+    result_parser.add_argument("from_path", help="Path to solver solution file")
     result_parser.add_argument("to_path", help="Path to file or folder to convert to")
 
     result_parser.add_argument(

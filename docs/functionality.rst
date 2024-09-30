@@ -11,7 +11,7 @@ to turbo-charge your modelling, are described on this page!
 As shown in the diagram, ``otoole`` deals primarily with data before and after OSeMOSYS.
 Data work prior to the generation of a datafile, which is read in by GLPK_, is called
 pre-processing. Anything that happens with the immediate outputs of a solver, such as
-the recommended open-source solvers GLPK_, CBC_, or the proprietary solvers CPLEX_ and
+the recommended open-source solvers GLPK_, CBC_, HiGHS_, or the commercial solvers CPLEX_ and
 Gurobi_, is called results and post-processing.
 
 .. image:: _static/workflow.png
@@ -71,11 +71,10 @@ Overview
 With small OSeMOSYS models, it is normally fine to use the free open-source GLPK_ solver.
 If you do, then OSeMOSYS will write out a full set of results as a folder of CSV files.
 As you progress to larger models, the performance constraints of GLPK_ quickly become
-apparent. CBC_ is an alternative open-source solver which offers better performance than
-GLPK_ and can handle much larger models. However, CBC_ has no way of knowing how to write
-out the CSV files you were used to dealing with when using GLPK_. ``otoole`` to the rescue!
+apparent. CBC_ and HiGHS_ are alternative open-source solvers which offer better performance than
+GLPK_ and can handle much larger models.
 
-``otoole`` currently supports using GLPK_, CBC_, CPLEX_ or Gurobi_ with all versions of
+``otoole`` currently supports using GLPK_, CBC_, HiGHS_, CPLEX_ or Gurobi_ with all versions of
 GNU MathProg OSeMOSYS - the long, short and fast versions.
 
 The long version includes all results as variables within the formulation, so the
@@ -94,21 +93,21 @@ Gurobi_ or CPLEX_ solution file together with the input data::
 
     $ otoole results --help
     usage: otoole results [-h] [--glpk_model GLPK_MODEL] [--write_defaults]
-                        {cbc,cplex,gurobi} {csv} from_path to_path {csv,datafile,excel} input_path config
+        {cbc,cplex,glpk,gurobi,highs} {csv} from_path to_path {csv,datafile,excel} input_path config
 
     positional arguments:
-    {cbc,cplex,glpk,gurobi}  Result data format to convert from
-    {csv}                    Result data format to convert to
-    from_path                Path to file or folder to convert from
-    to_path                  Path to file or folder to convert to
-    {csv,datafile,excel}     Input data format
-    input_path               Path to input_data
-    config                   Path to config YAML file
+    {cbc,cplex,glpk,gurobi,highs} Result data format to convert from
+    {csv}                         Result data format to convert to
+    from_path                     Path to solver solution file
+    to_path                       Path to file or folder to convert to
+    {csv,datafile,excel}          Input data format
+    input_path                    Path to input_data
+    config                        Path to config YAML file
 
-    optional arguments:
-    -h, --help                show this help message and exit
-    --glpk_model GLPK_MODEL   GLPK model file required for processing GLPK results
-    --write_defaults          Writes default values
+    options:
+    -h, --help              show this help message and exit
+    --glpk_model GLPK_MODEL GLPK model file required for processing GLPK results
+    --write_defaults        Writes default values
 
 .. versionadded:: v1.0.0
     The ``config`` positional argument is now required
@@ -223,3 +222,4 @@ the rest of the model::
 .. _Gurobi: https://www.gurobi.com/
 .. _`OSeMOSYS Repository`: https://github.com/OSeMOSYS/OSeMOSYS_GNU_MathProg/tree/master/scripts
 .. _Graphviz: https://graphviz.org/
+.. _HiGHS: https://ergo-code.github.io/HiGHS/dev/
