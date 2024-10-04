@@ -672,7 +672,7 @@ class TestCapitalInvestment:
 
         assert_frame_equal(actual, expected)
 
-    def test_calculate_captital_investment_no_dr_idv(
+    def test_calculate_captital_investment_empty_dr_idv(
         self,
         capital_cost,
         new_capacity,
@@ -691,6 +691,38 @@ class TestCapitalInvestment:
             "YEAR": year,
             "DiscountRate": discount_rate,
             "DiscountRateIdv": discount_rate_idv_empty,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.capital_investment()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 4.104],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.599],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.52],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_calculate_captital_investment_no_dr_idv(
+        self,
+        capital_cost,
+        new_capacity,
+        operational_life,
+        region,
+        year,
+        discount_rate,
+    ):
+
+        results = {
+            "CapitalCost": capital_cost,
+            "NewCapacity": new_capacity,
+            "OperationalLife": operational_life,
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
         }
 
         package = ResultsPackage(results)
