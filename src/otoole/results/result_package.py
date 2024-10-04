@@ -307,11 +307,14 @@ class ResultsPackage(Mapping):
             capital_cost = self["CapitalCost"]
             new_capacity = self["NewCapacity"]
             operational_life = self["OperationalLife"]
+            discount_rate = self["DiscountRate"]
 
             if "DiscountRateIdv" in self.keys():
-                discount_rate = self["DiscountRateIdv"]
+                discount_rate_idv = self["DiscountRateIdv"]
+                if discount_rate_idv.empty:
+                    discount_rate_idv = self["DiscountRate"]
             else:
-                discount_rate = self["DiscountRate"]
+                discount_rate_idv = self["DiscountRate"]
 
             regions = self["REGION"]["VALUE"].to_list()
             technologies = self.get_unique_values_from_index(
@@ -326,7 +329,7 @@ class ResultsPackage(Mapping):
             raise KeyError(self._msg("CapitalInvestment", str(ex)))
 
         crf = capital_recovery_factor(
-            regions, technologies, discount_rate, operational_life
+            regions, technologies, discount_rate_idv, operational_life
         )
         pva = pv_annuity(regions, technologies, discount_rate, operational_life)
         capital_investment = capital_cost.mul(new_capacity, fill_value=0.0)

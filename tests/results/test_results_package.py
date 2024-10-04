@@ -178,6 +178,22 @@ def total_capacity():
 
 
 @fixture
+def capital_cost():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.23],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 2.34],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 3.45],
+            ["SIMPLICITY", "DUMMY", 2014, 4.56],
+            ["SIMPLICITY", "DUMMY", 2015, 5.67],
+            ["SIMPLICITY", "DUMMY", 2016, 6.78],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return df
+
+
+@fixture
 def fixed_cost():
     data = pd.DataFrame(
         data=[
@@ -621,6 +637,108 @@ class TestComputeTotalAnnualCapacity:
         )
 
 
+class TestCapitalInvestment:
+    def test_calculate_captital_investment_with_dr_idv(
+        self,
+        capital_cost,
+        new_capacity,
+        operational_life,
+        region,
+        year,
+        discount_rate,
+        discount_rate_idv,
+    ):
+
+        results = {
+            "CapitalCost": capital_cost,
+            "NewCapacity": new_capacity,
+            "OperationalLife": operational_life,
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+            "DiscountRateIdv": discount_rate_idv,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.capital_investment()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 4.2898413],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.6352585],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.6451702],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_calculate_captital_investment_empty_dr_idv(
+        self,
+        capital_cost,
+        new_capacity,
+        operational_life,
+        region,
+        year,
+        discount_rate,
+        discount_rate_idv_empty,
+    ):
+
+        results = {
+            "CapitalCost": capital_cost,
+            "NewCapacity": new_capacity,
+            "OperationalLife": operational_life,
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+            "DiscountRateIdv": discount_rate_idv_empty,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.capital_investment()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 4.104],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.599],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.52],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_calculate_captital_investment_no_dr_idv(
+        self,
+        capital_cost,
+        new_capacity,
+        operational_life,
+        region,
+        year,
+        discount_rate,
+    ):
+
+        results = {
+            "CapitalCost": capital_cost,
+            "NewCapacity": new_capacity,
+            "OperationalLife": operational_life,
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.capital_investment()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 4.104],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.599],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.52],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
 class TestCapitalRecoveryFactor:
     def test_crf(self, region, discount_rate_idv, operational_life):
 
@@ -632,8 +750,8 @@ class TestCapitalRecoveryFactor:
 
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", "GAS_EXTRACTION", 0.512195121],
-                ["SIMPLICITY", "DUMMY", 0.349722442],
+                ["SIMPLICITY", "GAS_EXTRACTION", 0.523809523],
+                ["SIMPLICITY", "DUMMY", 0.365558912],
             ],
             columns=["REGION", "TECHNOLOGY", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY"])
