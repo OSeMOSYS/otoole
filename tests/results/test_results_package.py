@@ -183,8 +183,10 @@ def capital_cost():
         data=[
             ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.23],
             ["SIMPLICITY", "GAS_EXTRACTION", 2015, 2.34],
-            ["SIMPLICITY", "DUMMY", 2015, 3.45],
-            ["SIMPLICITY", "DUMMY", 2016, 4.56],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 3.45],
+            ["SIMPLICITY", "DUMMY", 2014, 4.56],
+            ["SIMPLICITY", "DUMMY", 2015, 5.67],
+            ["SIMPLICITY", "DUMMY", 2016, 6.78],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -637,12 +639,20 @@ class TestComputeTotalAnnualCapacity:
 
 class TestCapitalInvestment:
     def test_calculate_captital_investment_with_dr_idv(
-        self, discount_rate, discount_rate_idv
+        self,
+        capital_cost,
+        new_capacity,
+        operational_life,
+        region,
+        year,
+        discount_rate,
+        discount_rate_idv,
     ):
 
         results = {
             "CapitalCost": capital_cost,
             "NewCapacity": new_capacity,
+            "OperationalLife": operational_life,
             "REGION": region,
             "YEAR": year,
             "DiscountRate": discount_rate,
@@ -653,9 +663,9 @@ class TestCapitalInvestment:
         actual = package.capital_investment()
         expected = pd.DataFrame(
             data=[
+                ["SIMPLICITY", "DUMMY", 2014, 4.2898413],
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.6352585],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 2.0126258],
-                ["SIMPLICITY", "DUMMY", 2014, 3.2456036],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.6451702],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -663,12 +673,20 @@ class TestCapitalInvestment:
         assert_frame_equal(actual, expected)
 
     def test_calculate_captital_investment_no_dr_idv(
-        self, discount_rate, discount_rate_idv_empty
+        self,
+        capital_cost,
+        new_capacity,
+        operational_life,
+        region,
+        year,
+        discount_rate,
+        discount_rate_idv_empty,
     ):
 
         results = {
             "CapitalCost": capital_cost,
             "NewCapacity": new_capacity,
+            "OperationalLife": operational_life,
             "REGION": region,
             "YEAR": year,
             "DiscountRate": discount_rate,
@@ -679,9 +697,9 @@ class TestCapitalInvestment:
         actual = package.capital_investment()
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.5990],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1.1230],
-                ["SIMPLICITY", "DUMMY", 2014, 5.520],
+                ["SIMPLICITY", "DUMMY", 2014, 4.104],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.599],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.52],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
