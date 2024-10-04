@@ -68,7 +68,7 @@ def discount_rate():
 @fixture
 def discount_rate_idv():
     df = pd.DataFrame(
-        data=[["SIMPLICITY", "GAS_EXTRACTION", 0.05], ["SIMPLICITY", "DUMMY", 0.05]],
+        data=[["SIMPLICITY", "GAS_EXTRACTION", 0.10], ["SIMPLICITY", "DUMMY", 0.10]],
         columns=["REGION", "TECHNOLOGY", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY"])
     return df
