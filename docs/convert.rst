@@ -38,7 +38,7 @@ The ``read_results`` function reads a CBC_, CLP_, HiGHS_,
 Gurobi_ or CPLEX_ solution file into memory::
 
 >>> from otoole import read_results
->>> read_results('my_model.yaml', 'cbc', 'csv', 'my_model.sol', 'my_model_csvs', 'datafile', 'my_model.dat')
+>>> data, defaults = read_results('my_model.yaml', 'cbc', 'my_model.sol', 'datafile', 'my_model.dat')
 
 See :func:`otoole.convert.read_results` for more details
 
