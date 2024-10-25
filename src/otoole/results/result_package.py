@@ -43,6 +43,7 @@ class ResultsPackage(Mapping):
             "AnnualTechnologyEmissionByMode": self.annual_technology_emission_by_mode,
             "AnnualVariableOperatingCost": self.annual_variable_operating_cost,
             "CapitalInvestment": self.capital_investment,
+            "DiscountedCapitalInvestment": self.discounted_capital_investment,
             "Demand": self.demand,
             "DiscountedTechnologyEmissionsPenalty": self.discounted_tech_emis_pen,
             "ProductionByTechnology": self.production_by_technology,
@@ -398,6 +399,45 @@ class ResultsPackage(Mapping):
 
         return data[(data != 0).all(1)]
 
+    def discounted_capital_investment(self) -> pd.DataFrame:
+        """DiscountingCapitalInvestment
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountingCapitalInvestment[r,t,y] :=
+            CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / DiscountFactor[r,y]
+
+        Alternatively, can be written as::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountingCapitalInvestment[r,t,y] := UndiscountedCapitalInvestment[r,t,y] / DiscountFactor[r,y]
+
+        """
+
+        try:
+            discount_rate = self["DiscountRate"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+            capital_investment = self["CapitalInvestment"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("CapitalInvestment", str(ex)))
+
+        df = discount_factor(regions, years, discount_rate, 0.0)
+
+        data = capital_investment.div(df, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
     def production_by_technology(self) -> pd.DataFrame:
         """ProductionByTechnology
 
@@ -620,7 +660,8 @@ class ResultsPackage(Mapping):
 
             annual_fixed_operating_cost = self["AnnualFixedOperatingCost"]
             annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
-            capital_investment = self["CapitalInvestment"]
+
+            discounted_capital_costs = self["DiscountedCapitalInvestment"]
 
             discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
             discounted_salvage_value = self["DiscountedSalvageValue"]
@@ -628,8 +669,6 @@ class ResultsPackage(Mapping):
             # capital_cost_storage = self["CapitalCostStorage"]
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
-
-        df_start = discount_factor(regions, years, discount_rate, 0.0)
 
         df_mid = discount_factor(regions, years, discount_rate, 0.5)
 
@@ -640,8 +679,6 @@ class ResultsPackage(Mapping):
         discounted_operational_costs = undiscounted_operational_costs.div(
             df_mid, fill_value=0.0
         )
-
-        discounted_capital_costs = capital_investment.div(df_start, fill_value=0.0)
 
         discounted_total_costs = discounted_operational_costs.add(
             discounted_capital_costs, fill_value=0.0
