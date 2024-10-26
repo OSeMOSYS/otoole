@@ -227,6 +227,21 @@ def variable_cost():
     return data
 
 
+@fixture
+def undiscounted_capital_investment():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 10],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
 @fixture(scope="function")
 def null() -> ResultsPackage:
     package = ResultsPackage({})
@@ -732,6 +747,37 @@ class TestCapitalInvestment:
                 ["SIMPLICITY", "DUMMY", 2014, 4.104],
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 1.599],
                 ["SIMPLICITY", "GAS_EXTRACTION", 2016, 5.52],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestDiscountedCapitalInvestment:
+    def test_calculate_discounted_captital_investment(
+        self,
+        region,
+        year,
+        undiscounted_capital_investment,
+        discount_rate,
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+            "CapitalInvestment": undiscounted_capital_investment,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_capital_investment()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 10],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 10],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 9.52380952],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 9.07029478],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
