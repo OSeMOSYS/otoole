@@ -45,7 +45,8 @@ class ResultsPackage(Mapping):
             "CapitalInvestment": self.capital_investment,
             "Demand": self.demand,
             "DiscountedCapitalInvestment": self.discounted_capital_investment,
-            "DiscountedOperationalCost": self.discounted_operational_costs,
+            "DiscountedCostByTechnology": self.discounted_technology_cost,
+            "DiscountedOperationalCost": self.discounted_operational_cost,
             "DiscountedTechnologyEmissionsPenalty": self.discounted_tech_emis_pen,
             "ProductionByTechnology": self.production_by_technology,
             "ProductionByTechnologyAnnual": self.production_by_technology_annual,
@@ -439,7 +440,7 @@ class ResultsPackage(Mapping):
 
         return data[(data != 0).all(1)]
 
-    def discounted_operational_costs(self) -> pd.DataFrame:
+    def discounted_operational_cost(self) -> pd.DataFrame:
         """DiscountedOperationalCosts
 
         Notes
@@ -490,7 +491,7 @@ class ResultsPackage(Mapping):
             annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
 
         except KeyError as ex:
-            raise KeyError(self._msg("CapitalInvestment", str(ex)))
+            raise KeyError(self._msg("DiscountedOperatingCost", str(ex)))
 
         df_mid = discount_factor(regions, years, discount_rate, 0.5)
 
@@ -507,6 +508,65 @@ class ResultsPackage(Mapping):
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
 
+        return data[(data != 0).all(1)]
+
+    def discounted_technology_cost(self) -> pd.DataFrame:
+        """TotalDiscountedCostByTechnology
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            TotalDiscountedCostByTechnology[r,t,y]:=
+            (
+                (
+                    (
+                        sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                        NewCapacity[r,t,yy]
+                    )
+                    + ResidualCapacity[r,t,y]
+                )
+                * FixedCost[r,t,y]
+                + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
+                RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
+            )
+            / (DiscountFactorMid[r,y])
+            + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
+            + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
+
+        Alternatively, can be written as::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            TotalDiscountedCostByTechnology[r,t,y]: =
+            DiscountedOperatingCost[r,t,y] + DiscountedCapitalInvestment[r,t,y] + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y]
+        """
+
+        try:
+            discounted_capital_costs = self["DiscountedCapitalInvestment"]
+            discounted_operational_costs = self["DiscountedOperationalCost"]
+            discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
+            discounted_salvage_value = self["DiscountedSalvageValue"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalDiscountedCostByTechnology", str(ex)))
+
+        discounted_total_costs = discounted_operational_costs.add(
+            discounted_capital_costs, fill_value=0.0
+        )
+
+        discounted_total_costs = discounted_total_costs.add(
+            discounted_emissions_penalty, fill_value=0.0
+        )
+
+        discounted_total_costs = discounted_total_costs.sub(
+            discounted_salvage_value, fill_value=0.0
+        )
+
+        data = discounted_total_costs
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
         return data[(data != 0).all(1)]
 
     def production_by_technology(self) -> pd.DataFrame:
@@ -722,27 +782,12 @@ class ResultsPackage(Mapping):
             ) ~VALUE;
         """
         try:
-            discounted_capital_costs = self["DiscountedCapitalInvestment"]
-            discounted_operational_costs = self["DiscountedOperationalCost"]
-            discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
-            discounted_salvage_value = self["DiscountedSalvageValue"]
+            discounted_cost_by_technology = self["DiscountedCostByTechnology"]
 
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
-        discounted_total_costs = discounted_operational_costs.add(
-            discounted_capital_costs, fill_value=0.0
-        )
-
-        discounted_total_costs = discounted_total_costs.add(
-            discounted_emissions_penalty, fill_value=0.0
-        )
-
-        discounted_total_costs = discounted_total_costs.sub(
-            discounted_salvage_value, fill_value=0.0
-        )
-
-        data = discounted_total_costs
+        data = discounted_cost_by_technology
 
         if not data.empty:
             data = data.groupby(by=["REGION", "YEAR"]).sum()
