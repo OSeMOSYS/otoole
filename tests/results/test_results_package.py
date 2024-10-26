@@ -233,9 +233,41 @@ def undiscounted_capital_investment():
         data=[
             ["SIMPLICITY", "DUMMY", 2014, 10],
             ["SIMPLICITY", "DUMMY", 2015, 0],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 10],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 10],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 123],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 456],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 789],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def annual_fixed_operating_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 0],
+            ["SIMPLICITY", "DUMMY", 2016, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 123],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 456],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 789],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def annual_variable_operating_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 10],
+            ["SIMPLICITY", "DUMMY", 2016, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 321],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 654],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 987],
         ],
         columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
     ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
@@ -775,9 +807,44 @@ class TestDiscountedCapitalInvestment:
         expected = pd.DataFrame(
             data=[
                 ["SIMPLICITY", "DUMMY", 2014, 10],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 10],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 9.52380952],
-                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 9.07029478],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 123],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 434.28571428],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 715.64625850],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestDiscountedOperationalCost:
+    def test_calculate_discounted_operational_cost(
+        self,
+        region,
+        year,
+        discount_rate,
+        annual_fixed_operating_cost,
+        annual_variable_operating_cost,
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+            "AnnualFixedOperatingCost": annual_fixed_operating_cost,
+            "AnnualVariableOperatingCost": annual_variable_operating_cost,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_operational_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 19.51800146],
+                ["SIMPLICITY", "DUMMY", 2015, 9.29428640],
+                ["SIMPLICITY", "DUMMY", 2016, 8.85170134],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 433.29963238],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1031.66579140],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1572.06215832],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
