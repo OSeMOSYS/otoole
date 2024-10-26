@@ -274,6 +274,65 @@ def annual_variable_operating_cost():
     return data
 
 
+@fixture
+def discounted_capital_costs():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 111],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 222],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 333],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_operational_costs():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 5],
+            ["SIMPLICITY", "DUMMY", 2015, 10],
+            ["SIMPLICITY", "DUMMY", 2016, 20],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 444],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 555],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 666],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_emissions_penalty():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 777],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_salvage_value():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 1],
+            ["SIMPLICITY", "DUMMY", 2015, 2],
+            ["SIMPLICITY", "DUMMY", 2016, 3],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 888],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 999],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
 @fixture(scope="function")
 def null() -> ResultsPackage:
     package = ResultsPackage({})
@@ -845,6 +904,39 @@ class TestDiscountedOperationalCost:
                 ["SIMPLICITY", "GAS_EXTRACTION", 2014, 433.29963238],
                 ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1031.66579140],
                 ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1572.06215832],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestDiscountedCostByTechnology:
+    def test_calculate_discounted_operational_cost(
+        self,
+        discounted_capital_costs,
+        discounted_operational_costs,
+        discounted_emissions_penalty,
+        discounted_salvage_value,
+    ):
+
+        results = {
+            "DiscountedCapitalInvestment": discounted_capital_costs,
+            "DiscountedOperationalCost": discounted_operational_costs,
+            "DiscountedTechnologyEmissionsPenalty": discounted_emissions_penalty,
+            "DiscountedSalvageValue": discounted_salvage_value,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_technology_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 24.0],
+                ["SIMPLICITY", "DUMMY", 2015, 8.0],
+                ["SIMPLICITY", "DUMMY", 2016, 17.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, -333.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, -222.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1775.0],
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
