@@ -333,6 +333,22 @@ def discounted_salvage_value():
     return data
 
 
+@fixture
+def discounted_technology_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 111],
+            ["SIMPLICITY", "DUMMY", 2015, 222],
+            ["SIMPLICITY", "DUMMY", 2016, 333],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 444],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 555],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 666],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
 @fixture(scope="function")
 def null() -> ResultsPackage:
     package = ResultsPackage({})
@@ -912,7 +928,7 @@ class TestDiscountedOperationalCost:
 
 
 class TestDiscountedCostByTechnology:
-    def test_calculate_discounted_operational_cost(
+    def test_calculate_discounted_cost_by_technology(
         self,
         discounted_capital_costs,
         discounted_operational_costs,
@@ -940,6 +956,30 @@ class TestDiscountedCostByTechnology:
             ],
             columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+
+class TestTotalDiscountedCost:
+    def test_calculate_total_discounted_cost(
+        self,
+        discounted_technology_cost,
+    ):
+
+        results = {
+            "DiscountedCostByTechnology": discounted_technology_cost,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.total_discounted_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 555],
+                ["SIMPLICITY", 2015, 777],
+                ["SIMPLICITY", 2016, 999],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
 
         assert_frame_equal(actual, expected)
 
