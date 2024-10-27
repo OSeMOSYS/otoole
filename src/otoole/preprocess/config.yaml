@@ -342,6 +342,21 @@ Demand:
     type: result
     dtype: float
     default: 0
+DiscountedCapitalInvestment:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: result
+    dtype: float
+    default: 0
+DiscountedCostByTechnology:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: result
+    dtype: float
+    default: 0
+DiscountedOperationalCost:
+    indices: [REGION, TECHNOLOGY, YEAR]
+    type: result
+    dtype: float
+    default: 0
 DiscountedSalvageValue:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result

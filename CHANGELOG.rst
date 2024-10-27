@@ -2,7 +2,11 @@
 Changelog
 =========
 
-(Development) Version 1.1.3
+Version 1.1.4
+=============
+- Add result calculations for ``DiscountedCapitalInvestment``, ``DiscountedCostByTechnology``, and ``DiscountedOperationalCost``
+
+Version 1.1.3
 ===========================
 - Lock pandas to 2.1.4 or later
 - Capital Investment result calculation fixed

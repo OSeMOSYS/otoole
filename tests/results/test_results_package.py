@@ -227,6 +227,128 @@ def variable_cost():
     return data
 
 
+@fixture
+def undiscounted_capital_investment():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 123],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 456],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 789],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def annual_fixed_operating_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 0],
+            ["SIMPLICITY", "DUMMY", 2016, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 123],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 456],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 789],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def annual_variable_operating_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 10],
+            ["SIMPLICITY", "DUMMY", 2016, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 321],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 654],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 987],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_capital_costs():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "DUMMY", 2015, 0],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 111],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 222],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 333],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_operational_costs():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 5],
+            ["SIMPLICITY", "DUMMY", 2015, 10],
+            ["SIMPLICITY", "DUMMY", 2016, 20],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 444],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 555],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 666],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_emissions_penalty():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 10],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 777],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_salvage_value():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 1],
+            ["SIMPLICITY", "DUMMY", 2015, 2],
+            ["SIMPLICITY", "DUMMY", 2016, 3],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 888],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 999],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_technology_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 111],
+            ["SIMPLICITY", "DUMMY", 2015, 222],
+            ["SIMPLICITY", "DUMMY", 2016, 333],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 444],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 555],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 666],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
 @fixture(scope="function")
 def null() -> ResultsPackage:
     package = ResultsPackage({})
@@ -737,6 +859,171 @@ class TestCapitalInvestment:
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.capital_investment()
+        assert "Cannot calculate CapitalInvestment due to missing data" in str(ex)
+
+
+class TestDiscountedCapitalInvestment:
+    def test_calculate_discounted_captital_investment(
+        self,
+        region,
+        year,
+        undiscounted_capital_investment,
+        discount_rate,
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+            "CapitalInvestment": undiscounted_capital_investment,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_capital_investment()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 10],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 123],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 434.28571428],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 715.64625850],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_capital_investment()
+        assert (
+            "Cannot calculate DiscountedCapitalInvestment due to missing data"
+            in str(ex)
+        )
+
+
+class TestDiscountedOperationalCost:
+    def test_calculate_discounted_operational_cost(
+        self,
+        region,
+        year,
+        discount_rate,
+        annual_fixed_operating_cost,
+        annual_variable_operating_cost,
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRate": discount_rate,
+            "AnnualFixedOperatingCost": annual_fixed_operating_cost,
+            "AnnualVariableOperatingCost": annual_variable_operating_cost,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_operational_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 19.51800146],
+                ["SIMPLICITY", "DUMMY", 2015, 9.29428640],
+                ["SIMPLICITY", "DUMMY", 2016, 8.85170134],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, 433.29963238],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, 1031.66579140],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1572.06215832],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_operational_cost()
+        assert "Cannot calculate DiscountedOperationalCost due to missing data" in str(
+            ex
+        )
+
+
+class TestDiscountedCostByTechnology:
+    def test_calculate_discounted_cost_by_technology(
+        self,
+        discounted_capital_costs,
+        discounted_operational_costs,
+        discounted_emissions_penalty,
+        discounted_salvage_value,
+    ):
+
+        results = {
+            "DiscountedCapitalInvestment": discounted_capital_costs,
+            "DiscountedOperationalCost": discounted_operational_costs,
+            "DiscountedTechnologyEmissionsPenalty": discounted_emissions_penalty,
+            "DiscountedSalvageValue": discounted_salvage_value,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_technology_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DUMMY", 2014, 24.0],
+                ["SIMPLICITY", "DUMMY", 2015, 8.0],
+                ["SIMPLICITY", "DUMMY", 2016, 17.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2014, -333.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2015, -222.0],
+                ["SIMPLICITY", "GAS_EXTRACTION", 2016, 1775.0],
+            ],
+            columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+        ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_technology_cost()
+        assert "Cannot calculate DiscountedCostByTechnology due to missing data" in str(
+            ex
+        )
+
+
+class TestTotalDiscountedCost:
+    def test_calculate_total_discounted_cost(
+        self,
+        discounted_technology_cost,
+    ):
+
+        results = {
+            "DiscountedCostByTechnology": discounted_technology_cost,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.total_discounted_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 555],
+                ["SIMPLICITY", 2015, 777],
+                ["SIMPLICITY", 2016, 999],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.total_discounted_cost()
+        assert "Cannot calculate TotalDiscountedCost due to missing data" in str(ex)
 
 
 class TestCapitalRecoveryFactor:
