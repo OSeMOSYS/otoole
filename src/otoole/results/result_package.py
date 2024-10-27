@@ -429,7 +429,7 @@ class ResultsPackage(Mapping):
             capital_investment = self["CapitalInvestment"]
 
         except KeyError as ex:
-            raise KeyError(self._msg("CapitalInvestment", str(ex)))
+            raise KeyError(self._msg("DiscountedCapitalInvestment", str(ex)))
 
         df = discount_factor(regions, years, discount_rate, 0.0)
 
@@ -491,7 +491,7 @@ class ResultsPackage(Mapping):
             annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
 
         except KeyError as ex:
-            raise KeyError(self._msg("DiscountedOperatingCost", str(ex)))
+            raise KeyError(self._msg("DiscountedOperationalCost", str(ex)))
 
         df_mid = discount_factor(regions, years, discount_rate, 0.5)
 
@@ -549,7 +549,7 @@ class ResultsPackage(Mapping):
             discounted_salvage_value = self["DiscountedSalvageValue"]
 
         except KeyError as ex:
-            raise KeyError(self._msg("TotalDiscountedCostByTechnology", str(ex)))
+            raise KeyError(self._msg("DiscountedCostByTechnology", str(ex)))
 
         discounted_total_costs = discounted_operational_costs.add(
             discounted_capital_costs, fill_value=0.0
