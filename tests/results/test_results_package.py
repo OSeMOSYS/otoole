@@ -860,6 +860,13 @@ class TestCapitalInvestment:
 
         assert_frame_equal(actual, expected)
 
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.capital_investment()
+        assert "Cannot calculate CapitalInvestment due to missing data" in str(ex)
+
 
 class TestDiscountedCapitalInvestment:
     def test_calculate_discounted_captital_investment(
@@ -890,6 +897,16 @@ class TestDiscountedCapitalInvestment:
         ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
 
         assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_capital_investment()
+        assert (
+            "Cannot calculate DiscountedCapitalInvestment due to missing data"
+            in str(ex)
+        )
 
 
 class TestDiscountedOperationalCost:
@@ -926,6 +943,15 @@ class TestDiscountedOperationalCost:
 
         assert_frame_equal(actual, expected)
 
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_operational_cost()
+        assert "Cannot calculate DiscountedOperationalCost due to missing data" in str(
+            ex
+        )
+
 
 class TestDiscountedCostByTechnology:
     def test_calculate_discounted_cost_by_technology(
@@ -959,6 +985,15 @@ class TestDiscountedCostByTechnology:
 
         assert_frame_equal(actual, expected)
 
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_technology_cost()
+        assert "Cannot calculate DiscountedCostByTechnology due to missing data" in str(
+            ex
+        )
+
 
 class TestTotalDiscountedCost:
     def test_calculate_total_discounted_cost(
@@ -982,6 +1017,13 @@ class TestTotalDiscountedCost:
         ).set_index(["REGION", "YEAR"])
 
         assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.total_discounted_cost()
+        assert "Cannot calculate TotalDiscountedCost due to missing data" in str(ex)
 
 
 class TestCapitalRecoveryFactor:
