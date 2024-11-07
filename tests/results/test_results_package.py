@@ -7,6 +7,7 @@ from otoole.results.result_package import (
     capital_recovery_factor,
     discount_factor,
     discount_factor_storage,
+    discount_factor_storage_salvage,
     pv_annuity,
 )
 
@@ -124,6 +125,11 @@ def year():
 @fixture
 def region():
     return pd.DataFrame(data=["SIMPLICITY"], columns=["VALUE"])
+
+
+@fixture
+def storage():
+    return pd.DataFrame(data=["DAM"], columns=["VALUE"])
 
 
 @fixture
@@ -384,9 +390,19 @@ def undiscounted_capital_investment_storage():
         data=[
             ["SIMPLICITY", "DAM", 2014, 1.23],
             ["SIMPLICITY", "DAM", 2015, 2.34],
-            # ["SIMPLICITY", "BATTERY", 2014, 3.45],
-            # ["SIMPLICITY", "BATTERY", 2015, 4.56],
-            # ["SIMPLICITY", "BATTERY", 2016, 5.67],
+        ],
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
+    return data
+
+
+@fixture
+def salvage_value_storage():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DAM", 2014, 1.23],
+            ["SIMPLICITY", "DAM", 2015, 2.34],
+            ["SIMPLICITY", "DAM", 2016, 3.45],
         ],
         columns=["REGION", "STORAGE", "YEAR", "VALUE"],
     ).set_index(["REGION", "STORAGE", "YEAR"])
@@ -1008,9 +1024,6 @@ class TestDiscountedCapitalInvestmentStorage:
         actual = package.discounted_capital_investment_storage()
         expected = pd.DataFrame(
             data=[
-                # ["SIMPLICITY", "BATTERY", 2014, 3.45],
-                # ["SIMPLICITY", "BATTERY", 2015, 4.34285714],
-                # ["SIMPLICITY", "BATTERY", 2016, 5.14285714],
                 ["SIMPLICITY", "DAM", 2014, 1.23],
                 ["SIMPLICITY", "DAM", 2015, 2.22857143],
             ],
@@ -1145,6 +1158,43 @@ class TestTotalDiscountedCost:
         with raises(KeyError) as ex:
             package.total_discounted_cost()
         assert "Cannot calculate TotalDiscountedCost due to missing data" in str(ex)
+
+
+class TestDiscountedSalvageValueStorage:
+    def test_calculate_discounted_salvage_value_storage(
+        self, region, year, storage, salvage_value_storage, discount_rate_storage
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "STORAGE": storage,
+            "DiscountRateStorage": discount_rate_storage,
+            "SalvageValueStorage": salvage_value_storage,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_salvage_value_storage()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DAM", 2014, 0.87413804],
+                ["SIMPLICITY", "DAM", 2015, 1.66299431],
+                ["SIMPLICITY", "DAM", 2016, 2.45185059],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_salvage_value_storage()
+        assert (
+            "Cannot calculate DiscountedSalvageValueStorage due to missing data"
+            in str(ex)
+        )
 
 
 class TestCapitalRecoveryFactor:
@@ -1422,6 +1472,55 @@ class TestDiscountFactorStorage:
         with raises(ValueError):
             discount_factor_storage(
                 regions, storages, years, discount_rate_storage_empty, 1.0
+            )
+
+
+class TestDiscountFactorStorageSalvage:
+    def test_discount_factor_storage_salvage(self, region, year, discount_rate_storage):
+
+        storages = ["DAM"]
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor_storage_salvage(
+            regions, storages, years, discount_rate_storage
+        )
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "DAM", 2014, 1.40710042],
+                ["SIMPLICITY", "DAM", 2015, 1.40710042],
+                ["SIMPLICITY", "DAM", 2016, 1.40710042],
+                ["SIMPLICITY", "DAM", 2017, 1.40710042],
+                ["SIMPLICITY", "DAM", 2018, 1.40710042],
+                ["SIMPLICITY", "DAM", 2019, 1.40710042],
+                ["SIMPLICITY", "DAM", 2020, 1.40710042],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_df_null(self, discount_rate_storage):
+
+        actual = discount_factor_storage_salvage([], [], [], discount_rate_storage)
+
+        expected = pd.DataFrame(
+            data=[],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_df_storage_empty_discount_rate(
+        self, region, year, discount_rate_storage_empty
+    ):
+        storages = ["DAM"]
+        regions = region["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+
+        with raises(ValueError):
+            discount_factor_storage_salvage(
+                regions, storages, years, discount_rate_storage_empty
             )
 
 
