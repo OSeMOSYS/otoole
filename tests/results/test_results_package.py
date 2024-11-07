@@ -349,6 +349,50 @@ def discounted_technology_cost():
     return data
 
 
+@fixture
+def capital_cost_storage():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DAM", 2014, 1.23],
+            ["SIMPLICITY", "DAM", 2015, 2.34],
+            ["SIMPLICITY", "DAM", 2016, 3.45],
+            ["SIMPLICITY", "BATTERY", 2014, 4.56],
+            ["SIMPLICITY", "BATTERY", 2015, 5.67],
+            ["SIMPLICITY", "BATTERY", 2016, 6.78],
+        ],
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
+    return df
+
+
+@fixture
+def new_capacity_storage():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DAM", 2014, 1.3],
+            ["SIMPLICITY", "DAM", 2016, 1.6],
+            ["SIMPLICITY", "BATTERY", 2014, 0.9],
+        ],
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
+    return df
+
+
+@fixture
+def undiscounted_capital_investment_storage():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DAM", 2014, 1.23],
+            ["SIMPLICITY", "DAM", 2015, 2.34],
+            ["SIMPLICITY", "BATTERY", 2014, 3.45],
+            ["SIMPLICITY", "BATTERY", 2015, 4.56],
+            ["SIMPLICITY", "BATTERY", 2016, 5.67],
+        ],
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
+    return data
+
+
 @fixture(scope="function")
 def null() -> ResultsPackage:
     package = ResultsPackage({})
@@ -868,6 +912,41 @@ class TestCapitalInvestment:
         assert "Cannot calculate CapitalInvestment due to missing data" in str(ex)
 
 
+class TestCapitalInvestmentStorage:
+    def test_capital_investment_storage(
+        self, region, year, capital_cost_storage, new_capacity_storage
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "CapitalCostStorage": capital_cost_storage,
+            "NewCapacityStorage": new_capacity_storage,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.capital_investment_storage()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "BATTERY", 2014, 4.104],
+                ["SIMPLICITY", "DAM", 2014, 1.599],
+                ["SIMPLICITY", "DAM", 2016, 5.52],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.capital_investment_storage()
+        assert "Cannot calculate CapitalInvestmentStorage due to missing data" in str(
+            ex
+        )
+
+
 class TestDiscountedCapitalInvestment:
     def test_calculate_discounted_captital_investment(
         self,
@@ -905,6 +984,48 @@ class TestDiscountedCapitalInvestment:
             package.discounted_capital_investment()
         assert (
             "Cannot calculate DiscountedCapitalInvestment due to missing data"
+            in str(ex)
+        )
+
+
+class TestDiscountedCapitalInvestmentStorage:
+    def test_calculate_discounted_captital_investment_storage(
+        self,
+        region,
+        year,
+        undiscounted_capital_investment_storage,
+        discount_rate_storage,
+    ):
+
+        results = {
+            "REGION": region,
+            "YEAR": year,
+            "DiscountRateStorage": discount_rate_storage,
+            "CapitalInvestmentStorage": undiscounted_capital_investment_storage,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_capital_investment_storage()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "BATTERY", 2014, 3.45],
+                ["SIMPLICITY", "BATTERY", 2015, 4.34285714],
+                ["SIMPLICITY", "BATTERY", 2016, 5.14285714],
+                ["SIMPLICITY", "DAM", 2014, 1.23],
+                ["SIMPLICITY", "DAM", 2015, 2.22857143],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_capital_investment()
+        assert (
+            "Cannot calculate DiscountedCapitalInvestmentStorage due to missing data"
             in str(ex)
         )
 
