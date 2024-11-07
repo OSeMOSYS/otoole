@@ -43,8 +43,10 @@ class ResultsPackage(Mapping):
             "AnnualTechnologyEmissionByMode": self.annual_technology_emission_by_mode,
             "AnnualVariableOperatingCost": self.annual_variable_operating_cost,
             "CapitalInvestment": self.capital_investment,
+            "CapitalInvestmentStorage": self.capital_investment_storage,
             "Demand": self.demand,
             "DiscountedCapitalInvestment": self.discounted_capital_investment,
+            "DiscountedCapitalInvestmentStorage": self.discounted_capital_investment_storage,
             "DiscountedCostByTechnology": self.discounted_technology_cost,
             "DiscountedOperationalCost": self.discounted_operational_cost,
             "DiscountedTechnologyEmissionsPenalty": self.discounted_tech_emis_pen,
@@ -347,6 +349,35 @@ class ResultsPackage(Mapping):
 
         return data[(data != 0).all(1)]
 
+    def capital_investment_storage(self) -> pd.DataFrame:
+        """CapitalInvestmentStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
+            ~VALUE;
+        """
+        try:
+            capital_cost_storage = self["CapitalCostStorage"]
+            new_capacity_storage = self["NewCapacityStorage"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("CapitalInvestmentStorage", str(ex)))
+
+        capital_investment_storage = capital_cost_storage.mul(
+            new_capacity_storage, fill_value=0
+        )
+
+        data = capital_investment_storage
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
     def demand(self) -> pd.DataFrame:
         """Demand
 
@@ -437,6 +468,54 @@ class ResultsPackage(Mapping):
 
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def discounted_capital_investment_storage(self) -> pd.DataFrame:
+        """DiscountedCapitalInvestmentStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            DiscountedCapitalInvestmentStorage[r,s,y] :=
+            CapitalCostStorage[r,s,y] * NewCapacity[r,t,y] / DiscountFactor[r,y]
+
+        Alternatively, can be written as::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            DiscountedCapitalInvestmentStorage[r,s,y] := UndiscountedCapitalInvestmentStorage[r,s,y] / DiscountFactor[r,y]
+
+        """
+
+        try:
+            discount_rate_storage = self["DiscountRateStorage"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+            capital_investment_storage = self["CapitalInvestmentStorage"]
+
+            storages = self.get_unique_values_from_index(
+                [
+                    capital_investment_storage,
+                ],
+                "STORAGE",
+            )
+
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedCapitalInvestmentStorage", str(ex)))
+
+        dfs = discount_factor_storage(
+            regions, storages, years, discount_rate_storage, 0.0
+        )
+
+        data = capital_investment_storage.div(dfs, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
 
         return data[(data != 0).all(1)]
 
@@ -774,10 +853,10 @@ class ResultsPackage(Mapping):
                 / (DiscountFactorMid[r,y])
                 + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
                 + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
-                + sum{s in STORAGE}
+                + sum{r in REGION, s in STORAGE, y in YEAR}
                 (
-                    CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y])
-                    - CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
+                    CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
+                    - SalvageValueStorage[r,s,y] / ((1+DiscountRateStorage[r,s])^(max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)+1))
                 )
             ) ~VALUE;
         """

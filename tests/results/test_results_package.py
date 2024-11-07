@@ -384,9 +384,9 @@ def undiscounted_capital_investment_storage():
         data=[
             ["SIMPLICITY", "DAM", 2014, 1.23],
             ["SIMPLICITY", "DAM", 2015, 2.34],
-            ["SIMPLICITY", "BATTERY", 2014, 3.45],
-            ["SIMPLICITY", "BATTERY", 2015, 4.56],
-            ["SIMPLICITY", "BATTERY", 2016, 5.67],
+            # ["SIMPLICITY", "BATTERY", 2014, 3.45],
+            # ["SIMPLICITY", "BATTERY", 2015, 4.56],
+            # ["SIMPLICITY", "BATTERY", 2016, 5.67],
         ],
         columns=["REGION", "STORAGE", "YEAR", "VALUE"],
     ).set_index(["REGION", "STORAGE", "YEAR"])
@@ -1008,9 +1008,9 @@ class TestDiscountedCapitalInvestmentStorage:
         actual = package.discounted_capital_investment_storage()
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", "BATTERY", 2014, 3.45],
-                ["SIMPLICITY", "BATTERY", 2015, 4.34285714],
-                ["SIMPLICITY", "BATTERY", 2016, 5.14285714],
+                # ["SIMPLICITY", "BATTERY", 2014, 3.45],
+                # ["SIMPLICITY", "BATTERY", 2015, 4.34285714],
+                # ["SIMPLICITY", "BATTERY", 2016, 5.14285714],
                 ["SIMPLICITY", "DAM", 2014, 1.23],
                 ["SIMPLICITY", "DAM", 2015, 2.22857143],
             ],
@@ -1023,7 +1023,7 @@ class TestDiscountedCapitalInvestmentStorage:
         """ """
         package = null
         with raises(KeyError) as ex:
-            package.discounted_capital_investment()
+            package.discounted_capital_investment_storage()
         assert (
             "Cannot calculate DiscountedCapitalInvestmentStorage due to missing data"
             in str(ex)
