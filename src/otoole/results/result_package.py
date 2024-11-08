@@ -364,7 +364,7 @@ class ResultsPackage(Mapping):
         """
         try:
             capital_cost_storage = self["CapitalCostStorage"]
-            new_capacity_storage = self["NewCapacityStorage"]
+            new_capacity_storage = self["NewStorageCapacity"]
 
         except KeyError as ex:
             raise KeyError(self._msg("CapitalInvestmentStorage", str(ex)))

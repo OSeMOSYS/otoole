@@ -372,7 +372,7 @@ def capital_cost_storage():
 
 
 @fixture
-def new_capacity_storage():
+def new_storage_capacity():
     df = pd.DataFrame(
         data=[
             ["SIMPLICITY", "DAM", 2014, 1.3],
@@ -977,14 +977,14 @@ class TestCapitalInvestment:
 
 class TestCapitalInvestmentStorage:
     def test_capital_investment_storage(
-        self, region, year, capital_cost_storage, new_capacity_storage
+        self, region, year, capital_cost_storage, new_storage_capacity
     ):
 
         results = {
             "REGION": region,
             "YEAR": year,
             "CapitalCostStorage": capital_cost_storage,
-            "NewCapacityStorage": new_capacity_storage,
+            "NewStorageCapacity": new_storage_capacity,
         }
 
         package = ResultsPackage(results)
