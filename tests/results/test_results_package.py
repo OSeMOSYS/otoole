@@ -409,6 +409,53 @@ def salvage_value_storage():
     return data
 
 
+@fixture
+def discounted_capital_costs_storage():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "BATTERY", 2014, 11.1],
+            ["SIMPLICITY", "BATTERY", 2016, 22.2],
+            ["SIMPLICITY", "DAM", 2014, 33.3],
+            ["SIMPLICITY", "DAM", 2015, 44.4],
+            ["SIMPLICITY", "DAM", 2016, 55.5],
+        ],
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_salvage_value_storage():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DAM", 2014, 1.23],
+            ["SIMPLICITY", "DAM", 2015, 2.34],
+            ["SIMPLICITY", "DAM", 2016, 3.45],
+            ["SIMPLICITY", "BATTERY", 2014, 4.56],
+            ["SIMPLICITY", "BATTERY", 2015, 5.67],
+            ["SIMPLICITY", "BATTERY", 2016, 6.78],
+        ],
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
+    return data
+
+
+@fixture
+def discounted_storage_cost():
+    data = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", "DUMMY", 2014, 111],
+            ["SIMPLICITY", "DUMMY", 2015, 222],
+            ["SIMPLICITY", "DUMMY", 2016, 333],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 444],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 555],
+            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 666],
+        ],
+        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
+    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+    return data
+
+
 @fixture(scope="function")
 def null() -> ResultsPackage:
     package = ResultsPackage({})
@@ -1126,6 +1173,45 @@ class TestDiscountedCostByTechnology:
             package.discounted_technology_cost()
         assert "Cannot calculate DiscountedCostByTechnology due to missing data" in str(
             ex
+        )
+
+
+class TestDiscountedCostByStorage:
+    def test_calculate_discounted_cost_by_storage(
+        self,
+        discounted_capital_costs_storage,
+        discounted_salvage_value_storage,
+    ):
+
+        results = {
+            "DiscountedCapitalInvestmentStorage": discounted_capital_costs_storage,
+            "DiscountedSalvageValueStorage": discounted_salvage_value_storage,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.discounted_storage_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", "BATTERY", 2014, 6.54],
+                ["SIMPLICITY", "BATTERY", 2015, -5.67],
+                ["SIMPLICITY", "BATTERY", 2016, 15.42],
+                ["SIMPLICITY", "DAM", 2014, 32.07],
+                ["SIMPLICITY", "DAM", 2015, 42.06],
+                ["SIMPLICITY", "DAM", 2016, 52.05],
+            ],
+            columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
+    def test_null(self, null: ResultsPackage):
+        """ """
+        package = null
+        with raises(KeyError) as ex:
+            package.discounted_storage_cost()
+        assert (
+            "Cannot calculate TotalDiscountedCostByStorage due to missing data"
+            in str(ex)
         )
 
 

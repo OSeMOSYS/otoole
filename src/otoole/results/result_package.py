@@ -47,6 +47,7 @@ class ResultsPackage(Mapping):
             "Demand": self.demand,
             "DiscountedCapitalInvestment": self.discounted_capital_investment,
             "DiscountedCapitalInvestmentStorage": self.discounted_capital_investment_storage,
+            "DiscountedCostByStorage": self.discounted_storage_cost,
             "DiscountedCostByTechnology": self.discounted_technology_cost,
             "DiscountedOperationalCost": self.discounted_operational_cost,
             "DiscountedSalvageValueStorage": self.discounted_salvage_value_storage,
@@ -588,6 +589,49 @@ class ResultsPackage(Mapping):
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
 
+        return data[(data != 0).all(1)]
+
+    def discounted_storage_cost(self) -> pd.DataFrame:
+        """TotalDiscountedCostByStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            TotalDiscountedStorageCost[r,s,y]:=
+            (
+                CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / DiscountFactorStorage[r,s,y] -
+                SalvageValueStorage[r,s,y] /
+                (
+                    (1+DiscountRateStorage[r,s])^(max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)+1))
+                )
+            )
+
+        Alternatively, can be written as::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            TotalDiscountedStorageCost[r,s,y]:=
+            DiscountedCapitalInvestmentStorage[r,s,y] - DiscountedSalvageValueStorage[r,s,y]
+        """
+
+        try:
+            discounted_capital_investment_storage = self[
+                "DiscountedCapitalInvestmentStorage"
+            ]
+            discounted_salvage_value_storage = self["DiscountedSalvageValueStorage"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalDiscountedCostByStorage", str(ex)))
+
+        discounted_storage_costs = discounted_capital_investment_storage.sub(
+            discounted_salvage_value_storage, fill_value=0.0
+        )
+
+        data = discounted_storage_costs
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
         return data[(data != 0).all(1)]
 
     def discounted_salvage_value_storage(self) -> pd.DataFrame:
