@@ -943,14 +943,36 @@ class ResultsPackage(Mapping):
                     - SalvageValueStorage[r,s,y] / ((1+DiscountRateStorage[r,s])^(max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)+1))
                 )
             ) ~VALUE;
+
+        Alternatively, can be written as::
+
+            r~REGION, y~YEAR,
+            TotalDiscountedCost[r,y] :=
+            sum{t in TECHNOLOGY} TotalDiscountedCostByTechnology[r,t,y] + sum{s in STORAGE} TotalDiscountedStorageCost[r,s,y]
         """
         try:
             discounted_cost_by_technology = self["DiscountedCostByTechnology"]
+            discounted_cost_by_storage = self["DiscountedCostByStorage"]
 
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
-        data = discounted_cost_by_technology
+        discounted_tech = (
+            discounted_cost_by_technology.droplevel("TECHNOLOGY")
+            .reset_index()
+            .groupby(["REGION", "YEAR"])
+            .sum()
+        )
+        discounted_storage = (
+            discounted_cost_by_storage.droplevel("STORAGE")
+            .reset_index()
+            .groupby(["REGION", "YEAR"])
+            .sum()
+        )
+
+        total_discounted_cost = discounted_tech.add(discounted_storage, fill_value=0)
+
+        data = total_discounted_cost
 
         if not data.empty:
             data = data.groupby(by=["REGION", "YEAR"]).sum()

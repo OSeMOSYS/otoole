@@ -444,15 +444,15 @@ def discounted_salvage_value_storage():
 def discounted_storage_cost():
     data = pd.DataFrame(
         data=[
-            ["SIMPLICITY", "DUMMY", 2014, 111],
-            ["SIMPLICITY", "DUMMY", 2015, 222],
-            ["SIMPLICITY", "DUMMY", 2016, 333],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2014, 444],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2015, 555],
-            ["SIMPLICITY", "GAS_EXTRACTION", 2016, 666],
+            ["SIMPLICITY", "DAM", 2014, 11.1],
+            ["SIMPLICITY", "DAM", 2015, 22.2],
+            ["SIMPLICITY", "DAM", 2016, 33.3],
+            ["SIMPLICITY", "BATTERY", 2014, 44.4],
+            ["SIMPLICITY", "BATTERY", 2015, 55.5],
+            ["SIMPLICITY", "BATTERY", 2016, 66.6],
         ],
-        columns=["REGION", "TECHNOLOGY", "YEAR", "VALUE"],
-    ).set_index(["REGION", "TECHNOLOGY", "YEAR"])
+        columns=["REGION", "STORAGE", "YEAR", "VALUE"],
+    ).set_index(["REGION", "STORAGE", "YEAR"])
     return data
 
 
@@ -1217,21 +1217,21 @@ class TestDiscountedCostByStorage:
 
 class TestTotalDiscountedCost:
     def test_calculate_total_discounted_cost(
-        self,
-        discounted_technology_cost,
+        self, discounted_technology_cost, discounted_storage_cost
     ):
 
         results = {
             "DiscountedCostByTechnology": discounted_technology_cost,
+            "DiscountedCostByStorage": discounted_storage_cost,
         }
 
         package = ResultsPackage(results)
         actual = package.total_discounted_cost()
         expected = pd.DataFrame(
             data=[
-                ["SIMPLICITY", 2014, 555],
-                ["SIMPLICITY", 2015, 777],
-                ["SIMPLICITY", 2016, 999],
+                ["SIMPLICITY", 2014, 610.5],
+                ["SIMPLICITY", 2015, 854.7],
+                ["SIMPLICITY", 2016, 1098.9],
             ],
             columns=["REGION", "YEAR", "VALUE"],
         ).set_index(["REGION", "YEAR"])
