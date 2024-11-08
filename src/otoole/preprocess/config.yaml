@@ -348,6 +348,7 @@ Demand:
     dtype: float
     default: 0
 DiscountedCapitalInvestmentStorage:
+    short_name: DiscountedCapitalInvestStorage
     indices: [REGION, STORAGE, YEAR]
     type: result
     dtype: float
