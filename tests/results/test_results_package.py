@@ -1238,6 +1238,28 @@ class TestTotalDiscountedCost:
 
         assert_frame_equal(actual, expected)
 
+    def test_calculate_total_discounted_cost_no_storage(
+        self, discounted_technology_cost
+    ):
+        """Situations where NewStorageCapacity not available"""
+
+        results = {
+            "DiscountedCostByTechnology": discounted_technology_cost,
+        }
+
+        package = ResultsPackage(results)
+        actual = package.total_discounted_cost()
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 555.0],
+                ["SIMPLICITY", 2015, 777.0],
+                ["SIMPLICITY", 2016, 999.0],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
+
     def test_null(self, null: ResultsPackage):
         """ """
         package = null

@@ -952,8 +952,6 @@ class ResultsPackage(Mapping):
         """
         try:
             discounted_cost_by_technology = self["DiscountedCostByTechnology"]
-            discounted_cost_by_storage = self["DiscountedCostByStorage"]
-
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
@@ -963,14 +961,26 @@ class ResultsPackage(Mapping):
             .groupby(["REGION", "YEAR"])
             .sum()
         )
-        discounted_storage = (
-            discounted_cost_by_storage.droplevel("STORAGE")
-            .reset_index()
-            .groupby(["REGION", "YEAR"])
-            .sum()
-        )
 
-        total_discounted_cost = discounted_tech.add(discounted_storage, fill_value=0)
+        try:
+            discounted_cost_by_storage = self["DiscountedCostByStorage"]
+
+            discounted_storage = (
+                discounted_cost_by_storage.droplevel("STORAGE")
+                .reset_index()
+                .groupby(["REGION", "YEAR"])
+                .sum()
+            )
+        except KeyError as ex:  # storage not always included
+            LOGGER.debug(ex)
+
+            discounted_storage = pd.DataFrame(
+                columns=["REGION", "YEAR", "VALUE"]
+            ).set_index(["REGION", "YEAR"])
+
+        total_discounted_cost = discounted_tech.add(
+            discounted_storage, fill_value=0
+        ).astype(float)
 
         data = total_discounted_cost
 
