@@ -5,6 +5,8 @@ Changelog
 Version 1.1.4
 =============
 - Add result calculations for ``DiscountedCapitalInvestment``, ``DiscountedCostByTechnology``, and ``DiscountedOperationalCost``
+- Add result calculations for ``CapitalInvestmentStorage``, ``DiscountedCapitalInvestmentStorage``, ``DiscountedCostByStorage`` and ``DiscountedSalvageValueStorage``
+- Correct ``TotalDiscountedCost`` calculation to account for storage costs
 
 Version 1.1.3
 ===========================
