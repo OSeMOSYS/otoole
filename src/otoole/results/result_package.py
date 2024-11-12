@@ -43,7 +43,14 @@ class ResultsPackage(Mapping):
             "AnnualTechnologyEmissionByMode": self.annual_technology_emission_by_mode,
             "AnnualVariableOperatingCost": self.annual_variable_operating_cost,
             "CapitalInvestment": self.capital_investment,
+            "CapitalInvestmentStorage": self.capital_investment_storage,
             "Demand": self.demand,
+            "DiscountedCapitalInvestment": self.discounted_capital_investment,
+            "DiscountedCapitalInvestmentStorage": self.discounted_capital_investment_storage,
+            "DiscountedCostByStorage": self.discounted_storage_cost,
+            "DiscountedCostByTechnology": self.discounted_technology_cost,
+            "DiscountedOperationalCost": self.discounted_operational_cost,
+            "DiscountedSalvageValueStorage": self.discounted_salvage_value_storage,
             "DiscountedTechnologyEmissionsPenalty": self.discounted_tech_emis_pen,
             "ProductionByTechnology": self.production_by_technology,
             "ProductionByTechnologyAnnual": self.production_by_technology_annual,
@@ -344,6 +351,35 @@ class ResultsPackage(Mapping):
 
         return data[(data != 0).all(1)]
 
+    def capital_investment_storage(self) -> pd.DataFrame:
+        """CapitalInvestmentStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y]
+            ~VALUE;
+        """
+        try:
+            capital_cost_storage = self["CapitalCostStorage"]
+            new_capacity_storage = self["NewStorageCapacity"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("CapitalInvestmentStorage", str(ex)))
+
+        capital_investment_storage = capital_cost_storage.mul(
+            new_capacity_storage, fill_value=0
+        )
+
+        data = capital_investment_storage
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
     def demand(self) -> pd.DataFrame:
         """Demand
 
@@ -396,6 +432,304 @@ class ResultsPackage(Mapping):
         if not data.empty:
             data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
 
+        return data[(data != 0).all(1)]
+
+    def discounted_capital_investment(self) -> pd.DataFrame:
+        """DiscountingCapitalInvestment
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountingCapitalInvestment[r,t,y] :=
+            CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / DiscountFactor[r,y]
+
+        Alternatively, can be written as::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountingCapitalInvestment[r,t,y] := UndiscountedCapitalInvestment[r,t,y] / DiscountFactor[r,y]
+
+        """
+
+        try:
+            discount_rate = self["DiscountRate"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+            capital_investment = self["CapitalInvestment"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedCapitalInvestment", str(ex)))
+
+        df = discount_factor(regions, years, discount_rate, 0.0)
+
+        data = capital_investment.div(df, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def discounted_capital_investment_storage(self) -> pd.DataFrame:
+        """DiscountedCapitalInvestmentStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            DiscountedCapitalInvestmentStorage[r,s,y] :=
+            CapitalCostStorage[r,s,y] * NewCapacity[r,t,y] / DiscountFactor[r,y]
+
+        Alternatively, can be written as::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            DiscountedCapitalInvestmentStorage[r,s,y] := UndiscountedCapitalInvestmentStorage[r,s,y] / DiscountFactor[r,y]
+
+        """
+
+        try:
+            discount_rate_storage = self["DiscountRateStorage"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+            capital_investment_storage = self["CapitalInvestmentStorage"]
+
+            storages = self.get_unique_values_from_index(
+                [
+                    capital_investment_storage,
+                ],
+                "STORAGE",
+            )
+
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedCapitalInvestmentStorage", str(ex)))
+
+        dfs = discount_factor_storage(
+            regions, storages, years, discount_rate_storage, 0.0
+        )
+
+        data = capital_investment_storage.div(dfs, fill_value=0.0)
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def discounted_operational_cost(self) -> pd.DataFrame:
+        """DiscountedOperationalCosts
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountedOperatingCost[r,t,y] :=
+            (
+                (
+                    (
+                        sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                        NewCapacity[r,t,yy]
+                    )
+                    + ResidualCapacity[r,t,y]
+                )
+                * FixedCost[r,t,y]
+                + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
+                RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
+            )
+            / (DiscountFactorMid[r,y])
+
+        Alternatively, can be written as::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountedOperatingCost[r,t,y] :=
+            (
+                AnnualVariableOperatingCost[r,t,y] + AnnualFixedOperatingCost[r,t,y]
+            )
+            / DiscountFactorMid[r, y]
+
+            OR
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            DiscountedOperatingCost[r,t,y] := OperatingCost[r,t,y] / DiscountFactorMid[r, y]
+
+        """
+
+        try:
+            discount_rate = self["DiscountRate"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+
+            annual_fixed_operating_cost = self["AnnualFixedOperatingCost"]
+            annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedOperationalCost", str(ex)))
+
+        df_mid = discount_factor(regions, years, discount_rate, 0.5)
+
+        undiscounted_operational_costs = annual_fixed_operating_cost.add(
+            annual_variable_operating_cost, fill_value=0.0
+        )
+
+        discounted_operational_costs = undiscounted_operational_costs.div(
+            df_mid, fill_value=0.0
+        )
+
+        data = discounted_operational_costs
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def discounted_storage_cost(self) -> pd.DataFrame:
+        """TotalDiscountedCostByStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            TotalDiscountedStorageCost[r,s,y]:=
+            (
+                CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / DiscountFactorStorage[r,s,y] -
+                SalvageValueStorage[r,s,y] /
+                (
+                    (1+DiscountRateStorage[r,s])^(max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)+1))
+                )
+            )
+
+        Alternatively, can be written as::
+
+            r~REGION, s~STORAGE, y~YEAR,
+            TotalDiscountedStorageCost[r,s,y]:=
+            DiscountedCapitalInvestmentStorage[r,s,y] - DiscountedSalvageValueStorage[r,s,y]
+        """
+
+        try:
+            discounted_capital_investment_storage = self[
+                "DiscountedCapitalInvestmentStorage"
+            ]
+            discounted_salvage_value_storage = self["DiscountedSalvageValueStorage"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("TotalDiscountedCostByStorage", str(ex)))
+
+        discounted_storage_costs = discounted_capital_investment_storage.sub(
+            discounted_salvage_value_storage, fill_value=0.0
+        )
+
+        data = discounted_storage_costs
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
+        return data[(data != 0).all(1)]
+
+    def discounted_salvage_value_storage(self) -> pd.DataFrame:
+        """DiscountedSalvageValueStorage
+
+        Notes
+        -----
+        From the formulation::
+
+            DiscountedSalvageValueStorage[r,s,y] = SalvageValueStorage[r,s,y] / ((1+DiscountRateStorage[r,s])^(max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)+1)))
+        """
+
+        try:
+            salvage_value_storage = self["SalvageValueStorage"]
+            discount_rate_storage = self["DiscountRateStorage"]
+            year_df = self["YEAR"].copy(deep=True)
+            region_df = self["REGION"].copy(deep=True)
+            storage_df = self["STORAGE"].copy(deep=True)
+
+            years = year_df["VALUE"].tolist()
+            regions = region_df["VALUE"].tolist()
+            storages = storage_df["VALUE"].tolist()
+
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedSalvageValueStorage", str(ex)))
+
+        df_storage_salvage = discount_factor_storage_salvage(
+            regions, storages, years, discount_rate_storage
+        )
+
+        discounted_salvage_value_storage = salvage_value_storage.div(
+            df_storage_salvage, fill_value=0
+        )
+
+        data = discounted_salvage_value_storage
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "STORAGE", "YEAR"]).sum()
+
+        return data[(data != 0).all(1)]
+
+    def discounted_technology_cost(self) -> pd.DataFrame:
+        """TotalDiscountedCostByTechnology
+
+        Notes
+        -----
+        From the formulation::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            TotalDiscountedCostByTechnology[r,t,y]:=
+            (
+                (
+                    (
+                        sum{yy in YEAR: y-yy < OperationalLife[r,t] && y-yy>=0}
+                        NewCapacity[r,t,yy]
+                    )
+                    + ResidualCapacity[r,t,y]
+                )
+                * FixedCost[r,t,y]
+                + sum{l in TIMESLICE, m in MODEperTECHNOLOGY[t]}
+                RateOfActivity[r,l,t,m,y] * YearSplit[l,y] * VariableCost[r,t,m,y]
+            )
+            / (DiscountFactorMid[r,y])
+            + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
+            + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
+
+        Alternatively, can be written as::
+
+            r~REGION, t~TECHNOLOGY, y~YEAR,
+            TotalDiscountedCostByTechnology[r,t,y]: =
+            DiscountedOperatingCost[r,t,y] + DiscountedCapitalInvestment[r,t,y] + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y]
+        """
+
+        try:
+            discounted_capital_costs = self["DiscountedCapitalInvestment"]
+            discounted_operational_costs = self["DiscountedOperationalCost"]
+            discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
+            discounted_salvage_value = self["DiscountedSalvageValue"]
+
+        except KeyError as ex:
+            raise KeyError(self._msg("DiscountedCostByTechnology", str(ex)))
+
+        discounted_total_costs = discounted_operational_costs.add(
+            discounted_capital_costs, fill_value=0.0
+        )
+
+        discounted_total_costs = discounted_total_costs.add(
+            discounted_emissions_penalty, fill_value=0.0
+        )
+
+        discounted_total_costs = discounted_total_costs.sub(
+            discounted_salvage_value, fill_value=0.0
+        )
+
+        data = discounted_total_costs
+
+        if not data.empty:
+            data = data.groupby(by=["REGION", "TECHNOLOGY", "YEAR"]).sum()
         return data[(data != 0).all(1)]
 
     def production_by_technology(self) -> pd.DataFrame:
@@ -603,59 +937,52 @@ class ResultsPackage(Mapping):
                 / (DiscountFactorMid[r,y])
                 + CapitalCost[r,t,y] * NewCapacity[r,t,y] * CapitalRecoveryFactor[r,t] * PvAnnuity[r,t] / (DiscountFactor[r,y])
                 + DiscountedTechnologyEmissionsPenalty[r,t,y] - DiscountedSalvageValue[r,t,y])
-                + sum{s in STORAGE}
+                + sum{r in REGION, s in STORAGE, y in YEAR}
                 (
-                    CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y])
-                    - CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
+                    CapitalCostStorage[r,s,y] * NewStorageCapacity[r,s,y] / (DiscountFactorStorage[r,s,y]
+                    - SalvageValueStorage[r,s,y] / ((1+DiscountRateStorage[r,s])^(max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)+1))
                 )
             ) ~VALUE;
+
+        Alternatively, can be written as::
+
+            r~REGION, y~YEAR,
+            TotalDiscountedCost[r,y] :=
+            sum{t in TECHNOLOGY} TotalDiscountedCostByTechnology[r,t,y] + sum{s in STORAGE} TotalDiscountedStorageCost[r,s,y]
         """
         try:
-            discount_rate = self["DiscountRate"]
-            year_df = self["YEAR"].copy(deep=True)
-            region_df = self["REGION"].copy(deep=True)
-
-            years = year_df["VALUE"].tolist()
-            regions = region_df["VALUE"].tolist()
-
-            annual_fixed_operating_cost = self["AnnualFixedOperatingCost"]
-            annual_variable_operating_cost = self["AnnualVariableOperatingCost"]
-            capital_investment = self["CapitalInvestment"]
-
-            discounted_emissions_penalty = self["DiscountedTechnologyEmissionsPenalty"]
-            discounted_salvage_value = self["DiscountedSalvageValue"]
-
-            # capital_cost_storage = self["CapitalCostStorage"]
+            discounted_cost_by_technology = self["DiscountedCostByTechnology"]
         except KeyError as ex:
             raise KeyError(self._msg("TotalDiscountedCost", str(ex)))
 
-        df_start = discount_factor(regions, years, discount_rate, 0.0)
-
-        df_mid = discount_factor(regions, years, discount_rate, 0.5)
-
-        undiscounted_operational_costs = annual_fixed_operating_cost.add(
-            annual_variable_operating_cost, fill_value=0.0
+        discounted_tech = (
+            discounted_cost_by_technology.droplevel("TECHNOLOGY")
+            .reset_index()
+            .groupby(["REGION", "YEAR"])
+            .sum()
         )
 
-        discounted_operational_costs = undiscounted_operational_costs.div(
-            df_mid, fill_value=0.0
-        )
+        try:
+            discounted_cost_by_storage = self["DiscountedCostByStorage"]
 
-        discounted_capital_costs = capital_investment.div(df_start, fill_value=0.0)
+            discounted_storage = (
+                discounted_cost_by_storage.droplevel("STORAGE")
+                .reset_index()
+                .groupby(["REGION", "YEAR"])
+                .sum()
+            )
+        except KeyError as ex:  # storage not always included
+            LOGGER.debug(ex)
 
-        discounted_total_costs = discounted_operational_costs.add(
-            discounted_capital_costs, fill_value=0.0
-        )
+            discounted_storage = pd.DataFrame(
+                columns=["REGION", "YEAR", "VALUE"]
+            ).set_index(["REGION", "YEAR"])
 
-        discounted_total_costs = discounted_total_costs.add(
-            discounted_emissions_penalty, fill_value=0.0
-        )
+        total_discounted_cost = discounted_tech.add(
+            discounted_storage, fill_value=0
+        ).astype(float)
 
-        discounted_total_costs = discounted_total_costs.sub(
-            discounted_salvage_value, fill_value=0.0
-        )
-
-        data = discounted_total_costs
+        data = total_discounted_cost
 
         if not data.empty:
             data = data.groupby(by=["REGION", "YEAR"]).sum()
@@ -954,6 +1281,54 @@ def discount_factor_storage(
         return discount_fac_storage.reset_index()[
             ["REGION", "STORAGE", "YEAR", "VALUE"]
         ].set_index(["REGION", "STORAGE", "YEAR"])
+    else:
+        return pd.DataFrame(
+            [], columns=["REGION", "STORAGE", "YEAR", "VALUE"]
+        ).set_index(["REGION", "STORAGE", "YEAR"])
+
+
+def discount_factor_storage_salvage(
+    regions: List,
+    storages: List,
+    years: List,
+    discount_rate_storage: pd.DataFrame,
+) -> pd.DataFrame:
+    """Discount Factor used for salvage value claculations
+
+    Arguments
+    ---------
+    regions: list
+    storages: list
+    years: list
+    discount_rate_storage: pd.DataFrame
+
+    Notes
+    -----
+    From the formulation::
+
+        ((1+DiscountRateStorage[r,s])^(1+max{yy in YEAR} max(yy)-min{yy in YEAR} min(yy)));
+    """
+
+    if discount_rate_storage.empty:
+        raise ValueError(
+            "Cannot calculate discount_factor_storage_salvage due to missing discount rate"
+        )
+
+    if regions and years:
+        index = pd.MultiIndex.from_product(
+            [regions, storages, years], names=["REGION", "STORAGE", "YEAR"]
+        )
+        discount_fac_storage_salv = discount_rate_storage.reindex(index)
+
+        max_year = max(years)
+        min_year = min(years)
+
+        discount_fac_storage_salv["VALUE"] = (1 + discount_fac_storage_salv).pow(
+            1 + max_year - min_year
+        )
+
+        return discount_fac_storage_salv
+
     else:
         return pd.DataFrame(
             [], columns=["REGION", "STORAGE", "YEAR", "VALUE"]
