@@ -66,6 +66,18 @@ def discount_rate():
 
 
 @fixture
+def discount_rate_multiple_regions():
+    df = pd.DataFrame(
+        data=[
+            ["SIMPLICITY", 0.05],
+            ["DUMMY", 0.05],
+        ],
+        columns=["REGION", "VALUE"],
+    ).set_index(["REGION"])
+    return df
+
+
+@fixture
 def discount_rate_idv():
     df = pd.DataFrame(
         data=[["SIMPLICITY", "GAS_EXTRACTION", 0.10], ["SIMPLICITY", "DUMMY", 0.10]],
