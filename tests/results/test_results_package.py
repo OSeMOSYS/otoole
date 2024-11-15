@@ -128,6 +128,11 @@ def region():
 
 
 @fixture
+def region_multiple():
+    return pd.DataFrame(data=["SIMPLICITY", "DUMMY"], columns=["VALUE"])
+
+
+@fixture
 def storage():
     return pd.DataFrame(data=["DAM"], columns=["VALUE"])
 
@@ -1484,6 +1489,36 @@ class TestDiscountFactor:
 
         with raises(ValueError):
             discount_factor(regions, years, discount_rate_empty, 1.0)
+
+    def test_df_two_regions(
+        self, region_multiple, year, discount_rate_multiple_regions
+    ):
+
+        regions = region_multiple["VALUE"].to_list()
+        years = year["VALUE"].to_list()
+        actual = discount_factor(regions, years, discount_rate_multiple_regions, 0.0)
+
+        expected = pd.DataFrame(
+            data=[
+                ["SIMPLICITY", 2014, 1],
+                ["SIMPLICITY", 2015, 1.05],
+                ["SIMPLICITY", 2016, 1.1025],
+                ["SIMPLICITY", 2017, 1.157625],
+                ["SIMPLICITY", 2018, 1.21550625],
+                ["SIMPLICITY", 2019, 1.276281562],
+                ["SIMPLICITY", 2020, 1.340095640],
+                ["DUMMY", 2014, 1],
+                ["DUMMY", 2015, 1.05],
+                ["DUMMY", 2016, 1.1025],
+                ["DUMMY", 2017, 1.157625],
+                ["DUMMY", 2018, 1.21550625],
+                ["DUMMY", 2019, 1.276281562],
+                ["DUMMY", 2020, 1.340095640],
+            ],
+            columns=["REGION", "YEAR", "VALUE"],
+        ).set_index(["REGION", "YEAR"])
+
+        assert_frame_equal(actual, expected)
 
 
 class TestDiscountFactorStorage:
