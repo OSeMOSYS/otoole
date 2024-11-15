@@ -2,6 +2,10 @@
 Changelog
 =========
 
+Version 1.1.5
+=============
+- Correct discount factor calculation for multiple regions
+
 Version 1.1.4
 =============
 - Add result calculations for ``DiscountedCapitalInvestment``, ``DiscountedCostByTechnology``, and ``DiscountedOperationalCost``
