@@ -90,8 +90,11 @@ class TestReadCplex:
             actual = reader._convert_to_dataframe(file_buffer)
         expected = pd.DataFrame(
             [
+                ["NewCapacity", "SIMPLICITY,ETHPLANT,2014", 0],
                 ["NewCapacity", "SIMPLICITY,ETHPLANT,2015", 0.030000000000000027],
                 ["NewCapacity", "SIMPLICITY,ETHPLANT,2016", 0.030999999999999917],
+                ["RateOfActivity", "SIMPLICITY,ID,GRID_EXP,1,2014", 0],
+                ["RateOfActivity", "SIMPLICITY,ID,GRID_EXP,2,2014", 0],
                 ["RateOfActivity", "SIMPLICITY,ID,HYD1,1,2020", 0.25228800000000001],
                 ["RateOfActivity", "SIMPLICITY,ID,HYD1,1,2021", 0.25228800000000001],
                 ["RateOfActivity", "SIMPLICITY,ID,HYD1,1,2022", 0.25228800000000001],
@@ -109,6 +112,7 @@ class TestReadCplex:
         expected = (
             pd.DataFrame(
                 [
+                    ["SIMPLICITY", "ETHPLANT", 2014, 0],
                     ["SIMPLICITY", "ETHPLANT", 2015, 0.030000000000000027],
                     ["SIMPLICITY", "ETHPLANT", 2016, 0.030999999999999917],
                 ],
@@ -123,6 +127,8 @@ class TestReadCplex:
         expected = (
             pd.DataFrame(
                 [
+                    ["SIMPLICITY", "ID", "GRID_EXP", 1, 2014, 0],
+                    ["SIMPLICITY", "ID", "GRID_EXP", 2, 2014, 0],
                     ["SIMPLICITY", "ID", "HYD1", 1, 2020, 0.25228800000000001],
                     ["SIMPLICITY", "ID", "HYD1", 1, 2021, 0.25228800000000001],
                     ["SIMPLICITY", "ID", "HYD1", 1, 2022, 0.25228800000000001],
