@@ -1,5 +1,5 @@
-"""Visualise the reference energy system
-"""
+"""Visualise the reference energy system"""
+
 import logging
 import os
 from typing import Dict, List, Tuple
@@ -228,7 +228,12 @@ def draw_graph(graph, path_to_resfile):
         logger.debug("%s-%s: %s", source, sink, attributes)
 
     filename, ext = os.path.splitext(path_to_resfile)
-    nx.write_graphml(graph, filename + ".graphml")
+    # GraphML consumers need fuel labels, while the diagram uses edge labels.
+    graphml_graph = graph.copy()
+    for node, attributes in graphml_graph.nodes.data():
+        if attributes.get("type") == "fuel" and not attributes.get("label"):
+            attributes["label"] = str(node)
+    nx.write_graphml(graphml_graph, filename + ".graphml")
     dot_graph = nx.nx_pydot.to_pydot(graph)
 
     dot_graph.set("rankdir", "LR")
